@@ -1,0 +1,533 @@
+/* Import Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&display=swap");
+
+:root {
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Source Serif 4", serif;
+  --font-serif: "Source Serif 4", serif;
+
+  /* ─── SCImago-style Palette ─── */
+  --bg-main: #ffffff; /* Background chính */
+  --bg-section: #ececec; /* Section / card background */
+  --bg-chip: #f2f2f2; /* Chip / filter background */
+  --bg-card: #ffffff; /* White card surface */
+  --border: #e6e6e6; /* Border / divider */
+
+  --text-main: #0d1b1c; /* Text chính */
+  --text-muted: #6b6b6b; /* Text phụ */
+
+  --primary: #ff7a33; /* Accent / link cam */
+  --primary-light: #fff0e8; /* Light tint của cam */
+  --btn-dark: #071a1c; /* Button đen đậm */
+  --q1-color: #ff7a33; /* Q1 badge dùng accent cam */
+
+  /* Compatibility aliases */
+  --dark-bg: var(--bg-main);
+  --dark-card: var(--bg-card);
+  --dark-border: var(--border);
+  --brand-accent: var(--primary);
+
+  --glow-accent: rgba(255, 122, 51, 0.08);
+}
+
+html,
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* Custom background grid pattern for light mode */
+.grid-bg {
+  background-color: var(--bg-main);
+  background-image:
+    linear-gradient(rgba(236, 236, 236, 0.6) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(236, 236, 236, 0.6) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center top;
+}
+
+/* Radial light gradient to fade out grid lines on corners */
+.radial-fade {
+  background: radial-gradient(
+    circle at 50% 30%,
+    transparent 10%,
+    var(--bg-main) 85%
+  );
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Hide right scrollbar while preserving scrolling behavior */
+html, body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* View Trends Button */
+.btn-view-trends {
+  font-size: 0.875rem;
+  letter-spacing: 0.03em;
+  background: var(--bg-chip) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-main) !important;
+  transition: all 0.25s ease;
+}
+
+.btn-view-trends-icon {
+  color: var(--primary);
+  transition: all 0.25s ease;
+}
+
+.btn-view-trends:hover {
+  background: #e5e5e5 !important;
+  border-color: #d4d4d4 !important;
+  color: var(--text-main) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.btn-view-trends:hover .btn-view-trends-icon {
+  color: var(--primary) !important;
+  transform: scale(1.08);
+}
+
+/* Selection highlight */
+::selection {
+  background: var(--primary-light);
+  color: var(--text-main);
+}
+
+/* Utility classes for light theme translation */
+.text-main {
+  color: var(--text-main) !important;
+}
+
+.text-muted-custom {
+  color: var(--text-muted) !important;
+}
+
+/* Smooth sticky header transition in light mode */
+header.sticky-scrolled {
+  background-color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Glassmorphism card - Light version */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 10px 30px -10px rgba(255, 122, 51, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Glowing text */
+.glow-text-accent {
+  text-shadow: 0 0 10px rgba(255, 122, 51, 0.2);
+}
+
+/* Primary accent button */
+.btn-primary-glow {
+  background: var(--primary);
+  border: none;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(255, 122, 51, 0.25);
+  transition: all 0.3s ease;
+}
+.btn-primary-glow:hover {
+  background: #e8632a;
+  box-shadow: 0 6px 20px rgba(255, 122, 51, 0.4);
+  transform: translateY(-1px);
+  color: #ffffff !important;
+}
+
+/* Dark button (SCImago style) */
+.btn-dark-solid {
+  background: var(--btn-dark);
+  border: none;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(7, 26, 28, 0.2);
+  transition: all 0.3s ease;
+}
+.btn-dark-solid:hover {
+  background: #0f2e31;
+  transform: translateY(-1px);
+  color: #ffffff !important;
+}
+
+.glow-gradient-text {
+  background: var(--primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.bg-dark-bg {
+  background-color: var(--bg-main);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Skeleton Shimmer in Light Mode */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.03) 25%,
+    rgba(0, 0, 0, 0.08) 37%,
+    rgba(0, 0, 0, 0.03) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+  border-radius: 4px;
+}
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Custom Tab Styling */
+.tab-nav-custom {
+  border-bottom: 1px solid var(--border);
+}
+.tab-nav-custom .nav-link {
+  color: var(--text-muted);
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.75rem 1.25rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  background: transparent;
+}
+.tab-nav-custom .nav-link:hover {
+  color: var(--text-main);
+}
+.tab-nav-custom .nav-link.active {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+  background: transparent;
+}
+
+/* List groups & card style overrides for Light Theme */
+.journal-dark-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+/* --- Font Customizations --- */
+
+/* 1. Logo / tên hệ thống */
+.navbar-brand,
+.logo-title,
+.system-logo,
+.brand-font {
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+}
+
+/* 2. Page titles */
+h1,
+h2,
+h3,
+.page-title,
+.font-display {
+  font-family: var(--font-display) !important;
+  font-weight: 600 !important;
+}
+
+/* 3. Body text defaults */
+body,
+p,
+span,
+li,
+div,
+input,
+textarea,
+select {
+  font-family: var(--font-sans);
+  font-weight: 400;
+}
+
+/* 4. Menu/sidebar */
+.nav-link,
+.sidebar-link,
+.menu-item,
+.nav-item {
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+}
+
+/* 5. Button */
+.btn,
+button,
+.btn-custom {
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+}
+.btn-fw-600,
+.btn-primary-glow {
+  font-weight: 600 !important;
+}
+
+/* 6. Table data */
+.table td,
+.table th,
+table,
+td,
+th {
+  font-family: var(--font-sans) !important;
+  font-weight: 400 !important;
+}
+.table th,
+th,
+.table-header {
+  font-weight: 500 !important;
+}
+
+/* 7. Badge/tag */
+.badge,
+.tag,
+.badge-custom {
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+}
+
+/* ─── Skeleton shimmer ────────────────────────────────────────────── */
+@keyframes skeleton-wave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-section) 25%,
+    var(--border) 50%,
+    var(--bg-section) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.5s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* ─── Dashboard button primary glow ─────────────────────────────── */
+.btn-primary-glow {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 2px 12px rgba(255, 122, 51, 0.18);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+.btn-primary-glow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(255, 122, 51, 0.22);
+  background: #e8632a !important;
+}
+.btn-primary-glow:active {
+  transform: translateY(0);
+}
+
+/* ─── Dashboard misc utilities ───────────────────────────────────── */
+.text-main {
+  color: var(--text-main) !important;
+}
+.text-muted-custom {
+  color: var(--text-muted) !important;
+}
+.bg-card {
+  background-color: var(--bg-card) !important;
+}
+
+/* ─── Sandbox Suggestion Tags ────────────────────────────────────── */
+.sandbox-tag {
+  font-size: 0.75rem;
+  background: var(--bg-chip) !important;
+  border: none !important;
+  color: var(--text-muted) !important;
+  transition: all 0.2s ease !important;
+}
+.sandbox-tag:hover {
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+}
+
+/* ─── Sandbox Result Items ────────────────────────────────────────── */
+.sandbox-result-item {
+  background-color: var(--bg-chip) !important;
+  border: 1px solid var(--border) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+.sandbox-result-item:hover {
+  border-color: var(--primary-light) !important;
+  background-color: var(--bg-card) !important;
+}
+.sandbox-result-item.is-journal {
+  cursor: pointer !important;
+}
+.sandbox-result-item.is-journal:hover {
+  border-color: var(--primary) !important;
+  background-color: var(--primary-light) !important;
+}
+
+/* ─── Auth Required Modal ─────────────────────────────────────────── */
+.auth-required-register-btn:hover {
+  background-color: var(--btn-dark) !important;
+  border-color: var(--btn-dark) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(7, 26, 28, 0.16);
+}
+.auth-required-register-btn:active {
+  transform: translateY(0);
+}
+
+/* --- Account Module Form custom styling --- */
+.account-form-input {
+  background-color: #f1f5f9 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 0.88rem !important;
+  padding: 0.65rem 1rem !important;
+  color: var(--text-main) !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+input.account-form-input,
+select.account-form-input {
+  height: 46px !important;
+}
+
+.account-form-input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+.account-form-input:focus {
+  background-color: #f1f5f9 !important;
+  outline: 0 !important;
+  box-shadow: 0 0 0 2px rgba(255, 122, 51, 0.25) !important;
+}
+
+.account-form-label {
+  font-size: 0.825rem !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  margin-bottom: 6px !important;
+}
+
+.orange-switch-toggle .form-check-input {
+  cursor: pointer;
+  scale: 1.15;
+}
+
+.orange-switch-toggle .form-check-input:checked {
+  background-color: #ea580c !important;
+  border-color: #ea580c !important;
+}
+
+/* --- Premium Dropzone styling --- */
+.premium-dropzone {
+  border: 1.5px dashed #fdba74 !important;
+  background-color: #fafafa !important;
+  transition: all 0.2s ease-in-out !important;
+  min-height: 280px;
+  cursor: pointer;
+}
+.premium-dropzone.drag-active {
+  border: 2px dashed #ea580c !important;
+  background-color: #fff0e8 !important;
+}
+.premium-dropzone-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  background-color: #fff0e8 !important;
+  color: #ea580c !important;
+}
+.premium-dropzone-btn {
+  border: 1px solid #ea580c !important;
+  color: #ea580c !important;
+  background-color: #ffffff !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease-in-out !important;
+}
+.premium-dropzone-btn:hover {
+  background-color: #ea580c !important;
+  color: #ffffff !important;
+}
+

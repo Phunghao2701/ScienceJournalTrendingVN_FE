@@ -28,6 +28,17 @@
   --brand-accent: var(--primary);
 
   --glow-accent: rgba(255, 122, 51, 0.08);
+
+  /* ─── Header Navigation Theme ─── */
+  --header-bg: #132B40;
+  --header-border: rgba(255, 255, 255, 0.1);
+  --header-nav-active-bg: rgba(25, 118, 210, 0.25);
+  --header-nav-active-color: #FFFFFF;
+  --header-nav-active-border: rgba(255, 255, 255, 0.15);
+  --header-nav-inactive-color: rgba(255, 255, 255, 0.75);
+  --header-nav-inactive-border: transparent;
+  --header-brand-primary: #1976D2;
+  --header-brand-primary-shadow: rgba(25, 118, 210, 0.3);
 }
 
 html,

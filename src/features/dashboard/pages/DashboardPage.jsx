@@ -60,7 +60,7 @@ export default function DashboardPage() {
   const handleQuickSearch = useCallback(
     (e) => {
       if (e.key === "Enter" && quickSearch.trim()) {
-        navigate(`/catalog?search=${encodeURIComponent(quickSearch.trim())}`);
+        navigate(`/articles?search=${encodeURIComponent(quickSearch.trim())}`);
       }
     },
     [quickSearch, navigate],
@@ -85,7 +85,7 @@ export default function DashboardPage() {
   };
 
   const handleKeywordClick = (keyword) => {
-    navigate(`/catalog?search=${encodeURIComponent(keyword)}`);
+    navigate(`/articles?search=${encodeURIComponent(keyword)}`);
   };
 
   const firstProjectId = projects[0]?.project_id ?? projects[0]?.id;
@@ -203,7 +203,7 @@ export default function DashboardPage() {
               loading={loadingKeywords}
               error={errorKeywords}
               onKeywordClick={handleKeywordClick}
-              onViewMore={() => navigate("/catalog")}
+              onViewMore={() => navigate("/articles")}
             />
           </Col>
           <Col xs={12} md={6}>

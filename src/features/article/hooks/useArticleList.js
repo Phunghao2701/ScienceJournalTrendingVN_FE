@@ -95,6 +95,7 @@ export default function useArticleList() {
           // Journal: map từ flat fields trả về bởi enriched service
           journal_id: item.journal_id || null,
           journal_name: item.journal_name || null,
+          journal_issn: item.journal_issn || null,
           // Tương thích với component cũ đang dùng article.journal.display_name
           journal: item.journal_id
             ? { journal_id: item.journal_id, display_name: item.journal_name }
@@ -102,6 +103,7 @@ export default function useArticleList() {
           is_open_access: Boolean(item.is_open_access),
           semantic_citation_count: item.semantic_citation_count !== undefined ? Number(item.semantic_citation_count) : null,
           created_at: item.created_at || null,
+          authors: item.authors || [],
         }));
 
         setArticles(mappedArticles);

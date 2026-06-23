@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import LandingPage from '../../features/landing/pages/LandingPage';
 import JournalDetailPage from '../../features/journal/pages/JournalDetailPage';
 import CatalogSearchPage from '../../features/catalog/pages/CatalogSearchPage';
-import ArticleListPage from '../../features/article/pages/ArticleListPage';
+import TrendingVNPage from '../../features/trendingVN/pages/TrendingVNPage';
 import ArticleDetailPage from '../../features/article/pages/ArticleDetailPage';
 import ArticleVisualDetailPage from '../../features/article/pages/ArticleVisualDetailPage';
 import DashboardPage from '../../features/dashboard/pages/DashboardPage';
@@ -119,7 +119,8 @@ export default function AppRoutes() {
         <Route path="/search" element={<CatalogSearchPage />} />
         <Route path="/catalog" element={<CatalogSearchPage />} />
 
-        <Route path="/articles" element={<ArticleListPage />} />
+        <Route path="/articles" element={<TrendingVNPage />} />
+        <Route path="/trending-vn" element={<TrendingVNPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
         <Route
           path="/articles/:id/visual"

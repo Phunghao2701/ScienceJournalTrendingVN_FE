@@ -64,6 +64,9 @@ const ROUTES = {
 
   // Chủ đề (Topic)
   TOPIC_DETAIL:          "/topics/:topicId",
+
+  // Xu hướng bài báo Việt Nam (Lens-style page)
+  TRENDING_VN:           "/trending-vn",
 };
 
 export default ROUTES;

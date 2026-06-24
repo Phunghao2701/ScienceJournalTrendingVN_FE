@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getArticlesListApi } from '../api/articleApi';
+import { searchJournalsApi } from '../../journal/api/journalApi';
 
 /**
  * Hook quản lý trạng thái trang Article List.
@@ -53,6 +54,26 @@ export default function useArticleList() {
     setError(null);
 
     try {
+      let journalIdToFilter = selectedJournal;
+      let textSearch = search.trim();
+
+      // Kiểm tra nếu search có định dạng ISSN (VD: "1859-3526", hoặc source.issn:"1859-3526")
+      const issnMatch = textSearch.match(/(?:source\.issn:\s*")?(\d{4}-\d{3}[\dX]|\d{4}\s*-\s*\d{3}[\dX]|\d{8})(?:"\s*)?/i);
+      if (issnMatch) {
+        const issnVal = issnMatch[1].replace(/\s+/g, ''); // Loại bỏ khoảng trắng
+        try {
+          const journalRes = await searchJournalsApi({ search: issnVal });
+          const journalList = journalRes?.data?.data?.items || [];
+          if (journalList.length > 0) {
+            const matchedJournal = journalList[0];
+            journalIdToFilter = matchedJournal.journal_id || matchedJournal.id;
+            textSearch = ''; // Xóa textSearch để không lọc theo text LIKE trong DB
+          }
+        } catch (err) {
+          console.warn("Failed to lookup journal by ISSN in fetchArticles:", err);
+        }
+      }
+
       const apiParams = {
         page,
         limit,
@@ -61,9 +82,9 @@ export default function useArticleList() {
       };
 
       // Chỉ gửi params khi có giá trị hợp lệ
-      if (search.trim()) apiParams.search = search.trim();
+      if (textSearch) apiParams.search = textSearch;
       if (selectedYear && selectedYear !== 'all') apiParams.publication_year = selectedYear;
-      if (selectedJournal && selectedJournal !== 'all') apiParams.journal_id = selectedJournal;
+      if (journalIdToFilter && journalIdToFilter !== 'all') apiParams.journal_id = journalIdToFilter;
       if (selectedTopic && selectedTopic !== 'all') apiParams.topic_id = selectedTopic;
       if (selectedAccess && selectedAccess !== 'all') apiParams.access = selectedAccess;
       if (selectedVolume) apiParams.volume_id = selectedVolume;

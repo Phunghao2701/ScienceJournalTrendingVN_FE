@@ -93,6 +93,9 @@ export const normalizeArticleDetail = (apiData = {}, id = '') => {
   const topics = normalizeTopics(apiData);
   const doiUrl = apiData.source_url || getDoiUrl(apiData.doi);
 
+  const citationsRaw = apiData.citations ?? apiData.citations_count ?? apiData.citation_count ?? apiData.cited_by_count ?? apiData.semantic_citation_count ?? apiData.semantic_scholar_citation_count;
+  const referenceCountRaw = apiData.reference_count ?? (Array.isArray(apiData.references) ? apiData.references.length : 0);
+
   return {
     ...apiData,
     article_id: apiData.article_id || apiData.id || id,
@@ -108,10 +111,10 @@ export const normalizeArticleDetail = (apiData = {}, id = '') => {
     topics,
     authors,
     is_open_access: Boolean(apiData.is_open_access),
-    citations: apiData.citations ?? apiData.citations_count ?? apiData.cited_by_count ?? apiData.semantic_citation_count ?? apiData.semantic_scholar_citation_count ?? null,
+    citations: citationsRaw !== undefined && citationsRaw !== null ? Number(citationsRaw) : null,
     semantic_tldr: apiData.semantic_tldr || null,
     references: Array.isArray(apiData.references) ? apiData.references : [],
-    reference_count: apiData.reference_count ?? (Array.isArray(apiData.references) ? apiData.references.length : 0),
+    reference_count: referenceCountRaw !== undefined && referenceCountRaw !== null ? Number(referenceCountRaw) : 0,
     volume_id: apiData.volume_id || apiData.volume?.volume_id || '',  
     volume_number: apiData.volume_number || apiData.volume || '',
     issue_id: apiData.issue_id || apiData.issue?.issue_id || '',
@@ -120,5 +123,6 @@ export const normalizeArticleDetail = (apiData = {}, id = '') => {
     journal_name: apiData.journal_name || apiData.journal?.display_name || '',
     publisher_id: apiData.publisher_id || apiData.publisher?.publisher_id || '',
     publisher_name: apiData.publisher_name || apiData.publisher?.display_name || '',
+    issn: apiData.issn || apiData.journal_issn || apiData.journal?.issn || '',
   };
 };

@@ -44,8 +44,11 @@ export default function TrendingVNPage() {
     updateFilters,
     clearFilters,
     handlePageChange,
-    handleDetailClick,
   } = useArticleList();
+
+  const handleDetailClick = (id) => {
+    navigate(`/trending/articles/${id}`);
+  };
 
   // --- State giao diện ---
   const [showSidebar, setShowSidebar] = useState(true); // Ẩn/hiện sidebar phân tích
@@ -567,7 +570,11 @@ export default function TrendingVNPage() {
                 <strong>{t('authorsLabel')}: </strong>
                 {article.authors && article.authors.length > 0 ? (
                   article.authors.map((au, aIdx) => (
-                    <span key={au.author_id || aIdx} className="text-link">
+                    <span 
+                      key={au.author_id || aIdx} 
+                      className="text-link cursor-pointer"
+                      onClick={() => au.author_id && navigate(`/authors/${au.author_id}`)}
+                    >
                       {au.display_name || au.name}
                       {aIdx < article.authors.length - 1 ? '; ' : ''}
                     </span>
@@ -603,7 +610,12 @@ export default function TrendingVNPage() {
             {visibleColumns.keywords && article.primary_topic && (
               <div className="lens-detail-line">
                 <strong>{t('keywordsLabel')}: </strong>
-                <span className="text-link">{article.primary_topic}</span>
+                <span 
+                  className="text-link cursor-pointer"
+                  onClick={() => updateFilters({ search: article.primary_topic })}
+                >
+                  {article.primary_topic}
+                </span>
               </div>
             )}
 

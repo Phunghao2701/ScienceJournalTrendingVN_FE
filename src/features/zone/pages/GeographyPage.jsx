@@ -33,7 +33,7 @@ export default function GeographyPage() {
 
   // State lưu trữ năm xuất bản được chọn để lọc (Mặc định: 'All' - hiển thị tất cả các năm)
   const [selectedYear, setSelectedYear] = useState('All');
-  
+
   // Articles listing states
   const [articles, setArticles] = useState([]);
   const [loadingArticles, setLoadingArticles] = useState(false);
@@ -49,9 +49,9 @@ export default function GeographyPage() {
 
   // Hook tự động gọi lại API để tải thống kê theo quốc gia bất cứ khi nào năm lọc (selectedYear) thay đổi
   useEffect(() => {
-    fetchCountryStats({ 
-      limit: 1000, 
-      year: selectedYear === 'All' ? undefined : selectedYear 
+    fetchCountryStats({
+      limit: 1000,
+      year: selectedYear === 'All' ? undefined : selectedYear
     });
   }, [selectedYear, fetchCountryStats]);
 
@@ -141,12 +141,12 @@ export default function GeographyPage() {
               Xem thống kê số lượng ấn phẩm khoa học và nhà xuất bản phân bố trên toàn thế giới.
             </p>
           </div>
-          
+
           {/* Year Filter Dropdown */}
           <div className="d-flex align-items-center gap-2" style={{ minWidth: '220px' }}>
             <span className="text-muted-custom fw-semibold text-nowrap" style={{ fontSize: '0.82rem' }}>Năm xuất bản:</span>
-            <Form.Select 
-              value={selectedYear} 
+            <Form.Select
+              value={selectedYear}
               onChange={(e) => {
                 setSelectedYear(e.target.value);
                 setArticlesPage(1);
@@ -168,7 +168,7 @@ export default function GeographyPage() {
               <strong>Lỗi tải dữ liệu: </strong>
               {errorCountries}
             </div>
-            <button 
+            <button
               className="btn btn-sm btn-outline-danger ms-auto"
               onClick={() => fetchCountryStats({ limit: 1000, year: selectedYear === 'All' ? undefined : selectedYear })}
             >
@@ -181,8 +181,8 @@ export default function GeographyPage() {
         <Row className="g-4">
           {/* Left Column: Chart Area */}
           <Col xs={12} lg={7} xl={8}>
-            <GeographyTerritoryChart 
-              data={countryStats} 
+            <GeographyTerritoryChart
+              data={countryStats}
               loading={loadingCountries}
               selectedCountry={selectedCountry}
               onSelectCountry={handleSelectCountry}
@@ -192,8 +192,8 @@ export default function GeographyPage() {
 
           {/* Right Column: Ranking Table */}
           <Col xs={12} lg={5} xl={4}>
-            <GeographyRankingTable 
-              data={countryStats} 
+            <GeographyRankingTable
+              data={countryStats}
               loading={loadingCountries}
               selectedCountry={selectedCountry}
               onSelectCountry={handleSelectCountry}
@@ -205,7 +205,7 @@ export default function GeographyPage() {
         {selectedCountry && (
           <Row className="mt-4" ref={articlesRef}>
             <Col xs={12}>
-              <GeographyArticleList 
+              <GeographyArticleList
                 articles={articles}
                 loading={loadingArticles}
                 total={totalArticles}
@@ -221,9 +221,9 @@ export default function GeographyPage() {
       </Container>
 
       {/* Login guard modal */}
-      <AuthRequiredModal 
-        show={showAuthModal} 
-        onHide={() => setShowAuthModal(false)} 
+      <AuthRequiredModal
+        show={showAuthModal}
+        onHide={() => setShowAuthModal(false)}
       />
     </div>
   );

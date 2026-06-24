@@ -126,7 +126,7 @@
   "info": "Info",
   "more": "More",
   "databaseArticlesCount": "{{count}} Articles (ResearchPulse Database)",
-  "exploreSectors": "Explore Science, Technology & Innovation...",
+  "exploreSectors": "Explore Science, Technology & Innovation",
   "articleSearchResults": "Article Search Results",
   "allDocs": "All Docs",
   "filtersApplied": "{{count}} applied",
@@ -272,5 +272,7 @@
   "history": "History",
   "publication": "Publication",
   "application": "Application",
-  "priority": "Priority"
+  "priority": "Priority",
+  "guest": "Guest",
+  "pleaseSignIn": "Please sign in"
 }

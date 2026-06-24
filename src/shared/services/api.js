@@ -46,18 +46,46 @@ export const publicApi = axios.create({
 });
 
 
-// Interceptor xử lý response và tự động refresh token khi gặp lỗi 401
+// Danh sách các endpoint auth public — không cần thử refresh token khi bị 401
+// vì đây là các request chưa xác thực (login, register, google...)
+const PUBLIC_AUTH_ENDPOINTS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/google',
+  '/auth/refresh',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/verify',
+];
 
+/**
+ * Kiểm tra URL của request có phải endpoint public auth không.
+ * Nếu có thì bỏ qua bước tự động refresh token.
+ */
+const isPublicAuthEndpoint = (url = '') =>
+  PUBLIC_AUTH_ENDPOINTS.some((path) => url.includes(path));
+
+// Interceptor xử lý response và tự động refresh token khi gặp lỗi 401
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl = originalRequest?.url || '';
+
+    // Bỏ qua refresh cho các endpoint public auth — giữ nguyên lỗi gốc từ backend
+    // để UI hiển thị đúng thông báo (ví dụ: "Email hoặc mật khẩu không đúng")
+    if (isPublicAuthEndpoint(requestUrl)) {
+      return Promise.reject(error);
+    }
 
     // Mỗi request chỉ được refresh một lần để tránh vòng lặp vô hạn khi token lỗi
     if (error.response && error.response.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
+
+      // Lưu lại lỗi gốc để fallback nếu refresh thất bại
+      const originalError = error;
 
       try {
         const res = await axios.get(
@@ -66,32 +94,32 @@ api.interceptors.response.use(
         );
 
         if (res.status === 200) {
-          // 🔥 HỢP NHẤT: Hỗ trợ cả 2 format response từ BE của nhánh Duy
+          // Hỗ trợ cả 2 format response từ BE
           const newToken = res.data?.token || res.data?.data?.token || null;
 
           if (newToken) {
-            // 🔥 Giữ thay đổi: Lấy hàm loginSuccess trực tiếp từ kho Zustand mà không dùng Hook
+            // Lấy hàm loginSuccess trực tiếp từ kho Zustand mà không dùng Hook
             const { loginSuccess } = useAuthStore.getState();
             loginSuccess(newToken);
 
             // Gán token mới vào header của request bị lỗi trước đó
             originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-
           }
 
           // Thực hiện lại request ban đầu với token mới
           return api(originalRequest);
         }
-      } catch (refreshError) {
-        // Refresh failed, clear everything
+      } catch {
+        // Refresh thất bại: xoá session và reject bằng LỖI GỐC
+        // (không dùng refreshError để tránh mất message từ backend)
         const { logout } = useAuthStore.getState();
         logout();
         localStorage.removeItem('researchpulse_token');
-        return Promise.reject(refreshError);
+        return Promise.reject(originalError);
       }
     }
 
-    // If it's 401 and we already retried, clear token
+    // Nếu đã retry mà vẫn 401, xoá token
     if (error.response && error.response.status === 401) {
       const { logout } = useAuthStore.getState();
       logout();

@@ -14,14 +14,14 @@ import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Header from '../../landing/components/Header';
-import useArticleList from '../../article/hooks/useArticleList';
+import useTrendingVN from '../hooks/useTrendingVN';
 import ArticleTable from '../../article/components/ArticleTable';
 import AdminPagination from '../../../shared/components/Pagination';
-import { searchJournalsApi } from '../../journal/api/journalApi';
-import { getTopicsApi } from '../../topic/api/topic.api';
+import { getTrendingJournalsApi, getTrendingTopicsApi } from '../api/trendingVNApi';
 import PublisherGrid from '../components/PublisherGrid';
 import { toast } from '../../../shared/utils/toast';
 import { useAuthStore } from '../../../app/store/authStore';
+import { isAuthenticated as checkAuthSession } from '../../../shared/utils/auth';
 import './TrendingVNPage.css';
 
 export default function TrendingVNPage() {
@@ -45,7 +45,7 @@ export default function TrendingVNPage() {
     clearFilters,
     handlePageChange,
     handleDetailClick,
-  } = useArticleList();
+  } = useTrendingVN();
 
   // --- State giao diện ---
   const [showSidebar, setShowSidebar] = useState(true); // Ẩn/hiện sidebar phân tích
@@ -109,13 +109,18 @@ export default function TrendingVNPage() {
     setLocalSearchInput(filters.search);
   }, [filters.search]);
 
+  // Khôi phục phiên đăng nhập từ cookie khi mount component ở route công khai
+  useEffect(() => {
+    checkAuthSession();
+  }, []);
+
   // Tải dữ liệu bộ lọc một lần khi mount
   useEffect(() => {
     const fetchFilterData = async () => {
       try {
         const [journalResponse, topicResponse] = await Promise.allSettled([
-          searchJournalsApi({ limit: 100 }),
-          getTopicsApi({ limit: 100, sort_by: 'display_name', sort_order: 'asc' })
+          getTrendingJournalsApi({ limit: 100 }),
+          getTrendingTopicsApi({ limit: 100, sort_by: 'display_name', sort_order: 'asc' })
         ]);
 
         if (journalResponse.status === 'fulfilled' && journalResponse.value?.data?.success && journalResponse.value?.data?.data?.items) {
@@ -869,20 +874,38 @@ export default function TrendingVNPage() {
             {/* 2. PROFILE / WORK AREA TAB VIEW */}
             {activeLeftTab === 'profile' && (
               <div className="lens-drawer-content">
-                <div className="lens-profile-block">
+                <div
+                  className="lens-profile-block"
+                  style={!user ? { cursor: 'pointer' } : {}}
+                  onClick={!user ? () => navigate('/login') : undefined}
+                >
                   <div className="lens-profile-avatar">
-                    {user?.name ? getInitials(user.name) : 'TM'}
+                    {user ? getInitials(user.name || user.username || user.email) : 'G'}
                   </div>
                   <div className="lens-profile-info">
-                    <div className="profile-name">{user?.name || user?.username || 'Trí Minh'}</div>
+                    <div className="profile-name">
+                      {user ? (user.name || user.username || user.email) : t('guest', 'Khách')}
+                    </div>
                     <div className="profile-subtitle">
-                      {t('personalAccount')}{' '}
-                      <span className="text-danger" style={{ fontSize: '0.62rem', display: 'block' }}>
-                        ({t('notCommercialUse')})
-                      </span>
+                      {user ? (
+                        <>
+                          {t('personalAccount')}{' '}
+                          <span className="text-danger" style={{ fontSize: '0.62rem', display: 'block' }}>
+                            ({t('notCommercialUse')})
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-primary" style={{ fontSize: '0.75rem', fontWeight: 500 }}>
+                          {t('pleaseSignIn', 'Đăng nhập tại đây')}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <Icon icon="lucide:chevron-down" width="16" className="text-muted ms-auto" />
+                  {!user ? (
+                    <Icon icon="lucide:log-in" width="16" className="text-primary ms-auto" />
+                  ) : (
+                    <Icon icon="lucide:chevron-down" width="16" className="text-muted ms-auto" />
+                  )}
                 </div>
 
                 <div className="lens-profile-actions">

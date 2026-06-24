@@ -43,14 +43,16 @@ export default function Header() {
 
   return (
     <>
+      {/* Navbar chính — chiều cao nhỏ gọn để không chiếm quá nhiều không gian */}
       <Navbar
         expand="md"
         fixed="top"
-        className="transition-all duration-300 py-3"
+        className="transition-all duration-300 py-1"
         style={{
           borderBottom: "1px solid var(--header-border)",
           background: "var(--header-bg)",
           backdropFilter: "blur(12px)",
+          minHeight: "44px",
         }}
       >
         <Container>
@@ -64,17 +66,19 @@ export default function Header() {
               cursor: "pointer",
             }}
           >
+            {/* Icon brand nhỏ gọn */}
             <div
               className="d-flex align-items-center justify-content-center me-2"
               style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "8px",
+                width: "22px",
+                height: "22px",
+                borderRadius: "6px",
                 background: "var(--btn-dark)",
-                boxShadow: "0 0 10px rgba(7, 26, 28, 0.15)",
+                boxShadow: "0 0 6px rgba(7, 26, 28, 0.15)",
+                flexShrink: 0,
               }}
             >
-              <Icon icon="lucide:activity" className="text-white text-sm" />
+              <Icon icon="lucide:activity" className="text-white" style={{ fontSize: "11px" }} />
             </div>
             ResearchPulse
           </Navbar.Brand>
@@ -93,10 +97,10 @@ export default function Header() {
             id="basic-navbar-nav"
             className="d-none d-md-flex justify-content-between align-items-center w-full"
           >
-            <div className="d-flex align-items-center gap-3 ms-auto">
-              {/* (Compact) Language selector moved to the far right below */}
+            {/* Nhóm các action ở bên phải navbar */}
+            <div className="d-flex align-items-center gap-2 ms-auto">
 
-              {/* Theme Toggle Sun/Moon Icon */}
+              {/* Nút chuyển theme sáng/tối */}
               <div
                 className="text-white hover:text-white-50"
                 style={{ cursor: "pointer" }}
@@ -104,7 +108,7 @@ export default function Header() {
                   alert(t("applyLightThemeAlert"))
                 }
               >
-                <Icon icon="lucide:sun" width="18" className="text-warning" />
+                <Icon icon="lucide:sun" width="16" className="text-warning" />
               </div>
 
               {/* Notification icon */}
@@ -123,15 +127,16 @@ export default function Header() {
               {/* User Authentication Display/Buttons */}
               {email ? (
                 <Dropdown align="end">
+                  {/* Avatar người dùng — kích thước nhỏ gọn */}
                   <Dropdown.Toggle
                     as="div"
                     className="d-flex align-items-center justify-content-center text-white"
                     style={{
-                      width: "32px",
-                      height: "32px",
+                      width: "28px",
+                      height: "28px",
                       borderRadius: "50%",
                       background: "var(--header-brand-primary)",
-                      boxShadow: "0 0 8px var(--header-brand-primary-shadow)",
+                      boxShadow: "0 0 6px var(--header-brand-primary-shadow)",
                       cursor: "pointer",
                       transition: "transform 0.15s ease",
                     }}
@@ -142,7 +147,7 @@ export default function Header() {
                       e.currentTarget.style.transform = "scale(1)";
                     }}
                   >
-                    <Icon icon="lucide:user" width="16" />
+                    <Icon icon="lucide:user" width="14" />
                   </Dropdown.Toggle>
 
                   <Dropdown.Menu
@@ -196,20 +201,26 @@ export default function Header() {
                   </Dropdown.Menu>
                 </Dropdown>
               ) : (
+                // Nút Đăng nhập / Đăng ký khi chưa xác thực
                 <>
                   <Button
                     variant="link"
-                    className="text-white-50 hover:text-white text-xs font-semibold text-decoration-none"
+                    className="text-white-50 hover:text-white text-decoration-none p-0"
+                    style={{ fontSize: "12px", fontWeight: 600 }}
                     onClick={handleAuthLogin}
                   >
                     {t("signIn")}
                   </Button>
                   <Button
-                    className="rounded-pill px-4 py-2 text-xs font-bold"
+                    className="rounded-pill px-3"
                     style={{
                       backgroundColor: "var(--header-brand-primary)",
                       borderColor: "var(--header-brand-primary)",
                       color: "var(--header-nav-active-color)",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      paddingTop: "4px",
+                      paddingBottom: "4px",
                     }}
                     onClick={handleAuthRegister}
                   >

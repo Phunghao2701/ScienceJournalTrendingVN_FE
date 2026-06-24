@@ -126,7 +126,7 @@
   "info": "Thông tin",
   "more": "Thêm",
   "databaseArticlesCount": "{{count}} bài báo (Cơ sở dữ liệu ResearchPulse)",
-  "exploreSectors": "Khám phá Khoa học, Công nghệ & Đổi mới sáng tạo...",
+  "exploreSectors": "Khám phá Khoa học, Công nghệ & Đổi mới sáng tạo",
   "articleSearchResults": "Kết quả tìm kiếm bài báo",
   "allDocs": "Tất cả tài liệu",
   "filtersApplied": "Đã áp dụng {{count}} bộ lọc",
@@ -272,5 +272,7 @@
   "history": "Lịch sử",
   "publication": "Công bố",
   "application": "Nộp đơn",
-  "priority": "Ưu tiên"
+  "priority": "Ưu tiên",
+  "guest": "Khách",
+  "pleaseSignIn": "Đăng nhập tại đây"
 }

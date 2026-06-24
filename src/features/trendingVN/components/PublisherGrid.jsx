@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Spinner, Alert } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import api from '../../../shared/services/api';
+import { getTrendingPublishersApi } from '../api/trendingVNApi';
 import './PublisherGrid.css';
 
 /**
@@ -43,7 +43,7 @@ export default function PublisherGrid() {
       setError(null);
       try {
         // Sử dụng đúng endpoint GET /publishers (có sẵn trong publisher.route.js)
-        const response = await api.get('/publishers', { params: { limit: 8 } });
+        const response = await getTrendingPublishersApi({ limit: 8 });
 
         if (response?.data?.success && response?.data?.data) {
           setPublishers(response.data.data);

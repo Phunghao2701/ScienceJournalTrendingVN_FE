@@ -1,0 +1,65 @@
+/**
+ * File: src/features/trendingVN/components/view-switcher/TrendingViewSwitcher.css
+ * Styles cho TrendingViewSwitcher - tab Table / List / Analysis.
+ * Scope prefix: tvs- (Trending View Switcher)
+ * Theo sat giao dien mau: underline tab style, tab active co gach xanh phia duoi.
+ */
+
+/* ─── Bar bao ngoai ──────────────────────────────────────────────────────── */
+.tvs-bar {
+  display: inline-flex;
+  align-items: stretch;
+  background-color: var(--t-bg-card, #ffffff);
+  border: 1px solid var(--t-border, #E2E8F0);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+/* ─── Moi tab ────────────────────────────────────────────────────────────── */
+.tvs-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #64748B;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--t-border, #E2E8F0);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease, border-bottom-color 0.15s ease;
+  white-space: nowrap;
+}
+
+/* Tab cuoi khong co border-right */
+.tvs-tab:last-child {
+  border-right: none;
+}
+
+.tvs-tab:hover:not(.tvs-tab--active) {
+  color: #1E293B;
+  background-color: #F8FAFC;
+}
+
+/* ─── Tab active ──────────────────────────────────────────────────────────── */
+.tvs-tab--active {
+  color: #1E293B;
+  font-weight: 600;
+  background-color: #F8FAFC;
+  border-bottom-color: #1976D2;
+}
+
+/* ─── Icon trong tab ─────────────────────────────────────────────────────── */
+.tvs-tab-icon {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.tvs-tab--active .tvs-tab-icon {
+  opacity: 1;
+  color: #1976D2;
+}

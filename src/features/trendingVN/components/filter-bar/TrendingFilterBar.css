@@ -1,0 +1,176 @@
+/**
+ * File: src/features/trendingVN/components/filter-bar/TrendingFilterBar.css
+ * Styles cho TrendingFilterBar - thanh loc theo mau Vietnam Research Index.
+ * Layout: search bar rong + dropdown nho inline.
+ * Scope prefix: tfb- (Trending Filter Bar)
+ */
+
+/* ─── Bar bao ngoai ──────────────────────────────────────────────────────── */
+.tfb-bar {
+  background-color: var(--t-bg-card, #ffffff);
+  border: 1px solid var(--t-border, #E2E8F0);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ─── Search wrapper ─────────────────────────────────────────────────────── */
+.tfb-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.tfb-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94A3B8;
+  pointer-events: none;
+  font-size: 1rem;
+}
+
+.tfb-search-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 2rem 0 2.1rem;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.84rem;
+  color: var(--t-text, #1E293B);
+  background-color: #F8FAFC;
+  border: 1px solid var(--t-border, #E2E8F0);
+  border-radius: 7px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tfb-search-input::placeholder {
+  color: #94A3B8;
+}
+
+.tfb-search-input:focus {
+  outline: none;
+  background-color: #ffffff;
+  border-color: var(--t-primary, #1976D2);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.12);
+}
+
+/* Nut X xoa search */
+.tfb-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.tfb-search-clear:hover {
+  color: #475569;
+}
+
+/* ─── Dropdown select ────────────────────────────────────────────────────── */
+.tfb-select {
+  height: 38px;
+  padding: 0 2rem 0 0.75rem;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--t-text, #1E293B);
+  background-color: #F8FAFC;
+  border: 1px solid var(--t-border, #E2E8F0);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+  appearance: auto;
+}
+
+.tfb-select:focus {
+  outline: none;
+  border-color: var(--t-primary, #1976D2);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.12);
+}
+
+.tfb-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Nut Apply ──────────────────────────────────────────────────────────── */
+.tfb-btn-apply {
+  height: 38px;
+  padding: 0 1rem;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: var(--t-primary, #1976D2);
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tfb-btn-apply:hover {
+  background-color: var(--t-primary-hover, #1565C0);
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.25);
+}
+
+/* ─── Nut Reset ──────────────────────────────────────────────────────────── */
+.tfb-btn-reset {
+  height: 38px;
+  padding: 0 0.9rem;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--t-text-muted, #64748B);
+  background-color: transparent;
+  border: 1px solid var(--t-border, #E2E8F0);
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.tfb-btn-reset:hover {
+  border-color: var(--t-primary, #1976D2);
+  color: var(--t-primary, #1976D2);
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .tfb-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tfb-search-wrap {
+    min-width: 100%;
+  }
+
+  .tfb-select {
+    width: 100%;
+  }
+
+  .tfb-btn-apply,
+  .tfb-btn-reset {
+    width: 100%;
+    justify-content: center;
+  }
+}

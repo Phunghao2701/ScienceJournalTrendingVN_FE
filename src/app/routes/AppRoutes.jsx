@@ -48,11 +48,13 @@ import ResetPasswordPage from '../../features/auth/pages/ResetPasswordPage';
 
 import GeographyPage from '../../features/zone/pages/GeographyPage';
 
-// --- ĐỒNG BỘ ĐƯỜNG DẪN IMPORT THEO CHUẨN CỦA NHÓM ---
 import JournalDirectoryPage from '../../features/admin/pages/JournalDirectoryPage';
 import RepositoryManagementPage from '../../features/admin/pages/RepositoryManagementPage';
 import EditJournalPage from '../../features/admin/pages/EditJournalPage';
 import VolumeArchivePage from '../../features/admin/pages/VolumeArchivePage';
+
+// Trang Theo dõi Xu hướng Nghiên cứu (TrendingVN)
+import TrendingPage from '../../features/trendingVN/pages/TrendingPage';
 
 /**
  * Nơi khai báo route chính của ứng dụng.
@@ -79,22 +81,19 @@ export default function AppRoutes() {
 
       {/* Routes sử dụng layout chung */}
       <Route element={<AuthLayoutWithUser />}>
-        
-        {/* 🔐 Tuyến đường yêu cầu bảo mật (Đã đăng nhập) */}
+
+        {/* Tuyến đường yêu cầu đăng nhập */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          
+
           <Route path="/projects" element={<ProjectListPage />} />
           <Route path="/projects/create" element={<CreateProjectPage />} />
           <Route path="/projects/:id/edit" element={<EditProjectPage />} />
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
 
-          <Route
-            path="/authors/leaderboard"
-            element={<AuthorLeaderboardPage />}
-          />
+          <Route path="/authors/leaderboard" element={<AuthorLeaderboardPage />} />
 
-          {/* Admin layouts & pages (Quản trị viên) - thống nhất namespace /admin/... */}
+          {/* Admin layouts & pages */}
           <Route element={<AdminRoute />}>
             <Route element={<AdminLayout />}>
               <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
@@ -106,7 +105,6 @@ export default function AppRoutes() {
               <Route path="/admin/articles/create" element={<SubmitArticlePage />} />
               <Route path="/admin/articles/:id" element={<UpdateArticlePage />} />
 
-              {/* Quản lý cấu trúc tạp chí dành cho Admin (Issue #76) */}
               <Route path="/admin/journals" element={<JournalDirectoryPage />} />
               <Route path="/admin/journals/repository" element={<RepositoryManagementPage />} />
               <Route path="/admin/journals/archive" element={<VolumeArchivePage />} />
@@ -122,10 +120,7 @@ export default function AppRoutes() {
         <Route path="/articles" element={<TrendingVNPage />} />
         <Route path="/trending-vn" element={<TrendingVNPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
-        <Route
-          path="/articles/:id/visual"
-          element={<ArticleVisualDetailPage />}
-        />
+        <Route path="/articles/:id/visual" element={<ArticleVisualDetailPage />} />
 
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -136,23 +131,23 @@ export default function AppRoutes() {
         <Route path="/journals/:id" element={<JournalDetailPage />} />
 
         <Route path="/keywords" element={<KeywordListPage />} />
-        <Route
-          path="/keywords/:keywordId/articles"
-          element={<KeywordArticlesPage />}
-        />
+        <Route path="/keywords/:keywordId/articles" element={<KeywordArticlesPage />} />
 
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route path="/geography" element={<GeographyPage />} />
-
         <Route path="/topics/:topicId" element={<TopicDetailPage />} />
+
+        {/* Trang Theo dõi Xu hướng Nghiên cứu - public, không cần đăng nhập */}
+        <Route path="/trending" element={<TrendingPage />} />
+
       </Route>
 
       <Route path="/topics/:topicId" element={<TopicDetailPage />} />
 
-      {/* TODO: route tạm để preview UI Admin không cần login.
-          Xóa route này khi vấn đề đăng nhập đã được xử lý xong. */}
+      {/* TODO: route tạm để preview UI không cần login.
+          Xóa các route này khi vấn đề đăng nhập đã được xử lý xong. */}
       <Route element={<AdminLayout />}>
         <Route path="/admin-preview" element={<AdminDashboardPage />} />
         <Route path="/admin-preview/articles/:id" element={<UpdateArticlePage />} />
@@ -161,6 +156,9 @@ export default function AppRoutes() {
         <Route path="/admin-preview/journals/archive" element={<VolumeArchivePage />} />
         <Route path="/admin-preview/journals/:id/edit" element={<EditJournalPage />} />
       </Route>
+
+      {/* TODO: route tạm để preview TrendingVN không cần login */}
+      <Route path="/trending-preview" element={<TrendingPage />} />
 
       <Route path="*" element={<LandingPage />} />
     </Routes>

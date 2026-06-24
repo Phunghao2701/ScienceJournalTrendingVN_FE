@@ -1,0 +1,109 @@
+/**
+ * File: src/features/trendingVN/components/trend-momentum/TrendMomentumCards.css
+ * Styles cho Research Trend Momentum cards.
+ * Scope prefix: tmc- (Trend Momentum Cards)
+ * Theo mau: nen xam nhat, border trai mau, label uppercase nho, gia tri to.
+ */
+
+/* ─── Wrapper danh sach ──────────────────────────────────────────────────── */
+.tmc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ─── Mot card ───────────────────────────────────────────────────────────── */
+.tmc-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background-color: #F8FAFC;
+  border: 1px solid var(--t-border, #E2E8F0);
+  border-left: 3px solid var(--t-primary, #1976D2);
+  border-radius: 7px;
+  padding: 0.75rem 1rem;
+  transition: background-color 0.15s ease;
+  cursor: default;
+}
+
+.tmc-card:hover {
+  background-color: #F1F5F9;
+}
+
+/* ─── Phan trai: label + gia tri ─────────────────────────────────────────── */
+.tmc-card-left {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Label nho uppercase */
+.tmc-label {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--t-text-muted, #64748B);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 3px;
+}
+
+/* Gia tri chinh (ten topic / ten truong / ten tac gia) */
+.tmc-value {
+  font-family: var(--font-display, serif);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--t-text, #1E293B);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Badge ben phai ──────────────────────────────────────────────────────── */
+.tmc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Xanh la — tang truong (card 1) */
+.tmc-badge--up {
+  background-color: rgba(22, 163, 74, 0.1);
+  color: #16A34A;
+}
+
+/* Xam trung tinh — so lieu (card 2, 3) */
+.tmc-badge--neutral {
+  background-color: #E2E8F0;
+  color: #475569;
+  font-weight: 600;
+}
+
+/* Teal — MoM growth (card 4) */
+.tmc-badge--teal {
+  background-color: rgba(8, 145, 178, 0.1);
+  color: #0891B2;
+}
+
+/* ─── Skeleton loading ───────────────────────────────────────────────────── */
+.tmc-skeleton {
+  height: 62px;
+  border-radius: 7px;
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
+.tmc-empty {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.84rem;
+  color: var(--t-text-muted, #64748B);
+  text-align: center;
+  padding: 2rem 0;
+}

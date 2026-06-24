@@ -1,0 +1,180 @@
+/**
+ * File: src/features/trendingVN/components/authors/TopAuthorsList.css
+ * Styles cho bang xep hang tac gia.
+ * Layout theo mau: rank | ten + uni-badge + bar | score so lon.
+ * Scope prefix: tal- (Top Authors List)
+ */
+
+/* ─── Danh sach ──────────────────────────────────────────────────────────── */
+.tal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ─── Mot dong tac gia ───────────────────────────────────────────────────── */
+.tal-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.25rem;
+  border-bottom: 1px solid var(--t-border, #E2E8F0);
+  transition: background-color 0.15s ease;
+}
+
+.tal-row:last-child {
+  border-bottom: none;
+}
+
+.tal-row:hover {
+  background-color: #F8FAFC;
+  border-radius: 6px;
+}
+
+/* ─── So thu hang ────────────────────────────────────────────────────────── */
+.tal-rank {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--t-text-muted, #64748B);
+  width: 22px;
+  min-width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Top 3 dung mau primary */
+.tal-rank--top {
+  color: var(--t-primary, #1976D2);
+}
+
+/* ─── Block thong tin (ten + badge + bar) ────────────────────────────────── */
+.tal-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tal-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tal-name {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--t-text, #1E293B);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ─── University badge ───────────────────────────────────────────────────── */
+.tal-uni-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+  /* background va color set inline theo mau rieng */
+}
+
+/* ─── Horizontal bar ─────────────────────────────────────────────────────── */
+.tal-bar-wrapper {
+  width: 100%;
+  height: 4px;
+  background-color: #E2E8F0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tal-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--t-primary, #1976D2);
+  transition: width 0.5s ease;
+}
+
+/* ─── Score so lon ben phai ──────────────────────────────────────────────── */
+.tal-score {
+  font-family: var(--font-display, serif);
+  font-size: 1.0rem;
+  font-weight: 700;
+  color: var(--t-text, #1E293B);
+  width: 40px;
+  min-width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ─── Avatar ─────────────────────────────────────────────────────────────── */
+.tal-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #EAF4FF;
+  border: 1.5px solid var(--t-border, #E2E8F0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.tal-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tal-avatar-initials {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--t-primary, #1976D2);
+  letter-spacing: 0.02em;
+}
+
+/* ─── Skeleton loading ───────────────────────────────────────────────────── */
+.tal-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tal-skeleton-row {
+  border-radius: 6px;
+  height: 44px;
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
+.tal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  color: var(--t-text-muted, #64748B);
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.tal-empty-icon {
+  font-size: 2rem;
+  opacity: 0.3;
+}
+
+.tal-empty-text {
+  font-size: 0.84rem;
+  font-weight: 500;
+}

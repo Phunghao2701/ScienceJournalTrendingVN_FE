@@ -18,6 +18,9 @@ const ROUTES = {
   DASHBOARD:             "/dashboard",
   GEOGRAPHY:             "/geography",
 
+  // Theo dõi Xu hướng Nghiên cứu
+  TRENDING:              "/trending",
+
   // Quản lý Dự án (Project)
   PROJECTS:              "/projects",
   PROJECT_CREATE:        "/projects/create",
@@ -34,7 +37,7 @@ const ROUTES = {
   ADMIN_USERS_CREATE:    "/admin/users/create",
   ADMIN_USERS_EDIT:      "/admin/users/:id/edit",
 
-  // Tuyến đường quản trị bài viết khoa học & Tạp chí (Admin Dashboard, Update Article, Journals Directory...)
+  // Tuyến đường quản trị bài viết khoa học & Tạp chí
   ADMIN_DASHBOARD:       "/admin/dashboard",
   ADMIN_ARTICLES:        "/admin/articles",
   ADMIN_ARTICLE_CREATE:  "/admin/articles/create",

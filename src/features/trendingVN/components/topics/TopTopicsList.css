@@ -1,0 +1,113 @@
+/**
+ * File: src/features/trendingVN/components/topics/TopTopicsList.css
+ * Styles cho component danh sách Top Chủ đề Nghiên cứu nổi bật.
+ * Màu sắc dùng token --t-* theo Design System lens.org (blue #1976D2).
+ */
+
+/* ─── Một dòng topic ─────────────────────────────────────────────────────── */
+.ttl-row {
+  display: flex;
+  align-items: center;
+  padding: 0.55rem 0.5rem;
+  border-bottom: 1px solid var(--t-border);
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+  cursor: default;
+}
+
+.ttl-row:last-child {
+  border-bottom: none;
+}
+
+.ttl-row:hover {
+  background-color: #F1F5F9;
+}
+
+/* ─── Số thứ tự ──────────────────────────────────────────────────────────── */
+.ttl-rank {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--t-text-muted);
+  width: 22px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+/* Top 3 dùng màu primary blue để nổi bật */
+.ttl-rank.top-three {
+  color: var(--t-primary);
+}
+
+/* ─── Tên topic ──────────────────────────────────────────────────────────── */
+.ttl-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--t-text);
+  flex: 1;
+  margin: 0 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Thanh progress ─────────────────────────────────────────────────────── */
+.ttl-bar-wrapper {
+  width: 80px;
+  height: 6px;
+  background-color: #E2E8F0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-right: 0.6rem;
+  flex-shrink: 0;
+}
+
+.ttl-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--t-primary);
+  transition: width 0.5s ease;
+}
+
+/* ─── Điểm score ─────────────────────────────────────────────────────────── */
+.ttl-score {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--t-text-muted);
+  min-width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ─── Skeleton loading ───────────────────────────────────────────────────── */
+.ttl-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ttl-skeleton-row {
+  border-radius: 8px;
+  height: 36px;
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
+.ttl-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  color: var(--t-text-muted);
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.ttl-empty-icon {
+  font-size: 2rem;
+  opacity: 0.35;
+}
+
+.ttl-empty-text {
+  font-size: 0.84rem;
+  font-weight: 500;
+}

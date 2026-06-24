@@ -1,0 +1,139 @@
+/**
+ * File: src/features/trendingVN/components/treemap/TopicsTreemap.css
+ * Styles cho treemap chu de nghien cuu.
+ * Mau: green palette #1B4332 (dam) → #B7E4C7 (nhat) theo mau Vietnam Research Index.
+ * Scope prefix: ttm- (Topics Treemap)
+ */
+
+/* ─── Wrapper treemap ────────────────────────────────────────────────────── */
+.ttm-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 3px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+/* ─── Mot o trong treemap ────────────────────────────────────────────────── */
+.ttm-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 0.5rem 0.6rem;
+  border-radius: 5px;
+  cursor: default;
+  transition: filter 0.2s ease;
+  overflow: hidden;
+  position: relative;
+  min-width: 60px;
+  min-height: 90px;
+  flex: 1 1 14%;
+}
+
+/* O "Others" chiem toan bo dong rieng */
+.ttm-cell.others {
+  flex-basis: 100% !important;
+  flex-grow: 1 !important;
+  min-height: 52px;
+  background-color: #EDF2F7;
+}
+
+.ttm-cell:hover {
+  filter: brightness(1.07);
+  z-index: 1;
+}
+
+/* ─── Overlay gradient de text de doc tren nen dam ──────────────────────── */
+.ttm-cell-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.2));
+  border-radius: 0 0 5px 5px;
+  pointer-events: none;
+}
+
+/* ─── Noi dung text trong o ──────────────────────────────────────────────── */
+.ttm-cell-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.ttm-cell-name {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  margin-bottom: 2px;
+}
+
+.ttm-cell-pct {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.64rem;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* ─── O "Others" mau xam nhat ───────────────────────────────────────────── */
+.ttm-cell.others {
+  background-color: #EDF2F7;
+}
+
+.ttm-cell-name--others {
+  color: #475569 !important;
+  text-shadow: none !important;
+}
+
+.ttm-cell-pct--others {
+  color: #64748B !important;
+  text-shadow: none !important;
+}
+
+/* ─── Ghi chu duoi treemap ───────────────────────────────────────────────── */
+.ttm-footnote {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.68rem;
+  color: var(--t-text-muted, #64748B);
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+/* ─── Skeleton loading ───────────────────────────────────────────────────── */
+.ttm-skeleton {
+  width: 100%;
+  height: 280px;
+  border-radius: 8px;
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
+.ttm-empty {
+  width: 100%;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--t-text-muted, #64748B);
+  gap: 0.5rem;
+}
+
+.ttm-empty-icon {
+  font-size: 2rem;
+  opacity: 0.3;
+}
+
+.ttm-empty-text {
+  font-size: 0.84rem;
+  font-weight: 500;
+}

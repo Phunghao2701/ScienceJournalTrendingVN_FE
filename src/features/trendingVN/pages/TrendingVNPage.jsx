@@ -22,12 +22,14 @@ import { getTopicsApi } from '../../topic/api/topic.api';
 import PublisherGrid from '../components/PublisherGrid';
 import { toast } from '../../../shared/utils/toast';
 import { useAuthStore } from '../../../app/store/authStore';
+import TrendingPage from './TrendingPage';
 import './TrendingVNPage.css';
 
 export default function TrendingVNPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
+  const [activeMainTab, setActiveMainTab] = useState('articles'); // 'articles' hoặc 'trending'
   const [activeLeftTab, setActiveLeftTab] = useState(null); // 'filters', 'profile', 'info', 'more'
   const [activeTooltip, setActiveTooltip] = useState(null); // { name, count, x, y }
 
@@ -1105,43 +1107,58 @@ export default function TrendingVNPage() {
           {/* ===== CỘT TRÁI: Tabs + Toolbar + Kết quả ===== */}
           <Col lg={showSidebar ? 8 : 12} md={12} className="transition-col">
 
-            {/* --- Tab row: Articles / Explore Citations + Table/List/Analysis --- */}
+            {/* --- Tab row: Articles / Explore Citations / Phân tích + Table/List/Analysis --- */}
             <div className="lens-tab-row">
               <div className="tab-group">
-                <button className="tab-item active">
+                <button 
+                  className={`tab-item ${activeMainTab === 'articles' ? 'active' : ''}`}
+                  onClick={() => setActiveMainTab('articles')}
+                >
                   {t('articles')}
                 </button>
                 <button className="tab-item" disabled>
                   {t('exploreCitations')}
                   <Icon icon="lucide:check-check" width="13" style={{ color: '#16a34a' }} />
                 </button>
-              </div>
-              <div className="view-toggles">
-                <button
-                  className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
-                  onClick={() => setViewMode('table')}
+                <button 
+                  className={`tab-item ${activeMainTab === 'trending' ? 'active' : ''}`}
+                  onClick={() => setActiveMainTab('trending')}
                 >
-                  <Icon icon="lucide:table" width="13" />
-                  {t('viewTable')}
-                </button>
-                <button
-                  className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
-                  onClick={() => setViewMode('list')}
-                >
-                  <Icon icon="lucide:list" width="13" />
-                  {t('viewList')}
-                </button>
-                <button
-                  className={`view-toggle-btn ${showSidebar ? 'active' : ''}`}
-                  onClick={() => setShowSidebar(!showSidebar)}
-                >
-                  <Icon icon="lucide:bar-chart-3" width="13" />
+                  <Icon icon="lucide:bar-chart-2" width="13" style={{ marginRight: '4px' }} />
                   {t('analysis')}
                 </button>
+              </div>
+              <div className="view-toggles">
+                {activeMainTab === 'articles' && (
+                  <>
+                    <button
+                      className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+                      onClick={() => setViewMode('table')}
+                    >
+                      <Icon icon="lucide:table" width="13" />
+                      {t('viewTable')}
+                    </button>
+                    <button
+                      className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+                      onClick={() => setViewMode('list')}
+                    >
+                      <Icon icon="lucide:list" width="13" />
+                      {t('viewList')}
+                    </button>
+                    <button
+                      className={`view-toggle-btn ${showSidebar ? 'active' : ''}`}
+                      onClick={() => setShowSidebar(!showSidebar)}
+                    >
+                      <Icon icon="lucide:bar-chart-3" width="13" />
+                      {t('chartLabel')}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
             {/* --- Action toolbar: Expand, Customise, Save, Share, Export, Sort --- */}
+            {activeMainTab === 'articles' && (
             <div className="lens-action-toolbar">
               <div className="action-group">
                 <button className="lens-action-btn" onClick={handleToggleAllAbstracts}>
@@ -1196,9 +1213,11 @@ export default function TrendingVNPage() {
                 </select>
               </div>
             </div>
+            )}
 
             {/* --- Panel Customise Your Results View --- */}
             {/* Hiện khi bấm nút "Customise List", chứa 6 checkbox */}
+            {activeMainTab === 'articles' && (
             <Collapse in={showCustomise}>
               <div className="lens-customise-panel">
                 <div className="customise-title">{t('customiseYourResultsView')}</div>
@@ -1224,9 +1243,10 @@ export default function TrendingVNPage() {
                 </div>
               </div>
             </Collapse>
+            )}
 
             {/* --- Active filter chips --- */}
-            {activeChips.length > 0 && (
+            {activeMainTab === 'articles' && activeChips.length > 0 && (
               <div className="lens-chips-bar">
                 <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{t('filterSearch')}:</span>
                 {activeChips.map(chip => (
@@ -1248,6 +1268,9 @@ export default function TrendingVNPage() {
               </div>
             )}
 
+            {/* ==================== ARTICLES TAB CONTENT ==================== */}
+            {activeMainTab === 'articles' && (
+            <>
             {/* ==================== SEARCH BAR ==================== */}
             <div className="py-2">
               <Form onSubmit={handleSearchSubmit}>
@@ -1358,6 +1381,15 @@ export default function TrendingVNPage() {
                 </div>
               )}
             </div>
+            </>
+            )}
+
+            {/* ==================== TRENDING TAB CONTENT ==================== */}
+            {activeMainTab === 'trending' && (
+              <div style={{ width: '100%' }}>
+                <TrendingPage />
+              </div>
+            )}
           </Col>
 
           {/* ===== CỘT PHẢI: Sidebar phân tích (ẩn/hiện bằng nút Analysis) ===== */}

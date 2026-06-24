@@ -1,0 +1,45 @@
+import { Spinner } from 'react-bootstrap';
+import './TopUniversitiesGrid.css';
+
+export default function TopUniversitiesGrid({ universities = [], loading = false }) {
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center py-5">
+        <Spinner animation="border" style={{ color: 'var(--t-primary)' }} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="top-universities-grid">
+      <div className="tu-grid-container">
+        {universities.length === 0 ? (
+          <div className="text-center w-100 py-4 text-muted" style={{ gridColumn: 'span 2' }}>
+            Chưa có dữ liệu trường đại học
+          </div>
+        ) : (
+          universities.map((uni) => (
+            <div key={uni.name} className="tu-card">
+            <div className="tu-logo">
+              {uni.shortName}
+            </div>
+            <div className="tu-info">
+              <h3 className="tu-name">{uni.name}</h3>
+              <div className="tu-stats">
+                <div className="tu-stat">
+                  <span className="tu-stat-label">PAPERS</span>
+                  <span className="tu-stat-value">{uni.papers}</span>
+                </div>
+                <div className="tu-stat">
+                  <span className="tu-stat-label">CITES</span>
+                  <span className="tu-stat-value">{uni.cites}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}

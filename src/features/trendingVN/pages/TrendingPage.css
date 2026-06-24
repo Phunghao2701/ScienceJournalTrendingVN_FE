@@ -1,0 +1,175 @@
+/**
+ * File: src/features/trendingVN/pages/TrendingPage.css
+ *
+ * Styles layout tổng thể cho trang Theo dõi Xu hướng Nghiên cứu (TrendingVN).
+ * Chứa CSS tokens riêng --t-* theo Design System lens.org (blue #1976D2)
+ * để không ảnh hưởng màu sắc các trang khác trong hệ thống.
+ *
+ * Scope: tất cả styles trong .trending-root
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSS TOKENS RIÊNG CHO TRENDIGVN
+   Override màu primary từ orange sang blue theo Design System lens.org.
+   Chỉ áp dụng trong scope .trending-root.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.trending-root {
+  /* Primary blue */
+  --t-primary:        #1976D2;
+  --t-primary-hover:  #1565C0;
+  --t-primary-light:  #EAF4FF;
+  --t-primary-dark:   #0F4FA3;
+
+  /* Surface / background */
+  --t-bg:             #F8FAFC;
+  --t-bg-card:        #FFFFFF;
+  --t-border:         #E2E8F0;
+
+  /* Text */
+  --t-text:           #1E293B;
+  --t-text-muted:     #64748B;
+
+  /* Chart colors theo design system */
+  --t-chart-1:        #1976D2;
+  --t-chart-2:        #16A34A;
+  --t-chart-3:        #F59E0B;
+  --t-chart-4:        #DC2626;
+  --t-chart-5:        #7C3AED;
+  --t-chart-6:        #0891B2;
+
+  /* Semantic */
+  --t-success:        #16A34A;
+  --t-warning:        #F59E0B;
+  --t-danger:         #DC2626;
+
+  /* Shadow */
+  --t-shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.06);
+  --t-shadow-md:      0 4px 8px rgba(0, 0, 0, 0.08);
+  --t-shadow-lg:      0 8px 24px rgba(0, 0, 0, 0.10);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYOUT TONG THE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Layout chinh: flex row, sidebar trai + main content phai */
+.trending-layout {
+  display: flex;
+  flex-direction: row;
+  min-height: calc(100vh - 64px);
+  padding-top: 64px;
+}
+
+/* Main content area — grow de chiem phan con lai */
+.trending-main-content {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 80px;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE HEADER (tiêu đề + mô tả trang)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.trending-page-header {
+  border-bottom: 1px solid var(--t-border);
+  background-color: var(--t-bg-card);
+  padding: 1.5rem 0 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+.trending-page-title {
+  font-family: var(--font-display) !important;
+  font-size: 1.6rem !important;
+  font-weight: 700 !important;
+  color: var(--t-text);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.3rem;
+}
+
+.trending-page-subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  color: var(--t-text-muted);
+  font-weight: 400;
+  line-height: 1.55;
+  max-width: 600px;
+  margin-bottom: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION CARD (container cho chart, table, list)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.trending-section-card {
+  background-color: var(--t-bg-card);
+  border: 1px solid var(--t-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  height: 100%;
+  box-shadow: var(--t-shadow-sm);
+  transition: box-shadow 0.2s ease;
+}
+
+.trending-section-card:hover {
+  box-shadow: var(--t-shadow-md);
+}
+
+/* Tiêu đề section */
+.trending-section-title {
+  font-family: var(--font-display) !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: var(--t-text);
+  margin-bottom: 0.2rem;
+}
+
+/* Mô tả phụ của section */
+.trending-section-subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--t-text-muted);
+  margin-bottom: 0;
+}
+
+/* Divider giữa header và content của section */
+.trending-section-divider {
+  border: none;
+  border-top: 1px solid var(--t-border);
+  margin: 1rem 0;
+}
+
+/* Link nho goc phai section header (VD: "Trending Articles") */
+.trending-section-link {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--t-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.trending-section-link:hover {
+  opacity: 0.75;
+  text-decoration: underline;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SKELETON SHIMMER (dùng chung cho tất cả components trong trendingVN)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.trending-root .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #F1F5F9 25%,
+    #E2E8F0 50%,
+    #F1F5F9 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

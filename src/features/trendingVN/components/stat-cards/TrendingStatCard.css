@@ -1,0 +1,129 @@
+/**
+ * File: src/features/trendingVN/components/stat-cards/TrendingStatCard.css
+ * Styles cho Stat Card theo sat giao dien mau Vietnam Research Index.
+ * Scope prefix: tsc- (Trending Stat Card)
+ * Token: --t-* (dinh nghia trong TrendingPage.css).
+ */
+
+/* ─── Card wrapper ───────────────────────────────────────────────────────── */
+.tsc-card {
+  background-color: var(--t-bg-card, #ffffff);
+  border: 1px solid var(--t-border, #E2E8F0);
+  border-radius: 10px;
+  padding: 1.1rem 1.25rem 1rem;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.tsc-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+/* ─── Accent line tren cung ──────────────────────────────────────────────── */
+.tsc-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--t-primary, #1976D2);
+  border-radius: 10px 10px 0 0;
+}
+
+/* ─── Header: label + badge ──────────────────────────────────────────────── */
+.tsc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 0.55rem;
+}
+
+.tsc-label {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--t-text-muted, #64748B);
+  line-height: 1.35;
+  flex: 1;
+}
+
+/* ─── Badge growth ───────────────────────────────────────────────────────── */
+.tsc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+/* Up: xanh la nen nhat */
+.tsc-badge--up {
+  background-color: rgba(22, 163, 74, 0.1);
+  color: #16A34A;
+}
+
+/* Down: do nen nhat */
+.tsc-badge--down {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: #DC2626;
+}
+
+/* Tag: chip vang nhat kieu "Article Trend" */
+.tsc-badge--tag {
+  background-color: #FEF9C3;
+  color: #854D0E;
+  border: 1px solid #FDE047;
+  font-weight: 600;
+  font-size: 0.65rem;
+}
+
+/* Rank: chip xanh duong dam kieu "#1" */
+.tsc-badge--rank {
+  background-color: var(--t-primary, #1976D2);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.7rem;
+  min-width: 24px;
+  justify-content: center;
+}
+
+/* Neutral: chip xam */
+.tsc-badge--neutral {
+  background-color: #F1F5F9;
+  color: var(--t-text-muted, #64748B);
+}
+
+/* ─── Gia tri chinh ──────────────────────────────────────────────────────── */
+.tsc-value {
+  font-family: var(--font-display, serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--t-text, #1E293B);
+  line-height: 1.15;
+  margin-bottom: 0.3rem;
+  letter-spacing: -0.02em;
+}
+
+/* Value la text (VD: "AI / ML") */
+.tsc-value--text {
+  font-size: 1.25rem;
+  color: var(--t-primary, #1976D2);
+  letter-spacing: -0.01em;
+}
+
+/* ─── Mo ta phu ──────────────────────────────────────────────────────────── */
+.tsc-desc {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.72rem;
+  color: var(--t-text-muted, #64748B);
+  line-height: 1.4;
+}

@@ -5,9 +5,10 @@
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Navbar from "react-bootstrap/Navbar";
+import Nav from "react-bootstrap/Nav";
 import NavDropdown from "react-bootstrap/NavDropdown";
 import Button from "react-bootstrap/Button";
 import Offcanvas from "react-bootstrap/Offcanvas";
@@ -20,6 +21,8 @@ import ROUTES from "../../../app/routes/routePaths";
 export default function Header() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const pathname = location?.pathname || "";
   const auth = useAuth?.() ?? { logout: () => {} };
   const { logout } = auth;
   const email = useUserStore((state) => state.email);
@@ -95,6 +98,29 @@ export default function Header() {
           >
             <div className="d-flex align-items-center gap-3 ms-auto">
               {/* (Compact) Language selector moved to the far right below */}
+
+              {/* Xu hướng */}
+              <Nav.Link
+                onClick={() => navigate(ROUTES.TRENDING)}
+                className="px-3 py-1 text-sm font-semibold d-flex align-items-center gap-1"
+                style={{
+                  borderRadius: '6px',
+                  backgroundColor: pathname.startsWith(ROUTES.TRENDING)
+                    ? 'var(--primary-light)'
+                    : 'transparent',
+                  color: pathname.startsWith(ROUTES.TRENDING)
+                    ? 'var(--primary)'
+                    : 'var(--text-muted)',
+                  border: pathname.startsWith(ROUTES.TRENDING)
+                    ? '1px solid var(--border)'
+                    : '1px solid transparent',
+                  transition: 'all 0.2s',
+                  fontWeight: pathname.startsWith(ROUTES.TRENDING) ? 700 : 500,
+                }}
+              >
+                <Icon icon="lucide:trending-up" width="14" />
+                Xu hướng
+              </Nav.Link>
 
               {/* Theme Toggle Sun/Moon Icon */}
               <div

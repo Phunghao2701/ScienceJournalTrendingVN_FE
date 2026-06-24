@@ -1,0 +1,77 @@
+.top-universities-grid {
+  width: 100%;
+}
+
+.tu-grid-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.tu-card {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: var(--t-bg-card);
+  border: 1px solid var(--t-border);
+  border-radius: 8px;
+  gap: 16px;
+}
+
+.tu-logo {
+  width: 48px;
+  height: 48px;
+  background: var(--t-primary-light);
+  color: var(--t-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  font-family: var(--font-display);
+}
+
+.tu-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.tu-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--t-text);
+  font-family: var(--font-sans);
+}
+
+.tu-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.tu-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.tu-stat-label {
+  font-size: 0.65rem;
+  color: var(--t-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.tu-stat-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--t-text);
+}
+
+@media (max-width: 768px) {
+  .tu-grid-container {
+    grid-template-columns: 1fr;
+  }
+}

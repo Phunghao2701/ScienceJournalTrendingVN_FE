@@ -1,0 +1,116 @@
+/**
+ * File: src/features/trendingVN/components/charts/TopJournalsChart.css
+ * Styles cho biểu đồ cột Top Journals theo số lượng bài báo.
+ * Màu sắc dùng token --t-* theo Design System lens.org (blue #1976D2).
+ */
+
+/* ─── Wrapper biểu đồ ────────────────────────────────────────────────────── */
+.tjc-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ─── Khu vực các cột bar ────────────────────────────────────────────────── */
+.tjc-bars-area {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 180px;
+  gap: 6px;
+  padding-bottom: 0;
+}
+
+/* ─── Một cột bar ────────────────────────────────────────────────────────── */
+.tjc-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  height: 100%;
+  gap: 4px;
+  cursor: default;
+}
+
+/* Số giá trị phía trên cột */
+.tjc-bar-value {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--t-primary);
+  line-height: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* Thân cột bar */
+.tjc-bar {
+  width: 100%;
+  border-radius: 5px 5px 0 0;
+  background-color: var(--t-primary);
+  opacity: 0.8;
+  min-height: 4px;
+  transition: opacity 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.tjc-bar-col:hover .tjc-bar {
+  opacity: 1;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(25, 118, 210, 0.28);
+}
+
+/* ─── Labels tên journal dưới chart ─────────────────────────────────────── */
+.tjc-labels-area {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 6px;
+  border-top: 1px solid var(--t-border);
+  padding-top: 6px;
+}
+
+.tjc-bar-label {
+  flex: 1;
+  font-size: 0.62rem;
+  color: var(--t-text-muted);
+  text-align: center;
+  line-height: 1.3;
+  word-break: break-word;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ─── Skeleton loading ───────────────────────────────────────────────────── */
+.tjc-skeleton-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 180px;
+}
+
+.tjc-skeleton-bar {
+  flex: 1;
+  border-radius: 5px 5px 0 0;
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
+.tjc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 180px;
+  color: var(--t-text-muted);
+  gap: 0.5rem;
+}
+
+.tjc-empty-icon {
+  font-size: 2rem;
+  opacity: 0.35;
+}
+
+.tjc-empty-text {
+  font-size: 0.84rem;
+  font-weight: 500;
+}

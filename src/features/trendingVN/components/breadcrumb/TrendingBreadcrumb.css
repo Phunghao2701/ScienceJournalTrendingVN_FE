@@ -1,0 +1,66 @@
+/**
+ * File: src/features/trendingVN/components/breadcrumb/TrendingBreadcrumb.css
+ * Styles cho TrendingBreadcrumb - bar context phia tren page header.
+ * Scope prefix: tbc- (Trending Breadcrumb)
+ */
+
+/* ─── Bar bao ngoai ──────────────────────────────────────────────────────── */
+.tbc-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0 10px 0;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.78rem;
+  list-style: none;
+  margin: 0;
+}
+
+/* ─── Nut Home ───────────────────────────────────────────────────────────── */
+.tbc-home-btn {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.tbc-home-btn:hover {
+  color: #1976D2;
+  background-color: #EAF4FF;
+}
+
+/* ─── Separator chevron ──────────────────────────────────────────────────── */
+.tbc-sep {
+  color: #CBD5E1;
+  flex-shrink: 0;
+}
+
+/* ─── Crumb chung ────────────────────────────────────────────────────────── */
+.tbc-crumb {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Crumb co the bam (link style) */
+.tbc-crumb--link {
+  color: #64748B;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.tbc-crumb--link:hover {
+  color: #1976D2;
+  text-decoration: underline;
+}
+
+/* Crumb active (item cuoi, khong bam) */
+.tbc-crumb--active {
+  color: #1E293B;
+  font-weight: 600;
+  cursor: default;
+}

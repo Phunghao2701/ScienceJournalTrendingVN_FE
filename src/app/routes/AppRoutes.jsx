@@ -5,7 +5,7 @@ import JournalDetailPage from '../../features/journal/pages/JournalDetailPage';
 import CatalogSearchPage from '../../features/catalog/pages/CatalogSearchPage';
 import TrendingVNPage from '../../features/trendingVN/pages/TrendingVNPage';
 import ArticleDetailPage from '../../features/article/pages/ArticleDetailPage';
-import TrendingArticleDetailPage from '../../trendingVN/pages/ArticleDetailPage';
+import TrendingArticleDetailPage from '../../features/trendingVN/pages/ArticleDetailPage';
 import ArticleVisualDetailPage from '../../features/article/pages/ArticleVisualDetailPage';
 import DashboardPage from '../../features/dashboard/pages/DashboardPage';
 
@@ -66,7 +66,7 @@ import VolumeArchivePage from '../../features/admin/pages/VolumeArchivePage';
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<TrendingVNPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
@@ -167,7 +167,7 @@ export default function AppRoutes() {
         <Route path="/admin-preview/journals/:id/edit" element={<EditJournalPage />} />
       </Route>
 
-      <Route path="*" element={<LandingPage />} />
+      <Route path="*" element={<TrendingVNPage />} />
     </Routes>
   );
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Spinner, Alert } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import api from '../../../shared/services/api';
-import './PublisherGrid.css';
+import '../trendingVN.css';
 
 /**
  * Ánh xạ tên nhà xuất bản → URL logo SVG.

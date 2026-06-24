@@ -1,33 +1,32 @@
-/**
- * File source thuộc hệ thống FE ResearchPulse.
- * Thiết kế trang chi tiết bài báo theo phong cách chuyên nghiệp đa cột của Lens.org.
+﻿/**
+ * File source thuá»™c há»‡ thá»‘ng FE ResearchPulse.
+ * Thiáº¿t káº¿ trang chi tiáº¿t bÃ i bÃ¡o theo phong cÃ¡ch chuyÃªn nghiá»‡p Ä‘a cá»™t cá»§a Lens.org.
  *
  * File: trendingVN\pages\ArticleDetailPage.jsx
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Button, Modal, Form, Collapse, Row, Col, Dropdown, ButtonGroup } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 
 // Layout & Auth
-import Header from '../../features/landing/components/Header';
-import useAuth from '../../features/auth/hooks/useAuth';
+import Header from '../../landing/components/Header';
+import useAuth from '../../auth/hooks/useAuth';
 
 // API & Helpers
-import { getArticleDetailApi, bookmarkArticleApi, getArticlesListApi } from '../../features/article/api/articleApi';
-import { getDoiUrl, normalizeArticleDetail } from '../../features/article/utils/articleFormatters';
-import { toast } from '../../shared/utils/toast';
+import { getDoiUrl } from '../../article/utils/articleFormatters';
+import { toast } from '../../../shared/utils/toast';
+import { useTrendingArticleDetail } from '../hooks/useTrendingArticleDetail';
 
 // Subcomponents
-import ArticleDetailSkeleton from '../../features/article/components/ArticleDetailSkeleton';
-import ArticleDetailEmpty from '../../features/article/components/ArticleDetailEmpty';
-import ArticleDetailError from '../../features/article/components/ArticleDetailError';
-import ArticlesTabContent from '../../features/journal/components/ArticlesTabContent';
-import AuthRequiredModal from '../../shared/components/AuthRequiredModal';
+import ArticleDetailSkeleton from '../../article/components/ArticleDetailSkeleton';
+import ArticleDetailEmpty from '../../article/components/ArticleDetailEmpty';
+import ArticleDetailError from '../../article/components/ArticleDetailError';
+import ArticlesTabContent from '../../journal/components/ArticlesTabContent';
+import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
 
-import '../../features/trendingVN/pages/TrendingVNPage.css';
-import './ArticleDetailPage.css';
+import '../trendingVN.css';
 
 const formatReferenceLabel = (referenceUrl = '', index = 0) => {
   const rawValue = String(referenceUrl || '').trim();
@@ -43,25 +42,30 @@ export default function ArticleDetailPage() {
   const auth = useAuth();
   const currentUser = auth?.user;
 
-  // States
-  const [article, setArticle] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
+
+  const {
+    article,
+    isLoading,
+    error,
+    isBookmarked,
+    isBookmarking: isBookmarkLoading,
+    citingWorks,
+    recommendedArticles,
+    isRelatedLoading,
+    searchQuery,
+    handleBookmarkToggle,
+    refetch,
+  } = useTrendingArticleDetail(id, currentUser);
+  
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'citations' | 'references' | 'recommended' | 'collections'
-  const [citingWorks, setCitingWorks] = useState([]);
-  const [recommendedArticles, setRecommendedArticles] = useState([]);
-  const [isRelatedLoading, setIsRelatedLoading] = useState(false);
   const [expandedAbstracts, setExpandedAbstracts] = useState({});
   const [showAllAuthors, setShowAllAuthors] = useState(false);
   const [showCitationsModal, setShowCitationsModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [activeLeftTab, setActiveLeftTab] = useState(null); // 'filters' | 'profile' | 'info' | 'more'
-  const [searchQuery, setSearchQuery] = useState('');
-  const [scholarlyResultsCount, setScholarlyResultsCount] = useState(0);
+  const [scholarlyResultsCount] = useState(0);
 
   const handleSearchSubmit = (e) => {
     if (e) e.preventDefault();
@@ -80,9 +84,6 @@ export default function ArticleDetailPage() {
     setExpandedAbstracts((prev) => ({ ...prev, [articleId]: !prev[articleId] }));
   };
 
-
-
-  // Authors hiển thị (giới hạn 3 tác giả ban đầu)
   const visibleAuthors = useMemo(() => {
     const authors = article?.authors || [];
     if (showAllAuthors) return authors;
@@ -91,131 +92,6 @@ export default function ArticleDetailPage() {
 
   const hiddenAuthorCount = Math.max((article?.authors?.length || 0) - 3, 0);
 
-  // Lấy các bài báo đề xuất liên quan và bài trích dẫn
-  const fetchRelatedData = useCallback(async (parsedArticle) => {
-    try {
-      setIsRelatedLoading(true);
-      const params = {
-        limit: 12,
-        page: 1,
-      };
-      const journalId = Number(parsedArticle.journal_id);
-      const topicId = Number(parsedArticle.primary_topic || parsedArticle.topic_id);
-      if (Number.isFinite(journalId)) params.journal_id = journalId;
-      if (Number.isFinite(topicId)) params.topic_id = topicId;
-
-      const response = await getArticlesListApi(params);
-      const payload = response.data?.data || response.data || {};
-      const totalCount = payload.pagination?.total || payload.total || 0;
-      setScholarlyResultsCount(totalCount);
-
-      const rawItems = payload.items || payload.articles || payload.data || [];
-      const normalizedItems = rawItems
-        .map((item) => ({
-          ...item,
-          article_id: item.article_id || item.id,
-          title: item.title || 'Untitled Article',
-          publication_year: item.publication_year || item.year || '—',
-          doi: item.doi || '',
-          abstract: item.abstract || item.description || 'No abstract is available for this article.',
-          authors: Array.isArray(item.authors)
-            ? item.authors
-            : [{ display_name: item.authors || 'Tác giả' }],
-          is_open_access: Boolean(item.is_open_access),
-          journal_name: item.journal_name || item.journal?.display_name || '',
-          journal_id: item.journal_id || item.journal?.journal_id || '',
-          citations: item.citations ?? item.citations_count ?? item.citation_count ?? item.cited_by_count ?? item.semantic_citation_count ?? 0,
-        }))
-        .filter((item) => String(item.article_id) !== String(parsedArticle.article_id));
-
-      setCitingWorks(normalizedItems.slice(0, 5));
-      setRecommendedArticles(normalizedItems.slice(5, 10));
-    } catch (err) {
-      console.warn('Error fetching related data:', err);
-      setCitingWorks([]);
-      setRecommendedArticles([]);
-    } finally {
-      setIsRelatedLoading(false);
-    }
-  }, []);
-
-  // Lấy chi tiết bài báo
-  const fetchArticleDetail = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await getArticleDetailApi(id);
-      if (response.data && response.data.success !== false) {
-        const apiData = response.data.data || {};
-        let parsedArticle = normalizeArticleDetail(apiData, id);
-
-        if (String(id) === '3233') {
-          parsedArticle = {
-            ...parsedArticle,
-            article_id: '042-681-687-473-744',
-            title: "Non-uniform bounds for non-normal approximation via Stein's method with applications to the Curie--Weiss model and the imitative monomer-dimer model",
-            publication_year: '2025',
-            publication_date: 'Jun 20, 2025',
-            publication_info: 'Preprint',
-            doi: '10.48550/arxiv.2506.17061',
-            doi_url: 'https://doi.org/10.48550/arxiv.2506.17061',
-            source_url: 'https://arxiv.org/abs/2506.17061',
-            is_open_access: true,
-            citations: 0,
-            reference_count: 0,
-            references: [],
-            journal_name: 'ArXiv.org',
-            journal_id: '',
-            volume_number: '',
-            issue_number: '',
-            publisher_name: '',
-            issn: '2331-8422',
-            authors: [
-              { author_id: '1', display_name: 'Lê Văn Thành' },
-              { author_id: '2', display_name: 'Nguyen Ngoc Tu', orcid: 'https://orcid.org/0009-0004-9844-3253' }
-            ],
-            topics: [
-              { display_name: 'Chatterjee' },
-              { display_name: 'Mathematics' },
-              { display_name: 'Context (archaeology)' },
-              { display_name: 'Chen' },
-              { display_name: 'Limit (mathematics)' },
-              { display_name: 'Upper and lower bounds' },
-              { display_name: 'Discrete mathematics' },
-              { display_name: 'Applied mathematics' },
-              { display_name: 'Approximation theory' },
-              { display_name: 'Generalization' },
-              { display_name: 'Pure mathematics' },
-              { display_name: 'Calculus (dental)' },
-              { display_name: 'Series (stratigraphy)' },
-              { display_name: 'Central limit theorem' },
-              { display_name: 'Danskin\'s theorem' },
-              { display_name: 'Counterexample' }
-            ]
-          };
-        }
-
-        setArticle(parsedArticle);
-        setSearchQuery(parsedArticle.issn ? `source.issn:"${parsedArticle.issn}"` : '');
-        fetchRelatedData(parsedArticle);
-
-        const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${id}`;
-        const isLocallyBookmarked = localStorage.getItem(localBookmarkKey) === 'true';
-        setIsBookmarked(apiData.is_bookmarked || isLocallyBookmarked);
-      } else {
-        throw new Error('Không thể tải chi tiết bài báo khoa học.');
-      }
-    } catch (err) {
-      console.error('Error fetching article detail:', err);
-      setError(err.response?.data?.message || err.message || 'Lỗi khi tải dữ liệu bài báo khoa học.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id, currentUser, fetchRelatedData]);
-
-  useEffect(() => {
-    fetchArticleDetail();
-  }, [fetchArticleDetail]);
 
   const renderRelatedArticleCard = (item) => {
     const isExpanded = expandedAbstracts[item.article_id] || false;
@@ -251,9 +127,9 @@ export default function ArticleDetailPage() {
             <div className="lens-meta-line mt-1">
               <span className="lens-meta-badge">{docId}</span>
               <span className="text-xs text-muted-custom">Journal Article</span>
-              <span>•</span>
-              <span className="text-xs text-muted-custom">{t('yearLabel')}: {item.publication_year || '—'}</span>
-              <span>•</span>
+              <span>â€¢</span>
+              <span className="text-xs text-muted-custom">{t('yearLabel')}: {item.publication_year || 'â€”'}</span>
+              <span>â€¢</span>
               <span className="d-flex align-items-center gap-1 text-xs">
                 <span className="lens-status-dot" style={{ background: '#16a34a', width: '6px', height: '6px', borderRadius: '50%' }} />
                 <span style={{ color: '#16a34a', fontWeight: 650 }}>{t('statusPublished')}</span>
@@ -412,20 +288,20 @@ export default function ArticleDetailPage() {
                       <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>{t('history')}</div>
                       <div className="history-timeline text-xs d-flex flex-column gap-2">
                         <div className="history-item">
-                          <div className="fw-semibold text-dark">{t('publication')}: {item.publication_year || '—'}</div>
+                          <div className="fw-semibold text-dark">{t('publication')}: {item.publication_year || 'â€”'}</div>
                           <div className="text-muted font-monospace" style={{ fontSize: '0.68rem' }}>
                             {docId}
                           </div>
                         </div>
                         <div className="history-item border-top pt-1.5">
-                          <div className="fw-semibold text-dark">{t('application')}: {item.publication_year || '—'}</div>
+                          <div className="fw-semibold text-dark">{t('application')}: {item.publication_year || 'â€”'}</div>
                           <div className="text-muted font-monospace" style={{ fontSize: '0.68rem' }}>
                             {docId.replace(/\s*[A-Z]$/, '')}
                           </div>
                         </div>
                         <div className="history-item border-top pt-1.5">
                           <div className="fw-semibold text-dark d-flex align-items-center gap-1">
-                            {t('priority')}: {item.publication_year || '—'}
+                            {t('priority')}: {item.publication_year || 'â€”'}
                             <Icon icon="lucide:link" width="10" className="text-muted" />
                           </div>
                           <div className="text-muted font-monospace" style={{ fontSize: '0.68rem' }}>
@@ -444,51 +320,41 @@ export default function ArticleDetailPage() {
     );
   };
 
-  const handleBookmarkToggle = async () => {
+
+  const handleBookmarkToggleClick = async () => {
     if (!currentUser) {
       setShowLoginModal(true);
       return;
     }
-
-    setIsBookmarkLoading(true);
-    const localBookmarkKey = `bookmark_${currentUser.username}_${id}`;
-    const nextState = !isBookmarked;
-
     try {
-      await bookmarkArticleApi(id);
-      setIsBookmarked(nextState);
-      localStorage.setItem(localBookmarkKey, String(nextState));
-      toast.success(nextState ? 'Đã thêm bài báo vào project.' : 'Đã xóa bài báo khỏi project.');
+      await handleBookmarkToggle();
+      toast.success(isBookmarked ? "Ðã b? luu bài vi?t" : "Ðã luu bài vi?t thành công");
     } catch (err) {
-      console.warn('Bookmark API error, toggling state locally:', err);
-      setIsBookmarked(nextState);
-      localStorage.setItem(localBookmarkKey, String(nextState));
-      toast.warning('Không thể đồng bộ server, đã cập nhật tạm trên trình duyệt.');
-    } finally {
-      setIsBookmarkLoading(false);
+      toast.error("L?i khi c?p nh?t danh sách dã luu");
     }
   };
+
 
   const handleShareArticle = async () => {
     const shareUrl = window.location.href;
     const shareData = {
       title: article?.title || 'Article detail',
-      text: `Khám phá bài báo: ${article?.title || ''}`,
+      text: `KhÃ¡m phÃ¡ bÃ i bÃ¡o: ${article?.title || ''}`,
       url: shareUrl,
     };
 
     try {
       if (navigator.share) {
         await navigator.share(shareData);
-        toast.success('Đã mở chia sẻ bài báo.');
+        toast.success('ÄÃ£ má»Ÿ chia sáº» bÃ i bÃ¡o.');
         return;
       }
       await navigator.clipboard.writeText(shareUrl);
-      toast.success('Đã sao chép liên kết bài báo.');
+      toast.success('ÄÃ£ sao chÃ©p liÃªn káº¿t bÃ i bÃ¡o.');
     } catch (err) {
       if (err?.name === 'AbortError') return;
       console.warn('Unable to share article:', err);
-      toast.error('Không thể chia sẻ bài báo lúc này.');
+      toast.error('KhÃ´ng thá»ƒ chia sáº» bÃ i bÃ¡o lÃºc nÃ y.');
     }
   };
 
@@ -502,7 +368,7 @@ export default function ArticleDetailPage() {
   const generateBibTeX = useCallback(() => {
     if (!article) return '';
     const authorList = (article.authors || [])
-      .map((a) => a.display_name || a.name || 'Tác giả')
+      .map((a) => a.display_name || a.name || 'TÃ¡c giáº£')
       .join(' and ');
     return `@article{article_${article.article_id || '3233'},
   title={${article.title}},
@@ -516,7 +382,7 @@ export default function ArticleDetailPage() {
   const generateRIS = useCallback(() => {
     if (!article) return '';
     const authorList = (article.authors || [])
-      .map((a) => `AU  - ${a.display_name || a.name || 'Tác giả'}`)
+      .map((a) => `AU  - ${a.display_name || a.name || 'TÃ¡c giáº£'}`)
       .join('\n');
     return `TY  - JOUR
 T1  - ${article.title}
@@ -530,10 +396,10 @@ ER  - `;
   const handleCopyCitationText = async (text, formatName) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`Đã sao chép trích dẫn dạng ${formatName}!`);
+      toast.success(`ÄÃ£ sao chÃ©p trÃ­ch dáº«n dáº¡ng ${formatName}!`);
     } catch (err) {
       console.warn('Unable to copy citation:', err);
-      toast.error('Không thể sao chép trích dẫn.');
+      toast.error('KhÃ´ng thá»ƒ sao chÃ©p trÃ­ch dáº«n.');
     }
   };
 
@@ -548,10 +414,10 @@ ER  - `;
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast.success(`Đã tải xuống tệp ${filename}!`);
+      toast.success(`ÄÃ£ táº£i xuá»‘ng tá»‡p ${filename}!`);
     } catch (err) {
       console.warn('Unable to download citation:', err);
-      toast.error('Không thể tải tệp trích dẫn.');
+      toast.error('KhÃ´ng thá»ƒ táº£i tá»‡p trÃ­ch dáº«n.');
     }
   };
 
@@ -588,7 +454,7 @@ ER  - `;
       <div className="article-detail-page-wrapper">
         <Header />
         <Container fluid className="px-3 px-xl-5 mt-4">
-          <ArticleDetailError errorMsg={error} onRetry={fetchArticleDetail} />
+          <ArticleDetailError errorMsg={error} onRetry={refetch} />
         </Container>
       </div>
     );
@@ -609,7 +475,7 @@ ER  - `;
     <div className="article-detail-page-wrapper grid-bg">
       <Header />
 
-      {/* Query Search Bar Top - Mô phỏng giao diện Lens.org */}
+      {/* Query Search Bar Top - MÃ´ phá»ng giao diá»‡n Lens.org */}
       <section className="lens-top-search-section">
         <div className="lens-search-container-fluid d-flex align-items-center justify-content-between flex-wrap gap-3">
           {/* Left Side */}
@@ -656,7 +522,7 @@ ER  - `;
                 <Form.Control
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={() => {}}
                   onKeyDown={handleKeyDown}
                   placeholder="Search database..."
                   className="lens-search-input-field"
@@ -873,18 +739,18 @@ ER  - `;
             
             {/* Breadcrumb */}
             <div className="lens-breadcrumb">
-              <span className="lens-breadcrumb-link" onClick={() => navigate('/articles')}>Bài báo</span>
+              <span className="lens-breadcrumb-link" onClick={() => navigate('/articles')}>BÃ i bÃ¡o</span>
               <Icon icon="lucide:chevron-right" width="12" />
-              <span className="lens-breadcrumb-current">Chi tiết bài báo</span>
+              <span className="lens-breadcrumb-current">Chi tiáº¿t bÃ i bÃ¡o</span>
             </div>
 
-            {/* Tiêu đề & Thông tin cơ bản */}
+            {/* TiÃªu Ä‘á» & ThÃ´ng tin cÆ¡ báº£n */}
             <section className="lens-article-header-section">
               <h1 className="lens-article-title">
                 {article.title}
               </h1>
 
-              {/* Dòng metadata phụ */}
+              {/* DÃ²ng metadata phá»¥ */}
               <div className="lens-meta-line flex-wrap gap-2">
                 <span className="lens-badge-type">
                   <Icon icon="lucide:file-text" className="me-1" />
@@ -910,7 +776,7 @@ ER  - `;
                         {article.journal_name || 'ArXiv.org'}
                       </span>
                       {', '}
-                      {article.publication_date || article.publication_year || '—'}
+                      {article.publication_date || article.publication_year || 'â€”'}
                     </>
                   ) : (
                     <>
@@ -921,26 +787,26 @@ ER  - `;
                           if (article.journal_id) {
                             navigate(`/journals/${article.journal_id}`);
                           } else {
-                            navigate(`/articles?search=${encodeURIComponent(article.journal_name || 'Đang cập nhật')}`);
+                            navigate(`/articles?search=${encodeURIComponent(article.journal_name || 'Äang cáº­p nháº­t')}`);
                           }
                         }}
                       >
-                        {article.journal_name || 'Đang cập nhật'}
+                        {article.journal_name || 'Äang cáº­p nháº­t'}
                       </span>, 
-                      <strong> Vol:</strong> {article.volume_number || '—'}, 
-                      <strong> Issue:</strong> {article.issue_number || '—'}, 
-                      <strong> Published:</strong> {article.publication_date || article.publication_year || '—'}
+                      <strong> Vol:</strong> {article.volume_number || 'â€”'}, 
+                      <strong> Issue:</strong> {article.issue_number || 'â€”'}, 
+                      <strong> Published:</strong> {article.publication_date || article.publication_year || 'â€”'}
                     </>
                   )}
                 </span>
               </div>
 
-              {/* Tác giả */}
+              {/* TÃ¡c giáº£ */}
               <div className="lens-authors-line">
                 <strong>Authors:</strong>{' '}
                 {visibleAuthors.length > 0 ? (
                   visibleAuthors.map((author, index) => {
-                    const name = author.display_name || author.name || 'Tác giả';
+                    const name = author.display_name || author.name || 'TÃ¡c giáº£';
                     return (
                       <span key={index}>
                         <Button 
@@ -956,7 +822,7 @@ ER  - `;
                     );
                   })
                 ) : (
-                  <span className="text-muted-custom">Đang cập nhật tác giả</span>
+                  <span className="text-muted-custom">Äang cáº­p nháº­t tÃ¡c giáº£</span>
                 )}
 
                 {hiddenAuthorCount > 0 && !showAllAuthors && (
@@ -971,7 +837,7 @@ ER  - `;
                 )}
               </div>
 
-              {/* Dòng lượt trích dẫn */}
+              {/* DÃ²ng lÆ°á»£t trÃ­ch dáº«n */}
               <div className="lens-stats-plain-line text-xs font-sans mt-2 mb-2 d-flex flex-wrap gap-4">
                 <span>Citing Patents: <strong className="text-dark">{article.citing_patents ?? 0}</strong></span>
                 <span className="pointer" onClick={() => setShowCitationsModal(true)}>
@@ -982,7 +848,7 @@ ER  - `;
                 </span>
               </div>
 
-              {/* Dòng nhãn thông tin phụ */}
+              {/* DÃ²ng nhÃ£n thÃ´ng tin phá»¥ */}
               <div className="lens-additional-info-badges d-flex align-items-center gap-2 mt-2 mb-3">
                 <span className="text-xs fw-bold text-muted-custom">Additional Info:</span>
                 {article.is_open_access && (
@@ -1011,7 +877,7 @@ ER  - `;
                 )}
               </div>
 
-              {/* Danh sách các biểu tượng định danh (Identifiers & Links) */}
+              {/* Danh sÃ¡ch cÃ¡c biá»ƒu tÆ°á»£ng Ä‘á»‹nh danh (Identifiers & Links) */}
               <div className="lens-external-links-badges gap-3 flex-wrap mt-2">
                 <span className="lens-ext-badge text-uppercase gray">
                   <Icon icon="lucide:file-text" className="me-1 text-dark" />
@@ -1052,7 +918,7 @@ ER  - `;
               </div>
             </section>
 
-            {/* Khu vực Tabs điều hướng chính: Summary, Citing Works, References, Recommended & Collections */}
+            {/* Khu vá»±c Tabs Ä‘iá»u hÆ°á»›ng chÃ­nh: Summary, Citing Works, References, Recommended & Collections */}
             <div className="lens-tab-bar">
               <Button 
                 variant="link" 
@@ -1084,11 +950,11 @@ ER  - `;
               </Button>
             </div>
 
-            {/* Nội dung theo Tab */}
+            {/* Ná»™i dung theo Tab */}
             {activeTab === 'summary' ? (
               <div className="lens-summary-tab-content">
                 
-                {/* Thanh Action nhỏ: Share, Add to project, Download Citation */}
+                {/* Thanh Action nhá»: Share, Add to project, Download Citation */}
                 <div className="lens-actions-bar">
                   <Button variant="link" className="lens-action-btn" onClick={handleShareArticle}>
                     <Icon icon="lucide:share-2" />
@@ -1097,7 +963,7 @@ ER  - `;
                   <Button 
                     variant="link" 
                     className={`lens-action-btn ${isBookmarked ? 'active' : ''}`} 
-                    onClick={handleBookmarkToggle}
+                    onClick={handleBookmarkToggleClick}
                     disabled={isBookmarkLoading}
                   >
                     <Icon icon={isBookmarked ? 'lucide:bookmark-check' : 'lucide:bookmark-plus'} />
@@ -1109,10 +975,10 @@ ER  - `;
                   </Button>
                 </div>
 
-                {/* Grid chi tiết trong Summary */}
+                {/* Grid chi tiáº¿t trong Summary */}
                 <div className="lens-summary-grid">
                   
-                  {/* Cột trái của Summary (Abstract, Authors, Field of Study, Identifiers) */}
+                  {/* Cá»™t trÃ¡i cá»§a Summary (Abstract, Authors, Field of Study, Identifiers) */}
                   <div className="lens-summary-left-pane">
                     
                     {/* TL;DR (AI summary) if available */}
@@ -1120,7 +986,7 @@ ER  - `;
                       <div className="lens-section-block mb-4 p-3 rounded" style={{ backgroundColor: 'var(--primary-light)', borderLeft: '4px solid var(--primary)' }}>
                         <div className="d-flex align-items-center gap-2 mb-2 font-weight-bold" style={{ color: 'var(--primary)', fontSize: '0.9rem', letterSpacing: '0.5px' }}>
                           <Icon icon="lucide:sparkles" width="16" />
-                          <strong className="text-uppercase">TL;DR (AI Tóm tắt nhanh)</strong>
+                          <strong className="text-uppercase">TL;DR (AI TÃ³m táº¯t nhanh)</strong>
                         </div>
                         <p className="lens-section-text mb-0" style={{ fontSize: '0.88rem', fontWeight: 500, color: 'var(--text-main)' }}>
                           {article.semantic_tldr}
@@ -1142,7 +1008,7 @@ ER  - `;
                       <div className="lens-authors-detail-inline text-xs font-sans" style={{ lineHeight: '1.6' }}>
                         {article.authors && article.authors.length > 0 ? (
                           article.authors.map((author, index) => {
-                            const name = author.display_name || author.name || 'Tác giả';
+                            const name = author.display_name || author.name || 'TÃ¡c giáº£';
                             return (
                               <span key={index}>
                                 <span 
@@ -1162,7 +1028,7 @@ ER  - `;
                             );
                           })
                         ) : (
-                          <span className="text-muted-custom">Đang cập nhật danh sách tác giả...</span>
+                          <span className="text-muted-custom">Äang cáº­p nháº­t danh sÃ¡ch tÃ¡c giáº£...</span>
                         )}
                       </div>
                     </div>
@@ -1198,7 +1064,7 @@ ER  - `;
                             </span>
                           ))
                         ) : (
-                          <span className="text-muted-custom">Đang cập nhật từ khóa...</span>
+                          <span className="text-muted-custom">Äang cáº­p nháº­t tá»« khÃ³a...</span>
                         )}
                       </div>
                     </div>
@@ -1259,7 +1125,7 @@ ER  - `;
 
                   </div>
 
-                  {/* Cột phải của Summary (Metadata boxes) */}
+                  {/* Cá»™t pháº£i cá»§a Summary (Metadata boxes) */}
                   <div className="lens-summary-right-pane">
                     
                     {/* Metadata Card 1 */}
@@ -1270,7 +1136,7 @@ ER  - `;
                             <th>In:</th>
                             <td>
                               <span className="text-primary-hover font-sans" onClick={() => article.journal_id && navigate(`/journals/${article.journal_id}`)}>
-                                {article.journal_name || 'Đang cập nhật'}
+                                {article.journal_name || 'Äang cáº­p nháº­t'}
                               </span>
                               {article.volume_number ? `, Vol: ${article.volume_number}` : ''}
                               {article.issue_number ? `, Issue: ${article.issue_number}` : ''}
@@ -1284,11 +1150,11 @@ ER  - `;
                           </tr>
                           <tr>
                             <th>Published:</th>
-                            <td>{article.publication_year || '—'}</td>
+                            <td>{article.publication_year || 'â€”'}</td>
                           </tr>
                           <tr>
                             <th>E-Published:</th>
-                            <td>{article.publication_year || '—'}</td>
+                            <td>{article.publication_year || 'â€”'}</td>
                           </tr>
                           <tr>
                             <th>Publication Info:</th>
@@ -1296,11 +1162,11 @@ ER  - `;
                           </tr>
                           <tr>
                             <th>Published:</th>
-                            <td>{article.publication_date || article.publication_year || '—'}</td>
+                            <td>{article.publication_date || article.publication_year || 'â€”'}</td>
                           </tr>
                           <tr>
                             <th>E-Published:</th>
-                            <td>{article.publication_date || article.publication_year || '—'}</td>
+                            <td>{article.publication_date || article.publication_year || 'â€”'}</td>
                           </tr>
                           <tr>
                             <th>Publication Info:</th>
@@ -1308,12 +1174,12 @@ ER  - `;
                           </tr>
                           <tr>
                             <th>Publisher:</th>
-                            <td>{article.publisher_name || '—'}</td>
+                            <td>{article.publisher_name || 'â€”'}</td>
                           </tr>
                           <tr>
                             <th>Source ISSN:</th>
                             <td className="font-monospace text-muted-custom">
-                              {article.issn || '—'}
+                              {article.issn || 'â€”'}
                             </td>
                           </tr>
                         </tbody>
@@ -1398,15 +1264,15 @@ ER  - `;
                   </div>
                 ) : (
                   <div className="article-reference-card-empty text-center py-5">
-                    Chưa có bài báo trích dẫn nào được tìm thấy.
+                    ChÆ°a cÃ³ bÃ i bÃ¡o trÃ­ch dáº«n nÃ o Ä‘Æ°á»£c tÃ¬m tháº¥y.
                   </div>
                 )}
               </div>
             ) : activeTab === 'references' ? (
               <div className="lens-references-tab-content py-4">
-                <h4 className="font-display fw-bold mb-3">Tài liệu tham khảo (References)</h4>
+                <h4 className="font-display fw-bold mb-3">TÃ i liá»‡u tham kháº£o (References)</h4>
                 <p className="text-muted-custom mb-4 text-sm">
-                  Bài báo hiện có <strong>{(article.references || []).length}</strong> tài liệu tham khảo được đồng bộ trong hệ thống.
+                  BÃ i bÃ¡o hiá»‡n cÃ³ <strong>{(article.references || []).length}</strong> tÃ i liá»‡u tham kháº£o Ä‘Æ°á»£c Ä‘á»“ng bá»™ trong há»‡ thá»‘ng.
                 </p>
 
                 {(article.references || []).length > 0 ? (
@@ -1434,7 +1300,7 @@ ER  - `;
                             </div>
                             <span className="article-reference-action">
                               <Icon icon="lucide:external-link" width="16" />
-                              Mở nguồn
+                              Má»Ÿ nguá»“n
                             </span>
                           </div>
                         </a>
@@ -1443,7 +1309,7 @@ ER  - `;
                   </div>
                 ) : (
                   <div className="article-reference-card-empty text-center py-5">
-                    Chưa có danh sách reference chi tiết cho bài báo này.
+                    ChÆ°a cÃ³ danh sÃ¡ch reference chi tiáº¿t cho bÃ i bÃ¡o nÃ y.
                   </div>
                 )}
               </div>
@@ -1475,13 +1341,13 @@ ER  - `;
                   </div>
                 ) : (
                   <div className="article-reference-card-empty text-center py-5">
-                    Chưa có bài báo đề xuất nào được tìm thấy.
+                    ChÆ°a cÃ³ bÃ i bÃ¡o Ä‘á» xuáº¥t nÃ o Ä‘Æ°á»£c tÃ¬m tháº¥y.
                   </div>
                 )}
               </div>
             ) : (
               <div className="lens-collections-tab-content py-4">
-                <h4 className="font-display fw-bold mb-4">Bài báo liên quan / Đề xuất</h4>
+                <h4 className="font-display fw-bold mb-4">BÃ i bÃ¡o liÃªn quan / Äá» xuáº¥t</h4>
                 <ArticlesTabContent
                   recentArticles={recommendedArticles}
                   loading={isRelatedLoading}
@@ -1493,35 +1359,35 @@ ER  - `;
           </main>
       </div>
 
-      {/* Modal hiển thị chi tiết Trích dẫn và Export Citation */}
+      {/* Modal hiá»ƒn thá»‹ chi tiáº¿t TrÃ­ch dáº«n vÃ  Export Citation */}
       <Modal show={showCitationsModal} onHide={() => setShowCitationsModal(false)} size="lg" centered>
         <Modal.Header closeButton>
           <Modal.Title className="font-display fw-bold">Citations & Citation Manager</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="row g-4">
-            {/* Cột trái: Thông tin trích dẫn */}
+            {/* Cá»™t trÃ¡i: ThÃ´ng tin trÃ­ch dáº«n */}
             <div className="col-12 col-md-5 border-end">
               <div className="lens-modal-stat-box">
-                <div className="text-muted-custom text-xs fw-bold text-uppercase mb-1">Tổng lượt trích dẫn</div>
+                <div className="text-muted-custom text-xs fw-bold text-uppercase mb-1">Tá»•ng lÆ°á»£t trÃ­ch dáº«n</div>
                 <div className="font-display fw-bold text-dark mb-2" style={{ fontSize: '2.5rem' }}>
                   {(article?.citations ?? 0).toLocaleString('en-US')}
                 </div>
               </div>
               <p className="text-muted-custom mb-3 text-xs" style={{ lineHeight: 1.6 }}>
-                Số lượt trích dẫn (Citations) biểu thị số lượng bài báo, tài liệu học thuật khác đã sử dụng nguồn hoặc trích dẫn lại kết quả của công trình nghiên cứu này.
+                Sá»‘ lÆ°á»£t trÃ­ch dáº«n (Citations) biá»ƒu thá»‹ sá»‘ lÆ°á»£ng bÃ i bÃ¡o, tÃ i liá»‡u há»c thuáº­t khÃ¡c Ä‘Ã£ sá»­ dá»¥ng nguá»“n hoáº·c trÃ­ch dáº«n láº¡i káº¿t quáº£ cá»§a cÃ´ng trÃ¬nh nghiÃªn cá»©u nÃ y.
               </p>
               <div className="text-xs text-muted-custom d-flex flex-column gap-2">
-                <div><strong>DOI:</strong> Mã định danh đối tượng số định danh bài báo cố định trực tuyến.</div>
-                <div><strong>References:</strong> Số lượng công trình nghiên cứu được bài báo này trích dẫn lại.</div>
+                <div><strong>DOI:</strong> MÃ£ Ä‘á»‹nh danh Ä‘á»‘i tÆ°á»£ng sá»‘ Ä‘á»‹nh danh bÃ i bÃ¡o cá»‘ Ä‘á»‹nh trá»±c tuyáº¿n.</div>
+                <div><strong>References:</strong> Sá»‘ lÆ°á»£ng cÃ´ng trÃ¬nh nghiÃªn cá»©u Ä‘Æ°á»£c bÃ i bÃ¡o nÃ y trÃ­ch dáº«n láº¡i.</div>
               </div>
             </div>
 
-            {/* Cột phải: Xuất trích dẫn */}
+            {/* Cá»™t pháº£i: Xuáº¥t trÃ­ch dáº«n */}
             <div className="col-12 col-md-7">
               <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
                 <Icon icon="lucide:download" className="text-primary" />
-                <span>Export Citation (Tải trích dẫn)</span>
+                <span>Export Citation (Táº£i trÃ­ch dáº«n)</span>
               </h6>
               
               {/* BibTeX */}
@@ -1589,7 +1455,7 @@ ER  - `;
         </Modal.Body>
         <Modal.Footer>
           <Button variant="outline-secondary" size="sm" onClick={() => setShowCitationsModal(false)}>
-            Đóng
+            ÄÃ³ng
           </Button>
         </Modal.Footer>
       </Modal>
@@ -1659,3 +1525,9 @@ ER  - `;
     </div>
   );
 }
+
+
+
+
+
+

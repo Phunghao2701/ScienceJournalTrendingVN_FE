@@ -16,10 +16,10 @@ export default function TrendingArticleCard({
     const docId = `VN ${1000000 + Number(article.article_id)} A`;
 
     return (
-      <div key={article.article_id} className="lens-article-card p-3">
-        <div className="d-flex align-items-start gap-2">
+      <div key={article.article_id} className="lens-article-card">
+        <div className="d-flex align-items-start gap-1">
           {/* Checkbox + số thứ tự */}
-          <div className="d-flex flex-column align-items-center gap-1 pt-1" style={{ minWidth: '28px' }}>
+          <div className="d-flex flex-column align-items-center gap-1" style={{ minWidth: '22px' }}>
             <Form.Check type="checkbox" className="lens-checkbox-sm" />
             <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
               {itemIndex}
@@ -116,7 +116,7 @@ export default function TrendingArticleCard({
                 <>
                   {' | '}
                   <strong>{t('doiLabel')}:</strong>{' '}
-                  <span style={{ fontFamily: 'monospace', fontSize: '0.68rem' }}>{article.doi}</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: '13.6px' }}>{article.doi}</span>
                   <button
                     style={{ background: 'none', border: 'none', padding: 0, marginLeft: '3px', cursor: 'pointer', color: 'var(--text-muted)' }}
                     onClick={(e) => handleCopyDoi(e, article.doi)}

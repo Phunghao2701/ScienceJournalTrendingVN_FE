@@ -32,6 +32,14 @@ export const getArticleDetailApi = (id) => {
   return api.get(`/articles/${id}`);
 };
 
+export const getArticleCitingWorksApi = (id, params = {}) => {
+  return api.get(`/articles/${id}/citing-works`, { params });
+};
+
+export const getArticleReferencesApi = (id, params = {}) => {
+  return api.get(`/articles/${id}/references`, { params });
+};
+
 /**
  * Bookmark an article
  * @param {number|string} id - ID bài báo

@@ -979,7 +979,7 @@ export default function TrendingVNPage() {
             )}
 
             {/* ==================== SEARCH BAR ==================== */}
-            <div className="py-2">
+            <div>
               <Form onSubmit={handleSearchSubmit}>
                 <div className="lens-search-group">
                   <span className="d-flex align-items-center ps-3 pe-0" style={{ background: 'transparent' }}>

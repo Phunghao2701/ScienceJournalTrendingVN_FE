@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { getArticleDetailApi, getArticlesListApi, bookmarkArticleApi } from '../../article/api/articleApi';
+import { getArticleDetailApi, getArticlesListApi, bookmarkArticleApi, getArticleCitingWorksApi, getArticleReferencesApi } from '../../article/api/articleApi';
 import { normalizeArticleDetail } from '../../article/utils/articleFormatters';
 
 export const useTrendingArticleDetail = (id, currentUser) => {
@@ -37,21 +37,38 @@ export const useTrendingArticleDetail = (id, currentUser) => {
   const topicId = Number(article?.parsedArticle?.topic_id || article?.parsedArticle?.primary_topic?.id || article?.parsedArticle?.topic?.id);
   const isTopicValid = Number.isFinite(topicId);
 
-  const { data: relatedData, isLoading: isRelatedLoading } = useQuery({
+  const { data: citingWorksData, isLoading: isCitingWorksLoading } = useQuery({
+    queryKey: ['trendingVN', 'articleCitingWorks', id],
+    queryFn: async () => {
+      const response = await getArticleCitingWorksApi(id, { limit: 20 });
+      const payload = response.data?.data || response.data || {};
+      return Array.isArray(payload.items) ? payload.items : [];
+    },
+    enabled: !!article && !!id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: referencesData, isLoading: isReferencesLoading } = useQuery({
+    queryKey: ['trendingVN', 'articleReferences', id],
+    queryFn: async () => {
+      const response = await getArticleReferencesApi(id, { limit: 50 });
+      const payload = response.data?.data || response.data || {};
+      return Array.isArray(payload.items) ? payload.items : [];
+    },
+    enabled: !!article && !!id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: recommendedArticles = [], isLoading: isRecommendedLoading } = useQuery({
     queryKey: ['trendingVN', 'relatedArticles', topicId],
     queryFn: async () => {
-      const params = { limit: 10, sort_by: 'semantic_citation_count', sort_order: 'desc', topic_id: topicId };
+      const params = { limit: 5, sort_by: 'semantic_citation_count', sort_order: 'desc', topic_id: topicId };
       const response = await getArticlesListApi(params);
       const payload = response.data?.data || response.data || {};
       const rawItems = payload.items || payload.articles || [];
-      const normalizedItems = Array.isArray(rawItems) ? rawItems : [];
-      
-      return {
-        citingWorks: normalizedItems.slice(0, 5),
-        recommendedArticles: normalizedItems.slice(5, 10),
-      };
+      return Array.isArray(rawItems) ? rawItems : [];
     },
-    enabled: !!article && isTopicValid, // Chỉ chạy khi đã có bài báo và topicId hợp lệ
+    enabled: !!article && isTopicValid,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -90,9 +107,13 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     error: error ? (error.response?.data?.message || error.message) : null,
     isBookmarked,
     isBookmarking: bookmarkMutation.isPending,
-    citingWorks: relatedData?.citingWorks || [],
-    recommendedArticles: relatedData?.recommendedArticles || [],
-    isRelatedLoading,
+    citingWorks: citingWorksData || [],
+    references: referencesData || [],
+    recommendedArticles,
+    isRelatedLoading: isCitingWorksLoading || isReferencesLoading || isRecommendedLoading,
+    isCitingWorksLoading,
+    isReferencesLoading,
+    isRecommendedLoading,
     searchQuery,
     handleBookmarkToggle,
     refetch,

@@ -13,7 +13,6 @@ export default function TrendingArticleCard({
 
     const isExpanded = expandedAbstracts[article.article_id] || groupingMode === 'simple-expand' || groupingMode === 'extended-expand';
     const itemIndex = (currentPage - 1) * 10 + index + 1;
-    const docId = `VN ${1000000 + Number(article.article_id)} A`;
 
     return (
       <div key={article.article_id} className="lens-article-card">
@@ -38,9 +37,8 @@ export default function TrendingArticleCard({
               </div>
             )}
 
-            {/* Dòng meta badges: mã tài liệu, loại, trạng thái */}
+            {/* Dòng meta badges: loại, trạng thái */}
             <div className="lens-meta-line">
-              <span className="lens-meta-badge">{docId}</span>
               <span>{t('scientificArticle')}</span>
               <span>•</span>
               <span>{t('yearLabel')}: {article.publication_year || '—'}</span>
@@ -106,12 +104,10 @@ export default function TrendingArticleCard({
               </div>
             )}
 
-            {/* Dòng: DOI + Trích dẫn — ẩn/hiện DOI theo checkbox */}
+            {/* Dòng: Trích dẫn + DOI — lấy từ DB, ẩn/hiện DOI theo checkbox */}
             <div className="lens-detail-line">
-              <strong>{t('citedWorksLabel')}:</strong> 0 | {' '}
               <strong>{t('citedByLabel')}:</strong>{' '}
-              <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{article.semantic_citation_count || 0}</span> | {' '}
-              <strong>{t('citesLabel')}:</strong> 0
+              <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{article.semantic_citation_count || 0}</span>
               {visibleColumns.doi && article.doi && (
                 <>
                   {' | '}
@@ -237,24 +233,11 @@ export default function TrendingArticleCard({
                       <div className="history-timeline text-xs d-flex flex-column gap-2">
                         <div className="history-item">
                           <div className="fw-semibold text-dark">{t('publication')}: {article.publication_year || '—'}</div>
-                          <div className="text-muted font-monospace" style={{ fontSize: '0.68rem' }}>
-                            {docId}
-                          </div>
-                        </div>
-                        <div className="history-item border-top pt-1.5">
-                          <div className="fw-semibold text-dark">{t('application')}: {article.publication_year || '—'}</div>
-                          <div className="text-muted font-monospace" style={{ fontSize: '0.68rem' }}>
-                            {docId.replace(/\s*[A-Z]$/, '')}
-                          </div>
-                        </div>
-                        <div className="history-item border-top pt-1.5">
-                          <div className="fw-semibold text-dark d-flex align-items-center gap-1">
-                            {t('priority')}: {article.publication_year || '—'}
-                            <Icon icon="lucide:link" width="10" className="text-muted" />
-                          </div>
-                          <div className="text-muted font-monospace" style={{ fontSize: '0.68rem' }}>
-                            {docId.replace(/\s*[A-Z]$/, '')}
-                          </div>
+                          {article.doi && (
+                            <div className="text-muted font-monospace" style={{ fontSize: '0.68rem' }}>
+                              DOI: {article.doi}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

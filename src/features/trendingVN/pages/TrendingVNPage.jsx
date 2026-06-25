@@ -17,13 +17,13 @@ import Header from '../../landing/components/Header';
 import useArticleList from '../../article/hooks/useArticleList';
 import ArticleTable from '../../article/components/ArticleTable';
 import AdminPagination from '../../../shared/components/Pagination';
-import { searchJournalsApi } from '../../journal/api/journalApi';
-import { getTopicsApi } from '../../topic/api/topic.api';
 import PublisherGrid from '../components/PublisherGrid';
 import TrendingArticleCard from '../components/TrendingArticleCard';
 import { toast } from '../../../shared/utils/toast';
 import { useAuthStore } from '../../../app/store/authStore';
 import { useTrendingFilters } from '../hooks/useTrendingFilters';
+import { bookmarkArticleApi } from '../../article/api/articleApi';
+import ROUTES from '../../../app/routes/routePaths';
 import '../trendingVN.css';
 
 export default function TrendingVNPage() {
@@ -53,11 +53,104 @@ export default function TrendingVNPage() {
   };
 
   // --- State giao diện ---
-  const [showSidebar, setShowSidebar] = useState(true); // Ẩn/hiện sidebar phân tích
+  const [showSidebar] = useState(true); // Ẩn/hiện sidebar phân tích
   const [viewMode, setViewMode] = useState('list');      // 'list' hoặc 'table'
   const [expandedAbstracts, setExpandedAbstracts] = useState({}); // Toggle abstract từng bài
   const [allExpanded, setAllExpanded] = useState(false);          // Toggle tất cả abstract
   const [showCustomise, setShowCustomise] = useState(false);      // Ẩn/hiện panel Customise
+
+  // --- State chọn dòng bài báo ---
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  // Reset selection khi danh sách bài báo thay đổi
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [articles]);
+
+  const handleSelectRow = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedIds(articles.map(a => a.article_id).filter(Boolean));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleCreateCollection = () => {
+    if (!user) {
+      toast.warning('Vui lòng đăng nhập để tạo bộ sưu tập!');
+      navigate('/login');
+      return;
+    }
+    navigate(ROUTES?.PROJECT_CREATE || '/projects/create');
+  };
+
+  const handleAddToCollection = async () => {
+    if (!user) {
+      toast.warning('Vui lòng đăng nhập để quản lý bộ sưu tập!');
+      navigate('/login');
+      return;
+    }
+
+    if (selectedIds.length === 0) return;
+
+    try {
+      const promises = selectedIds.map(async (id) => {
+        const localKey = `bookmark_${user.username || 'guest'}_${id}`;
+        const isBookmarkedLocally = localStorage.getItem(localKey) === 'true';
+        const articleObj = articles.find(a => a.article_id === id);
+        const isBookmarkedApi = articleObj?.is_bookmarked;
+        
+        if (!isBookmarkedLocally && !isBookmarkedApi) {
+          await bookmarkArticleApi(id);
+          localStorage.setItem(localKey, 'true');
+        }
+      });
+
+      await Promise.all(promises);
+      toast.success(`Đã thêm thành công ${selectedIds.length} bài viết vào bộ sưu tập lưu trữ (Bookmarks).`);
+      setSelectedIds([]);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi thêm bài viết vào bộ sưu tập.');
+    }
+  };
+
+  const handleRemoveFromCollection = async () => {
+    if (!user) {
+      toast.warning('Vui lòng đăng nhập để quản lý bộ sưu tập!');
+      navigate('/login');
+      return;
+    }
+
+    if (selectedIds.length === 0) return;
+
+    try {
+      const promises = selectedIds.map(async (id) => {
+        const localKey = `bookmark_${user.username || 'guest'}_${id}`;
+        const isBookmarkedLocally = localStorage.getItem(localKey) === 'true';
+        const articleObj = articles.find(a => a.article_id === id);
+        const isBookmarkedApi = articleObj?.is_bookmarked;
+        
+        if (isBookmarkedLocally || isBookmarkedApi) {
+          await bookmarkArticleApi(id);
+          localStorage.removeItem(localKey);
+        }
+      });
+
+      await Promise.all(promises);
+      toast.success(`Đã xóa thành công ${selectedIds.length} bài viết khỏi bộ sưu tập lưu trữ (Bookmarks).`);
+      setSelectedIds([]);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi xóa bài viết khỏi bộ sưu tập.');
+    }
+  };
 
   // --- State của các tính năng nâng cao (Save Query, Share, Export, Grouping) ---
   const [showSaveQueryModal, setShowSaveQueryModal] = useState(false);
@@ -498,6 +591,246 @@ export default function TrendingVNPage() {
   // Format số lớn (ví dụ: 1,234)
   const fmt = (n) => new Intl.NumberFormat().format(n || 0);
 
+  const renderPublicationDateChart = () => {
+    return (
+      <div className="lens-sidebar-panel bg-white p-3 border rounded h-100">
+        <div className="lens-sidebar-title fw-bold mb-2">{t('publicationDate')}</div>
+        {articles.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            {t('anyTopic')}
+          </div>
+        ) : (
+          <div style={{ paddingTop: '4px' }}>
+            <svg viewBox="0 0 200 100" width="100%" height="110px">
+              <line x1="8" y1="18" x2="192" y2="18" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
+              <line x1="8" y1="38" x2="192" y2="38" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
+              <line x1="8" y1="58" x2="192" y2="58" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
+              {yearCounts.map((item, idx) => {
+                const colWidth = 16;
+                const gap = 6;
+                const x = 14 + idx * (colWidth + gap);
+                const colHeight = maxYearCount > 0 ? (item.count / maxYearCount) * 60 : 0;
+                const y = 78 - colHeight;
+                return (
+                  <g key={item.year}>
+                    <rect
+                      x={x} y={y}
+                      width={colWidth} height={colHeight}
+                      rx="2"
+                      fill="#1976D2"
+                      opacity="0.85"
+                      className="lens-chart-bar"
+                    />
+                    <text x={x + colWidth / 2} y="92" textAnchor="middle" fontSize="6.5" fill="var(--text-muted)">
+                      {item.year}
+                    </text>
+                    {item.count > 0 && (
+                      <text x={x + colWidth / 2} y={y - 3} textAnchor="middle" fontSize="6.5" fontWeight="600" fill="var(--text-main)">
+                        {item.count}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+              <line x1="8" y1="78" x2="192" y2="78" stroke="var(--border)" strokeWidth="1" />
+            </svg>
+          </div>
+        )}
+        <div className="lens-chart-hint mt-2">
+          <Icon icon="lucide:edit-2" width="10" className="me-1" />
+          {t('chartHint')}
+        </div>
+      </div>
+    );
+  };
+
+  const renderLegalStatusChart = () => {
+    return (
+      <div className="lens-sidebar-panel bg-white p-3 border rounded h-100">
+        <div className="lens-sidebar-title fw-bold mb-2">{t('legalStatus')}</div>
+        {articles.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            {t('anyTopic')}
+          </div>
+        ) : (
+          <div style={{ paddingTop: '4px' }}>
+            <svg viewBox="0 0 330 220" width="100%" height="200px">
+              {(() => {
+                const scaleLegalMax = Math.max(5, Math.ceil(maxLegalCount / 5) * 5);
+                const legalTicks = Array.from({ length: 6 }, (_, i) => i * (scaleLegalMax / 5));
+                return legalTicks.map((tickVal) => {
+                  const x = 90 + (tickVal / scaleLegalMax) * 220;
+                  return (
+                    <g key={tickVal}>
+                      <line x1={x} y1={15} x2={x} y2={190} stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
+                      <line x1={x} y1={190} x2={x} y2={194} stroke="var(--border-dark)" strokeWidth="1" />
+                      <text x={x} y={205} textAnchor="middle" fontSize="7.5" fill="var(--text-muted)">{fmt(tickVal)}</text>
+                    </g>
+                  );
+                });
+              })()}
+              <line x1="90" y1={15} x2={90} y2={190} stroke="var(--border-dark)" strokeWidth="1" />
+              <line x1="90" y1={190} x2={310} y2={190} stroke="var(--border-dark)" strokeWidth="1" />
+              {(() => {
+                const scaleLegalMax = Math.max(5, Math.ceil(maxLegalCount / 5) * 5);
+                const yStep = 175 / legalStatusCounts.length;
+                const barHeight = 12;
+                return legalStatusCounts.map((item, idx) => {
+                  const centerOfStep = 15 + (idx + 0.5) * yStep;
+                  const y = centerOfStep - barHeight / 2;
+                  const barWidth = scaleLegalMax > 0 ? (item.count / scaleLegalMax) * 220 : 0;
+                  return (
+                    <g key={item.key}>
+                      <text x={82} y={centerOfStep} textAnchor="end" dominantBaseline="middle" fontSize="7.5" fill="var(--text-muted)" fontWeight="600">{item.label}</text>
+                      <rect x={90} y={y} width={barWidth} height={barHeight} fill={item.color} opacity="0.85" className="lens-chart-bar">
+                        <title>{`${item.label}: ${item.count}`}</title>
+                      </rect>
+                    </g>
+                  );
+                });
+              })()}
+            </svg>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderTopAuthorsChart = () => {
+    return (
+      <div className="lens-sidebar-panel bg-white p-3 border rounded h-100">
+        <div className="lens-sidebar-title fw-bold mb-2">{t('topAuthors')}</div>
+        {authorCounts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            {t('anyTopic')}
+          </div>
+        ) : (
+          <div style={{ position: 'relative', paddingTop: '4px' }}>
+            <svg viewBox="0 0 330 260" width="100%" height="240px">
+              {(() => {
+                const counts = authorCounts.map(item => item.count);
+                const maxVal = Math.max(...counts, 0);
+                const scaleMax = Math.max(5, Math.ceil(maxVal / 5) * 5);
+                const yTicks = Array.from({ length: 6 }, (_, i) => i * (scaleMax / 5));
+                return yTicks.map((tickVal) => {
+                  const y = 175 - (tickVal / scaleMax) * 160;
+                  return (
+                    <g key={tickVal}>
+                      <line x1={45} y1={y} x2={315} y2={y} stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
+                      <line x1={41} y1={y} x2={45} y2={y} stroke="var(--border-dark)" strokeWidth="1" />
+                      <text x={37} y={y} textAnchor="end" dominantBaseline="middle" fontSize="7.5" fill="var(--text-muted)">{fmt(tickVal)}</text>
+                    </g>
+                  );
+                });
+              })()}
+              <line x1={45} y1={15} x2={45} y2={175} stroke="var(--border-dark)" strokeWidth="1" />
+              <line x1={45} y1={175} x2={315} y2={175} stroke="var(--border-dark)" strokeWidth="1" />
+              {(() => {
+                const counts = authorCounts.map(item => item.count);
+                const maxVal = Math.max(...counts, 0);
+                const scaleMax = Math.max(5, Math.ceil(maxVal / 5) * 5);
+                const greenShades = ['#09542c', '#23884f', '#4fae6f', '#78c68e', '#9fd9ae', '#c2ebcc', '#dbf2e3', '#e8f8ed'];
+                const n = authorCounts.length;
+                const colWidth = 270 / n;
+                const gap = colWidth * 0.25;
+                const barWidth = colWidth - gap;
+                return authorCounts.map((item, idx) => {
+                  const x = 45 + idx * colWidth + gap / 2;
+                  const barHeight = scaleMax > 0 ? (item.count / scaleMax) * 160 : 0;
+                  const y = 175 - barHeight;
+                  const color = greenShades[Math.min(idx, greenShades.length - 1)];
+                  return (
+                    <g key={item.name}>
+                      <rect
+                        x={x} y={y} width={barWidth} height={barHeight} fill={color} opacity="0.85" className="lens-chart-bar"
+                        style={{ transition: 'opacity 0.15s ease', cursor: 'pointer' }}
+                        onMouseEnter={() => setActiveTooltip({ name: item.name, count: item.count, x: x + barWidth / 2, y })}
+                        onMouseLeave={() => setActiveTooltip(null)}
+                      />
+                      <text transform={`translate(${x + barWidth / 2}, 183) rotate(90)`} textAnchor="start" dominantBaseline="middle" fontSize="7" fill="var(--text-muted)" fontWeight="600">{item.name}</text>
+                    </g>
+                  );
+                });
+              })()}
+            </svg>
+            {activeTooltip && (
+              <div
+                className="chart-tooltip"
+                style={{
+                  position: 'absolute', left: `${(activeTooltip.x / 330) * 100}%`, top: `${(activeTooltip.y / 260) * 100}%`,
+                  transform: 'translate(-50%, -100%)', marginTop: '-8px', backgroundColor: '#ffffff', border: '1px solid var(--border-dark)',
+                  borderRadius: '4px', padding: '6px 10px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', pointerEvents: 'none', zIndex: 10,
+                  fontSize: '0.68rem', lineHeight: '1.4', whiteSpace: 'nowrap'
+                }}
+              >
+                <div style={{ color: 'var(--text-muted)' }}>
+                  label: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{activeTooltip.name}</span>
+                </div>
+                <div style={{ color: 'var(--text-muted)' }}>
+                  Document Count: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{fmt(activeTooltip.count)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderTopTopicsChart = () => {
+    return (
+      <div className="lens-sidebar-panel bg-white p-3 border rounded h-100">
+        <div className="lens-sidebar-title fw-bold mb-2">{t('topTopics')}</div>
+        {topicCounts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            {t('anyTopic')}
+          </div>
+        ) : (
+          <div className="d-flex align-items-center gap-3 py-1">
+            <div style={{ width: '84px', height: '84px', flexShrink: 0 }}>
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                {donutSlices.map((slice, idx) => {
+                  const pathD = getDonutSlicePath(slice.startAngle, slice.endAngle, 50, 50, 46, 22);
+                  return (
+                    <path
+                      key={idx}
+                      d={pathD}
+                      fill={slice.color}
+                      className="lens-donut-slice"
+                      style={{ transition: 'opacity 0.2s ease', cursor: 'pointer' }}
+                    >
+                      <title>{slice.name}: {slice.count}</title>
+                    </path>
+                  );
+                })}
+              </svg>
+            </div>
+            <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.68rem', lineHeight: '1.4' }}>
+              {donutSlices.map((slice, idx) => (
+                <div key={idx} className="d-flex align-items-start gap-1.5 mb-1">
+                  <span 
+                    style={{ 
+                      width: '7px', 
+                      height: '7px', 
+                      borderRadius: '50%', 
+                      backgroundColor: slice.color, 
+                      display: 'inline-block',
+                      flexShrink: 0,
+                      marginTop: '4px'
+                    }} 
+                  />
+                  <span className="font-medium text-main text-truncate" style={{ maxWidth: '120px' }} title={slice.name}>
+                    {slice.name}
+                  </span>
+                  <span className="text-muted ms-auto" style={{ paddingLeft: '8px', flexShrink: 0 }}>({slice.count})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="trending-vn-page">
@@ -829,103 +1162,106 @@ export default function TrendingVNPage() {
           </div>
         </div>
 
+        {/* --- Tab row: Articles / Explore Citations + Table/List/Analysis --- */}
+        <div className="lens-tab-row">
+          <div className="tab-group">
+            <button className="tab-item active">
+              {t('articles')}
+            </button>
+            <button className="tab-item" disabled>
+              {t('exploreCitations')}
+              <Icon icon="lucide:check-check" width="13" style={{ color: '#16a34a' }} />
+            </button>
+          </div>
+
+          <div className="view-toggles">
+            <button
+              className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+              onClick={() => setViewMode('table')}
+            >
+              <Icon icon="lucide:table" width="13" className="btn-icon" />
+              {t('viewTable')}
+            </button>
+            <button
+              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+            >
+              <Icon icon="lucide:list" width="13" className="btn-icon" />
+              {t('viewList')}
+            </button>
+            <button
+              className={`view-toggle-btn ${viewMode === 'analysis' ? 'active' : ''}`}
+              onClick={() => setViewMode('analysis')}
+            >
+              <Icon icon="lucide:bar-chart-3" width="13" className="btn-icon" />
+              {t('analysis')}
+            </button>
+          </div>
+        </div>
+
         {/* ==================== 5. MAIN CONTENT (LEFT + RIGHT) ==================== */}
         <Row className="g-0">
 
-          {/* ===== CỘT TRÁI: Tabs + Toolbar + Kết quả ===== */}
-          <Col lg={showSidebar ? 8 : 12} md={12} className="transition-col">
-
-            {/* --- Tab row: Articles / Explore Citations + Table/List/Analysis --- */}
-            <div className="lens-tab-row">
-              <div className="tab-group">
-                <button className="tab-item active">
-                  {t('articles')}
-                </button>
-                <button className="tab-item" disabled>
-                  {t('exploreCitations')}
-                  <Icon icon="lucide:check-check" width="13" style={{ color: '#16a34a' }} />
-                </button>
-              </div>
-              <div className="view-toggles">
-                <button
-                  className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
-                  onClick={() => setViewMode('table')}
-                >
-                  <Icon icon="lucide:table" width="13" />
-                  {t('viewTable')}
-                </button>
-                <button
-                  className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
-                  onClick={() => setViewMode('list')}
-                >
-                  <Icon icon="lucide:list" width="13" />
-                  {t('viewList')}
-                </button>
-                <button
-                  className={`view-toggle-btn ${showSidebar ? 'active' : ''}`}
-                  onClick={() => setShowSidebar(!showSidebar)}
-                >
-                  <Icon icon="lucide:bar-chart-3" width="13" />
-                  {t('analysis')}
-                </button>
-              </div>
-            </div>
+          {/* ===== CỘT TRÁI: Toolbar + Kết quả ===== */}
+          <Col lg={(viewMode !== 'analysis' && showSidebar) ? 8 : 12} md={12} className="transition-col">
 
             {/* --- Action toolbar: Expand, Customise, Save, Share, Export, Sort --- */}
-            <div className="lens-action-toolbar">
-              <div className="action-group">
-                <button className="lens-action-btn" onClick={handleToggleAllAbstracts}>
-                  <Icon icon={allExpanded ? "lucide:chevron-up" : "lucide:chevron-down"} width="12" />
-                  {allExpanded ? t('collapseAbstract') : t('expand')}
-                </button>
-                <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                <button className="lens-action-btn" onClick={() => setShowCustomise(!showCustomise)}>
-                  <Icon icon="lucide:list-checks" width="12" />
-                  {t('customiseList')}
-                </button>
-                <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                <button className="lens-action-btn" onClick={() => setShowSaveQueryModal(true)}>
-                  <Icon icon="lucide:save" width="12" />
-                  {t('saveAsQuery')}
-                </button>
-                <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                <button className="lens-action-btn" onClick={() => setShowShareModal(true)}>
-                  <Icon icon="lucide:share-2" width="12" />
-                  {t('share')}
-                </button>
-                <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                <button className="lens-action-btn" onClick={() => setShowExportModal(true)}>
-                  <Icon icon="lucide:download" width="12" />
-                  {t('export')}
-                </button>
-                <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                <button className="lens-action-btn" disabled>
-                  <Icon icon="lucide:sparkles" width="12" />
-                  {t('analysisPreviewOptions')}
-                  <Badge bg="warning" text="dark" style={{ fontSize: '0.58rem', padding: '1px 4px', marginLeft: '3px' }}>{t('badgeNew')}</Badge>
-                </button>
-              </div>
+            {viewMode !== 'analysis' && (
+              <div className="lens-action-toolbar">
+                <div className="action-group">
+                  <button className="lens-action-btn" onClick={handleToggleAllAbstracts}>
+                    <Icon icon={allExpanded ? "lucide:chevron-up" : "lucide:chevron-down"} width="12" />
+                    {allExpanded ? t('collapseAbstract') : t('expand')}
+                  </button>
+                  <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+                  <button className="lens-action-btn" onClick={() => setShowCustomise(!showCustomise)}>
+                    <Icon icon="lucide:list-checks" width="12" />
+                    {t('customiseList')}
+                  </button>
+                  <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+                  <button className="lens-action-btn" onClick={() => setShowSaveQueryModal(true)}>
+                    <Icon icon="lucide:save" width="12" />
+                    {t('saveAsQuery')}
+                  </button>
+                  <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+                  <button className="lens-action-btn" onClick={() => setShowShareModal(true)}>
+                    <Icon icon="lucide:share-2" width="12" />
+                    {t('share')}
+                  </button>
+                  <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+                  <button className="lens-action-btn" onClick={() => setShowExportModal(true)}>
+                    <Icon icon="lucide:download" width="12" />
+                    {t('export')}
+                  </button>
+                  <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+                  <button className="lens-action-btn" disabled>
+                    <Icon icon="lucide:sparkles" width="12" />
+                    {t('analysisPreviewOptions')}
+                    <Badge bg="warning" text="dark" style={{ fontSize: '0.58rem', padding: '1px 4px', marginLeft: '3px' }}>{t('badgeNew')}</Badge>
+                  </button>
+                </div>
 
-              {/* Sort dropdown */}
-              <div className="d-flex align-items-center gap-2">
-                <Icon icon="lucide:arrow-up-down" width="12" className="text-muted" />
-                <select
-                  className="lens-sort-select"
-                  value={`${filters.sortBy}-${filters.sortOrder}`}
-                  onChange={(e) => {
-                    const [sortBy, sortOrder] = e.target.value.split('-');
-                    updateFilters({ sortBy, sortOrder });
-                  }}
-                >
-                  <option value="created_at-desc">{t('sortDateNewest')}</option>
-                  <option value="created_at-asc">{t('sortDateOldest')}</option>
-                  <option value="title-asc">{t('sortTitleAsc')}</option>
-                  <option value="title-desc">{t('sortTitleDesc')}</option>
-                  <option value="publication_year-desc">{t('sortYearDesc')}</option>
-                  <option value="publication_year-asc">{t('sortYearAsc')}</option>
-                </select>
+                {/* Sort dropdown */}
+                <div className="d-flex align-items-center gap-2">
+                  <Icon icon="lucide:arrow-up-down" width="12" className="text-muted" />
+                  <select
+                    className="lens-sort-select"
+                    value={`${filters.sortBy}-${filters.sortOrder}`}
+                    onChange={(e) => {
+                      const [sortBy, sortOrder] = e.target.value.split('-');
+                      updateFilters({ sortBy, sortOrder });
+                    }}
+                  >
+                    <option value="created_at-desc">{t('sortDateNewest')}</option>
+                    <option value="created_at-asc">{t('sortDateOldest')}</option>
+                    <option value="title-asc">{t('sortTitleAsc')}</option>
+                    <option value="title-desc">{t('sortTitleDesc')}</option>
+                    <option value="publication_year-desc">{t('sortYearDesc')}</option>
+                    <option value="publication_year-asc">{t('sortYearAsc')}</option>
+                  </select>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* --- Panel Customise Your Results View --- */}
             {/* Hiện khi bấm nút "Customise List", chứa 6 checkbox */}
@@ -977,31 +1313,6 @@ export default function TrendingVNPage() {
                 )}
               </div>
             )}
-
-            {/* ==================== SEARCH BAR ==================== */}
-            <div>
-              <Form onSubmit={handleSearchSubmit}>
-                <div className="lens-search-group">
-                  <span className="d-flex align-items-center ps-3 pe-0" style={{ background: 'transparent' }}>
-                    <Icon icon="lucide:search" width="16" className="text-muted" />
-                  </span>
-                  <Form.Control
-                    placeholder={t('searchPlaceholder')}
-                    value={localSearchInput}
-                    onChange={(e) => setLocalSearchInput(e.target.value)}
-                    className="lens-search-input"
-                  />
-                  {localSearchInput && (
-                    <Button variant="link" className="pe-2 text-muted" onClick={handleClearSearch}>
-                      <Icon icon="lucide:x" width="14" />
-                    </Button>
-                  )}
-                  <Button type="submit" className="lens-search-btn">
-                    {t('search')}
-                  </Button>
-                </div>
-              </Form>
-            </div>
 
             {/* ==================== ARTICLE RESULTS ==================== */}
             <div className="lens-results-body">
@@ -1091,20 +1402,81 @@ export default function TrendingVNPage() {
                   ))
                   )}
                 </div>
-              ) : (
+              ) : viewMode === 'table' ? (
                 /* ===== CHẾ ĐỘ TABLE ===== */
                 <div className="bg-white border overflow-hidden">
+                  {selectedIds.length > 0 && (
+                    <div 
+                      className="lens-selection-toolbar d-flex align-items-center gap-4 px-3 py-2 border-bottom" 
+                      style={{ backgroundColor: '#f8fafc' }}
+                    >
+                      <button 
+                        className="btn btn-link text-decoration-none text-main d-flex align-items-center gap-1.5 p-0 text-xs font-weight-medium" 
+                        onClick={handleCreateCollection}
+                      >
+                        <Icon icon="lucide:folder-plus" className="text-primary" width="15" />
+                        <span>Create Collection</span>
+                      </button>
+                      <button 
+                        className="btn btn-link text-decoration-none text-main d-flex align-items-center gap-1.5 p-0 text-xs font-weight-medium" 
+                        onClick={handleAddToCollection}
+                      >
+                        <Icon icon="lucide:plus-circle" className="text-success" width="15" />
+                        <span>Add to Collection</span>
+                      </button>
+                      <button 
+                        className="btn btn-link text-decoration-none text-main d-flex align-items-center gap-1.5 p-0 text-xs font-weight-medium" 
+                        onClick={handleRemoveFromCollection}
+                      >
+                        <Icon icon="lucide:minus-circle" className="text-danger" width="15" />
+                        <span>Remove from Collection</span>
+                      </button>
+                      <button 
+                        className="btn btn-link text-decoration-none text-main d-flex align-items-center gap-1.5 p-0 text-xs font-weight-medium ms-auto" 
+                        onClick={() => setSelectedIds([])}
+                      >
+                        <Icon icon="lucide:x-circle" className="text-muted" width="15" />
+                        <span>Clear Selection</span>
+                      </button>
+                    </div>
+                  )}
                   <ArticleTable
                     articles={articles}
                     isLoading={isLoading}
                     onDetailClick={handleDetailClick}
                     onClearFilters={clearFilters}
+                    selectedIds={selectedIds}
+                    onSelectRow={handleSelectRow}
+                    onSelectAll={handleSelectAll}
                   />
+                </div>
+              ) : (
+                /* ===== CHẾ ĐỘ ANALYSIS: Hiển thị các biểu đồ full width dạng bento grid ===== */
+                <div className="lens-analysis-dashboard">
+                  <Row className="g-3">
+                    <Col lg={6} md={12}>
+                      <div className="lens-sidebar-panel bg-white p-3 border rounded h-100">
+                        <PublisherGrid />
+                      </div>
+                    </Col>
+                    <Col lg={6} md={12}>
+                      {renderPublicationDateChart()}
+                    </Col>
+                    <Col lg={6} md={12}>
+                      {renderLegalStatusChart()}
+                    </Col>
+                    <Col lg={6} md={12}>
+                      {renderTopAuthorsChart()}
+                    </Col>
+                    <Col lg={12} md={12}>
+                      {renderTopTopicsChart()}
+                    </Col>
+                  </Row>
                 </div>
               )}
 
               {/* Phân trang */}
-              {totalPages > 1 && !isLoading && (
+              {viewMode !== 'analysis' && totalPages > 1 && !isLoading && (
                 <div className="lens-pagination-row">
                   <AdminPagination
                     totalItems={total}
@@ -1119,371 +1491,48 @@ export default function TrendingVNPage() {
           </Col>
 
           {/* ===== CỘT PHẢI: Sidebar phân tích (ẩn/hiện bằng nút Analysis) ===== */}
-          {showSidebar && (
+          {viewMode !== 'analysis' && showSidebar && (
             <Col lg={4} md={12} className="lens-sidebar-col">
+              {/* Search Bar (directly under view toggles, above Nhà xuất bản chính xác) */}
+              <div className="lens-sidebar-search-container mb-3">
+                <Form onSubmit={handleSearchSubmit}>
+                  <div className="lens-sidebar-search">
+                    <span className="d-flex align-items-center ps-2 pe-1" style={{ background: 'transparent' }}>
+                      <Icon icon="lucide:search" width="15" className="text-muted" />
+                    </span>
+                    <input
+                      type="text"
+                      className="lens-sidebar-search-input"
+                      placeholder={t('searchPlaceholder')}
+                      value={localSearchInput}
+                      onChange={(e) => setLocalSearchInput(e.target.value)}
+                    />
+                    {localSearchInput && (
+                      <button
+                        type="button"
+                        className="lens-sidebar-search-clear"
+                        onClick={handleClearSearch}
+                        aria-label="Clear"
+                      >
+                        <Icon icon="lucide:x" width="12" />
+                      </button>
+                    )}
+                    <button type="submit" className="lens-sidebar-search-btn">
+                      {t('search')}
+                    </button>
+                  </div>
+                </Form>
+              </div>
 
               {/* --- Panel 1: Applicant Name Exact (lưới nhà xuất bản) --- */}
               <div className="lens-sidebar-panel">
                 <PublisherGrid />
               </div>
 
-              {/* --- Panel 2: Publication Date (biểu đồ cột theo năm) --- */}
-              <div className="lens-sidebar-panel">
-                <div className="lens-sidebar-title">{t('publicationDate')}</div>
-                {articles.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {t('anyTopic')}
-                  </div>
-                ) : (
-                  <div style={{ paddingTop: '4px' }}>
-                    <svg viewBox="0 0 200 100" width="100%" height="110px">
-                      {/* Elegant background grid lines */}
-                      <line x1="8" y1="18" x2="192" y2="18" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
-                      <line x1="8" y1="38" x2="192" y2="38" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
-                      <line x1="8" y1="58" x2="192" y2="58" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
-
-                      {yearCounts.map((item, idx) => {
-                        const colWidth = 16;
-                        const gap = 6;
-                        const x = 14 + idx * (colWidth + gap);
-                        const colHeight = maxYearCount > 0 ? (item.count / maxYearCount) * 60 : 0;
-                        const y = 78 - colHeight;
-                        return (
-                          <g key={item.year}>
-                            <rect
-                              x={x} y={y}
-                              width={colWidth} height={colHeight}
-                              rx="2"
-                              fill="#1976D2"
-                              opacity="0.85"
-                              className="lens-chart-bar"
-                            />
-                            <text x={x + colWidth / 2} y="92" textAnchor="middle" fontSize="6.5" fill="var(--text-muted)">
-                              {item.year}
-                            </text>
-                            {item.count > 0 && (
-                              <text x={x + colWidth / 2} y={y - 3} textAnchor="middle" fontSize="6.5" fontWeight="600" fill="var(--text-main)">
-                                {item.count}
-                              </text>
-                            )}
-                          </g>
-                        );
-                      })}
-                      <line x1="8" y1="78" x2="192" y2="78" stroke="var(--border)" strokeWidth="1" />
-                    </svg>
-                  </div>
-                )}
-                <div className="lens-chart-hint">
-                  <Icon icon="lucide:edit-2" width="10" className="me-1" />
-                  {t('chartHint')}
-                </div>
-              </div>
-
-              {/* --- Panel 2.5: Legal Status (Biểu đồ ngang trạng thái pháp lý) --- */}
-              <div className="lens-sidebar-panel">
-                <div className="lens-sidebar-title">{t('legalStatus')}</div>
-                {articles.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {t('anyTopic')}
-                  </div>
-                ) : (
-                  <div style={{ paddingTop: '4px' }}>
-                    <svg viewBox="0 0 330 220" width="100%" height="200px">
-                      {/* Grid lines and Tick labels */}
-                      {(() => {
-                        const scaleLegalMax = Math.max(5, Math.ceil(maxLegalCount / 5) * 5);
-                        const legalTicks = Array.from({ length: 6 }, (_, i) => i * (scaleLegalMax / 5));
-                        return legalTicks.map((tickVal) => {
-                          const x = 90 + (tickVal / scaleLegalMax) * 220;
-                          return (
-                            <g key={tickVal}>
-                              {/* Dotted vertical grid lines */}
-                              <line
-                                x1={x}
-                                y1={15}
-                                x2={x}
-                                y2={190}
-                                stroke="var(--border)"
-                                strokeWidth="0.5"
-                                strokeDasharray="3 3"
-                                opacity="0.6"
-                              />
-                              {/* Tick marks at X-axis */}
-                              <line
-                                x1={x}
-                                y1={190}
-                                x2={x}
-                                y2={194}
-                                stroke="var(--border-dark)"
-                                strokeWidth="1"
-                              />
-                              {/* Tick numbers */}
-                              <text
-                                x={x}
-                                y={205}
-                                textAnchor="middle"
-                                fontSize="7.5"
-                                fill="var(--text-muted)"
-                              >
-                                {fmt(tickVal)}
-                              </text>
-                            </g>
-                          );
-                        });
-                      })()}
-
-                      {/* X and Y axes lines */}
-                      <line x1={90} y1={15} x2={90} y2={190} stroke="var(--border-dark)" strokeWidth="1" />
-                      <line x1={90} y1={190} x2={310} y2={190} stroke="var(--border-dark)" strokeWidth="1" />
-
-                      {/* Horizontal Bars & Y-axis labels */}
-                      {(() => {
-                        const scaleLegalMax = Math.max(5, Math.ceil(maxLegalCount / 5) * 5);
-                        const yStep = 175 / legalStatusCounts.length;
-                        const barHeight = 12;
-
-                        return legalStatusCounts.map((item, idx) => {
-                          const centerOfStep = 15 + (idx + 0.5) * yStep;
-                          const y = centerOfStep - barHeight / 2;
-                          const barWidth = scaleLegalMax > 0 ? (item.count / scaleLegalMax) * 220 : 0;
-
-                          return (
-                            <g key={item.key}>
-                              {/* Label on the left of Y-axis */}
-                              <text
-                                x={82}
-                                y={centerOfStep}
-                                textAnchor="end"
-                                dominantBaseline="middle"
-                                fontSize="7.5"
-                                fill="var(--text-muted)"
-                                fontWeight="600"
-                              >
-                                {item.label}
-                              </text>
-                              {/* Bar */}
-                              <rect
-                                x={90}
-                                y={y}
-                                width={barWidth}
-                                height={barHeight}
-                                fill={item.color}
-                                opacity="0.85"
-                                className="lens-chart-bar"
-                              >
-                                <title>{`${item.label}: ${item.count}`}</title>
-                              </rect>
-                            </g>
-                          );
-                        });
-                      })()}
-                    </svg>
-                  </div>
-                )}
-              </div>
-
-              {/* --- Panel 3: Top Authors (biểu đồ ô - mô phỏng bento grid) --- */}
-              <div className="lens-sidebar-panel">
-                <div className="lens-sidebar-title">{t('topAuthors')}</div>
-                {authorCounts.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {t('anyTopic')}
-                  </div>
-                ) : (
-                  <div style={{ position: 'relative', paddingTop: '4px' }}>
-                    <svg viewBox="0 0 330 260" width="100%" height="240px">
-                      {/* Grid lines and Tick labels on Y-axis */}
-                      {(() => {
-                        const counts = authorCounts.map(item => item.count);
-                        const maxVal = Math.max(...counts, 0);
-                        const scaleMax = Math.max(5, Math.ceil(maxVal / 5) * 5);
-                        const yTicks = Array.from({ length: 6 }, (_, i) => i * (scaleMax / 5));
-
-                        return yTicks.map((tickVal) => {
-                          const y = 175 - (tickVal / scaleMax) * 160;
-                          return (
-                            <g key={tickVal}>
-                              {/* Horizontal dotted grid lines */}
-                              <line
-                                x1={45}
-                                y1={y}
-                                x2={315}
-                                y2={y}
-                                stroke="var(--border)"
-                                strokeWidth="0.5"
-                                strokeDasharray="3 3"
-                                opacity="0.6"
-                              />
-                              {/* Y-axis tick mark line */}
-                              <line
-                                x1={41}
-                                y1={y}
-                                x2={45}
-                                y2={y}
-                                stroke="var(--border-dark)"
-                                strokeWidth="1"
-                              />
-                              {/* Y-axis tick labels */}
-                              <text
-                                x={37}
-                                y={y}
-                                textAnchor="end"
-                                dominantBaseline="middle"
-                                fontSize="7.5"
-                                fill="var(--text-muted)"
-                              >
-                                {fmt(tickVal)}
-                              </text>
-                            </g>
-                          );
-                        });
-                      })()}
-
-                      {/* X and Y axes lines */}
-                      <line x1={45} y1={15} x2={45} y2={175} stroke="var(--border-dark)" strokeWidth="1" />
-                      <line x1={45} y1={175} x2={315} y2={175} stroke="var(--border-dark)" strokeWidth="1" />
-
-                      {/* Bars & X-axis rotated labels */}
-                      {(() => {
-                        const counts = authorCounts.map(item => item.count);
-                        const maxVal = Math.max(...counts, 0);
-                        const scaleMax = Math.max(5, Math.ceil(maxVal / 5) * 5);
-                        const greenShades = ['#09542c', '#23884f', '#4fae6f', '#78c68e', '#9fd9ae', '#c2ebcc', '#dbf2e3', '#e8f8ed'];
-                        
-                        const n = authorCounts.length;
-                        const colWidth = 270 / n;
-                        const gap = colWidth * 0.25;
-                        const barWidth = colWidth - gap;
-
-                        return authorCounts.map((item, idx) => {
-                          const x = 45 + idx * colWidth + gap / 2;
-                          const barHeight = scaleMax > 0 ? (item.count / scaleMax) * 160 : 0;
-                          const y = 175 - barHeight;
-                          const color = greenShades[Math.min(idx, greenShades.length - 1)];
-
-                          return (
-                            <g key={item.name}>
-                              {/* Bar */}
-                              <rect
-                                x={x}
-                                y={y}
-                                width={barWidth}
-                                height={barHeight}
-                                fill={color}
-                                opacity="0.85"
-                                className="lens-chart-bar"
-                                style={{ transition: 'opacity 0.15s ease', cursor: 'pointer' }}
-                                onMouseEnter={() => setActiveTooltip({
-                                  name: item.name,
-                                  count: item.count,
-                                  x: x + barWidth / 2,
-                                  y: y
-                                })}
-                                onMouseLeave={() => setActiveTooltip(null)}
-                              />
-                              {/* Rotated text label */}
-                              <text
-                                transform={`translate(${x + barWidth / 2}, 183) rotate(90)`}
-                                textAnchor="start"
-                                dominantBaseline="middle"
-                                fontSize="7"
-                                fill="var(--text-muted)"
-                                fontWeight="600"
-                              >
-                                {item.name}
-                              </text>
-                            </g>
-                          );
-                        });
-                      })()}
-                    </svg>
-
-                    {/* Tooltip Overlay */}
-                    {activeTooltip && (
-                      <div
-                        className="chart-tooltip"
-                        style={{
-                          position: 'absolute',
-                          left: `${(activeTooltip.x / 330) * 100}%`,
-                          top: `${(activeTooltip.y / 260) * 100}%`,
-                          transform: 'translate(-50%, -100%)',
-                          marginTop: '-8px',
-                          backgroundColor: '#ffffff',
-                          border: '1px solid var(--border-dark)',
-                          borderRadius: '4px',
-                          padding: '6px 10px',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                          pointerEvents: 'none',
-                          zIndex: 10,
-                          fontSize: '0.68rem',
-                          lineHeight: '1.4',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        <div style={{ color: 'var(--text-muted)' }}>
-                          label: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{activeTooltip.name}</span>
-                        </div>
-                        <div style={{ color: 'var(--text-muted)' }}>
-                          Document Count: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{fmt(activeTooltip.count)}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* --- Panel 5: Top Topics (biểu đồ hình tròn donut - mô phỏng Document Types) --- */}
-              <div className="lens-sidebar-panel">
-                <div className="lens-sidebar-title">{t('topTopics')}</div>
-                {topicCounts.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {t('anyTopic')}
-                  </div>
-                ) : (
-                  <div className="d-flex align-items-center gap-3 py-1">
-                    <div style={{ width: '84px', height: '84px', flexShrink: 0 }}>
-                      <svg viewBox="0 0 100 100" width="100%" height="100%">
-                        {donutSlices.map((slice, idx) => {
-                          const pathD = getDonutSlicePath(slice.startAngle, slice.endAngle, 50, 50, 46, 22);
-                          return (
-                            <path
-                              key={idx}
-                              d={pathD}
-                              fill={slice.color}
-                              className="lens-donut-slice"
-                              style={{ transition: 'opacity 0.2s ease', cursor: 'pointer' }}
-                            >
-                              <title>{slice.name}: {slice.count}</title>
-                            </path>
-                          );
-                        })}
-                      </svg>
-                    </div>
-                    <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.68rem', lineHeight: '1.4' }}>
-                      {donutSlices.map((slice, idx) => (
-                        <div key={idx} className="d-flex align-items-start gap-1.5 mb-1">
-                          <span 
-                            style={{ 
-                              width: '7px', 
-                              height: '7px', 
-                              borderRadius: '50%', 
-                              backgroundColor: slice.color, 
-                              display: 'inline-block',
-                              flexShrink: 0,
-                              marginTop: '4px'
-                            }} 
-                          />
-                          <span className="font-medium text-main" title={slice.name}>
-                            {slice.name}
-                          </span>
-                          <span className="text-muted ms-auto" style={{ paddingLeft: '8px', flexShrink: 0 }}>({slice.count})</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
+              {renderPublicationDateChart()}
+              {renderLegalStatusChart()}
+              {renderTopAuthorsChart()}
+              {renderTopTopicsChart()}
             </Col>
           )}
         </Row>

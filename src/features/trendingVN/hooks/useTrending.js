@@ -18,6 +18,12 @@ import {
   getArticlesApi,
   getTopicsApi,
   getJournalsApi,
+  getTopJournalsTrendingApi,
+  getTopUniversitiesTrendingApi,
+  getUniversityRankingsApi,
+  getAuthorRankingsApi,
+  getTrendingArticlesApi,
+  getTrendingKeywordsApi,
   getAuthorsLeaderboardApi,
   getSubjectAreasApi,
   getSubjectCategoriesApi,
@@ -79,6 +85,10 @@ export default function useTrending() {
   // ─── State: Keywords & Universities ──────────────────────────────────────
   const [keywords, setKeywords] = useState([]);
   const [universities, setUniversities] = useState([]);
+
+  // ─── State: Trending Articles (dung cho treemap) ─────────────────────────
+  const [trendingArticles, setTrendingArticles] = useState([]);
+  const [trendingArticlesLoading, setTrendingArticlesLoading] = useState(false);
 
   // ─── State: Bộ lọc draft vs applied ─────────────────────────────────────
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
@@ -155,21 +165,17 @@ export default function useTrending() {
   }, []);
 
   // ─── Fetch: Danh sách tạp chí ────────────────────────────────────────────
+  // ─── Fetch: Top Journals theo trich dan (trending-vn endpoint) ──────────
   const fetchJournals = useCallback(async () => {
     setJournalsLoading(true);
     setJournalsError(null);
     try {
-      const res = await getJournalsApi({ page: 1, limit: 10 });
-      const resData = res?.data?.data || {};
-
+      const res = await getTopJournalsTrendingApi({ years: 2, limit: 7 });
+      // BE tra ve: { success, data: { window: {...}, items: [...] } }
+      const resData = res?.data?.data || res?.data || {};
       setJournals(resData.items || []);
-      const pagination = resData.pagination || {};
-      setStats((prev) => ({
-        ...prev,
-        total_journals: pagination.total || 0,
-      }));
     } catch (err) {
-      console.error('Lỗi khi lấy danh sách tạp chí:', err);
+      console.error('Lỗi khi lấy top journals:', err);
       setJournalsError('Không thể tải danh sách tạp chí.');
     } finally {
       setJournalsLoading(false);
@@ -177,47 +183,18 @@ export default function useTrending() {
   }, []);
 
   // ─── Fetch: Bảng xếp hạng tác giả ───────────────────────────────────────
+  // Endpoint: GET /api/v1/trending-vn/ranking/authors
+  // Xep hang theo h_index + cited_by_count toan bo lich su
+  // Fields: author_id, display_name, last_known_institution,
+  //         h_index, cited_by_count, works_count, local_articles_count
   const fetchAuthors = useCallback(async () => {
     setAuthorsLoading(true);
     setAuthorsError(null);
     try {
-      const res = await getAuthorsLeaderboardApi({ page: 1, limit: 10 });
-
-      // Author leaderboard API trả về data là array trực tiếp
-      const resData = res?.data?.data || [];
-      const authorList = Array.isArray(resData) ? resData : [];
-      setAuthors(authorList);
-
-      // Extract Top Universities from authors
-      const uniMap = {};
-      authorList.forEach(author => {
-        const inst = author.last_known_institution;
-        if (inst) {
-          if (!uniMap[inst]) {
-            uniMap[inst] = { name: inst, papers: 0, cites: 0 };
-          }
-          uniMap[inst].papers += author.works_count || 0;
-          uniMap[inst].cites += author.cited_by_count || 0;
-        }
-      });
-      const uniList = Object.values(uniMap)
-        .sort((a, b) => b.cites - a.cites)
-        .slice(0, 6)
-        .map((u, i) => {
-          // simple shortname generation
-          const parts = u.name.split(' ');
-          let shortName = parts.length > 1 ? parts.map(w => w[0]).join('').substring(0, 4).toUpperCase() : u.name.substring(0, 4).toUpperCase();
-          if (u.name.toLowerCase().includes('university')) shortName = 'UNIV';
-          if (u.name.toLowerCase().includes('institute')) shortName = 'INST';
-          return {
-            id: i + 1,
-            name: u.name,
-            shortName: shortName,
-            papers: u.papers,
-            cites: u.cites >= 1000 ? (u.cites / 1000).toFixed(1) + 'K' : u.cites
-          };
-        });
-      setUniversities(uniList);
+      const res = await getAuthorRankingsApi({ limit: 5 });
+      const resData = res?.data?.data || res?.data || {};
+      const items = resData.items || [];
+      setAuthors(Array.isArray(items) ? items : []);
     } catch (err) {
       console.error('Lỗi khi lấy bảng xếp hạng tác giả:', err);
       setAuthorsError('Không thể tải bảng xếp hạng tác giả.');
@@ -226,14 +203,80 @@ export default function useTrending() {
     }
   }, []);
 
-  // ─── Fetch: Keywords ─────────────────────────────────────────────────────
+  // ─── Fetch: Top Universities theo ranking toan bo lich su ────────────────
+  // Endpoint: GET /api/v1/trending-vn/ranking/universities
+  // Khong gioi han nam, join truc tiep Article → Author → institution
+  // Fields: institution_name, institution_id, total_citations, total_articles_count
+  const fetchUniversities = useCallback(async () => {
+    try {
+      const res = await getUniversityRankingsApi({ limit: 6 });
+      const resData = res?.data?.data || res?.data || {};
+      const items = resData.items || [];
+
+      const uniList = items.map((u, i) => {
+        const words = (u.institution_name || '').split(' ').filter(Boolean);
+        const shortName = words.length > 1
+          ? words.map((w) => w[0]).join('').substring(0, 5).toUpperCase()
+          : (u.institution_name || '').substring(0, 4).toUpperCase();
+
+        const cites = u.total_citations || 0;
+        return {
+          id: u.institution_id || i + 1,
+          name: u.institution_name || '',
+          shortName,
+          papers: u.total_articles_count || 0,
+          cites: cites >= 1000
+            ? (cites / 1000).toFixed(1) + 'K'
+            : String(cites),
+        };
+      });
+      setUniversities(uniList);
+    } catch (err) {
+      console.error('Lỗi khi lấy top universities:', err);
+    }
+  }, []);
+
+  // ─── Fetch: Keywords theo trending (topic hot + article_count + citations) ─
+  // Endpoint: GET /api/v1/trending-vn/trending/keywords
+  // Fields: keyword_id, display_name, article_count, total_citations
+  // Fallback: GET /api/v1/keywords neu endpoint moi chua co
   const fetchKeywords = useCallback(async () => {
     try {
-      const res = await getKeywordsApi({ limit: 10, sort_by: 'article_count', sort_order: 'desc' });
-      const resData = res?.data?.data || [];
-      setKeywords(Array.isArray(resData) ? resData : (resData.items || []));
+      const res = await getTrendingKeywordsApi({ limit: 7, hot_limit: 10 });
+      const resData = res?.data?.data || res?.data || {};
+      const items = resData.items || [];
+      if (items.length > 0) {
+        setKeywords(items);
+        return;
+      }
+      // Fallback neu items rong
+      throw new Error('empty');
+    } catch {
+      try {
+        const res = await getKeywordsApi({ limit: 7, sort_by: 'article_count', sort_order: 'desc' });
+        const resData = res?.data?.data || [];
+        setKeywords(Array.isArray(resData) ? resData : (resData.items || []));
+      } catch (err) {
+        console.error('Lỗi khi lấy từ khóa:', err);
+      }
+    }
+  }, []);
+
+  // ─── Fetch: Trending Articles cho treemap ────────────────────────────────
+  // Endpoint: GET /api/v1/trending-vn/trending/articles
+  // Xep hang theo trending_score = citation*3 + keyword_match*2 + topic_match*2
+  //                               + citing_works*2 + references*0.5
+  // Fields: article_id, title, citation_count, trending_score, journal_name
+  const fetchTrendingArticles = useCallback(async () => {
+    setTrendingArticlesLoading(true);
+    try {
+      const res = await getTrendingArticlesApi({ years: 2, limit: 6, hot_limit: 10 });
+      const resData = res?.data?.data || res?.data || {};
+      setTrendingArticles(resData.items || []);
     } catch (err) {
-      console.error('Lỗi khi lấy từ khóa:', err);
+      console.error('Lỗi khi lấy trending articles:', err);
+    } finally {
+      setTrendingArticlesLoading(false);
     }
   }, []);
 
@@ -265,9 +308,11 @@ export default function useTrending() {
     fetchTopics();
     fetchJournals();
     fetchAuthors();
+    fetchUniversities();
     fetchKeywords();
+    fetchTrendingArticles();
     fetchArticles(DEFAULT_FILTERS, 1);
-  }, [fetchFilterOptions, fetchTopics, fetchJournals, fetchAuthors, fetchKeywords, fetchArticles]);
+  }, [fetchFilterOptions, fetchTopics, fetchJournals, fetchAuthors, fetchUniversities, fetchKeywords, fetchTrendingArticles, fetchArticles]);
 
   // ─── Effect: Refetch articles khi appliedFilters hoặc currentPage thay đổi
   useEffect(() => {
@@ -330,6 +375,10 @@ export default function useTrending() {
 
     // Keywords
     keywords,
+
+    // Trending Articles (cho treemap)
+    trendingArticles,
+    trendingArticlesLoading,
 
     // Stat cards
     stats,

@@ -14,6 +14,7 @@
  * - loading: boolean  -- Dang tai du lieu
  */
 
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../../shared/components/Icon';
 import './TopAuthorsList.css';
 
@@ -64,6 +65,7 @@ function AuthorAvatar({ urlImage, displayName }) {
 }
 
 export default function TopAuthorsList({ authors = [], loading = false }) {
+  const { t } = useTranslation();
 
   // ── Skeleton ─────────────────────────────────────────────────────────────
   if (loading) {
@@ -96,7 +98,7 @@ export default function TopAuthorsList({ authors = [], loading = false }) {
         const cited = author.cited_by_count || 0;
         const score = calcScore(cited, maxCited);
         const barPct = (cited / maxCited) * 100;
-        const rank = author.final_rank || i + 1;
+        const rank = author.rank || author.final_rank || i + 1;
 
         // University badge — dung initials ten tac gia lam placeholder
         // khi BE co field last_known_institution thi thay vao day
@@ -125,7 +127,7 @@ export default function TopAuthorsList({ authors = [], loading = false }) {
                 <span
                   className="tal-uni-badge"
                   style={{ backgroundColor: uniColor.bg, color: uniColor.text }}
-                  title={uniName || 'University'}
+                  title={uniName || t('topUniversitiesTitle')}
                 >
                   {uniBadgeText}
                 </span>

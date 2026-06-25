@@ -276,6 +276,7 @@
   "application": "Application",
   "priority": "Priority",
 
+  "others": "Others",
   "trendingPageTitle": "Trending",
   "trendingPageSubtitle": "Discover fast-rising publications from Vietnamese universities based on citation growth, views, downloads, and research momentum.",
   "trendingArticlesLabel": "Trending Articles",
@@ -301,8 +302,8 @@
   "topUniversitiesTitle": "Top Universities",
   "topUniversitiesSubtitle": "Most active universities by publication count",
   "topUniversitiesTrendingBadge": "Trending Papers",
-  "topArticlesByTopic": "Top Articles by Research Topic",
-  "topArticlesTopicSubtitle": "Topic distribution by citation score",
+  "topArticlesByTopic": "Top Articles by Citations",
+  "topArticlesTopicSubtitle": "Most cited articles ranked by citation count",
   "topAuthorsRanking": "Top Authors Influence Ranking",
   "topAuthorsSubtitle": "Authors ranked by research influence score",
   "keywordMomentumTitle": "Keyword Momentum Cloud",

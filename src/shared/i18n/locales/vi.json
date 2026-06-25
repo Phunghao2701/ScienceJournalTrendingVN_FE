@@ -276,6 +276,7 @@
   "application": "Nộp đơn",
   "priority": "Ưu tiên",
 
+  "others": "Các bài khác",
   "trendingPageTitle": "Xu hướng",
   "trendingPageSubtitle": "Khám phá các bài báo tăng trưởng nhanh từ các trường đại học Việt Nam dựa trên mức tăng trích dẫn, lượt xem, lượt tải và xu hướng nghiên cứu.",
   "trendingArticlesLabel": "Bài báo thịnh hành",
@@ -301,8 +302,8 @@
   "topUniversitiesTitle": "Top Trường Đại học",
   "topUniversitiesSubtitle": "Các trường hoạt động nhất theo số lượng bài báo",
   "topUniversitiesTrendingBadge": "Bài báo thịnh hành",
-  "topArticlesByTopic": "Bài báo nổi bật theo Chủ đề",
-  "topArticlesTopicSubtitle": "Phân bổ chủ đề theo điểm trích dẫn",
+  "topArticlesByTopic": "Bài báo nổi bật theo Trích dẫn",
+  "topArticlesTopicSubtitle": "Các bài báo được trích dẫn nhiều nhất",
   "topAuthorsRanking": "Bảng xếp hạng Tác giả ảnh hưởng",
   "topAuthorsSubtitle": "Tác giả xếp hạng theo chỉ số ảnh hưởng nghiên cứu",
   "keywordMomentumTitle": "Đám mây Từ khóa",

@@ -1,39 +1,49 @@
 /**
  * File: src/features/trendingVN/components/treemap/TopicsTreemap.jsx
  *
- * Treemap hien thi phan bo chu de nghien cuu.
- * Top 6 o chinh: bang nhau (flexGrow = 1), mau blue dam → nhat.
- * O "Others": nho hon, mau xam.
- * Caption: "X% (Y cites)" tinh tu score thuc hoac index fallback.
+ * Treemap hien thi Top 6 bai bao noi bat nhat theo citation_count.
+ * Moi o = 1 bai bao, size bang nhau (flexGrow = 1), mau blue dam -> nhat.
+ * O "Others" = phan con lai, mau xam.
  *
- * Data shape tu useTrending:
- * { topic_id, display_name, score }
+ * Data: articles tu useTrending, duoc sort theo citation_count DESC o FE.
+ * Fields su dung: article_id, title, citation_count, publication_year, primary_topic
  *
  * Props:
- * - topics: array    -- Danh sach topics tu useTrending hook
- * - loading: boolean -- Dang tai du lieu
+ * - articles: array    -- Danh sach bai bao tu useTrending hook
+ * - loading: boolean   -- Dang tai du lieu
  */
 
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../../shared/components/Icon';
 import './TopicsTreemap.css';
 
 // ── Blue palette dam → nhat theo design system ───────────────────────────────
 const BLUE_SHADES = [
-  '#1565C0', // dam nhat
+  '#1565C0',
   '#1976D2',
   '#1E88E5',
   '#2196F3',
   '#42A5F5',
-  '#90CAF9', // nhat nhat
+  '#90CAF9',
 ];
 
-// Format so trich dan: 1240 -> "1,240"
+// ── Format so citations ───────────────────────────────────────────────────────
 function fmtCites(n) {
   if (!n && n !== 0) return '0';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
   return Number(n).toLocaleString('en-US');
 }
 
-export default function TopicsTreemap({ topics = [], loading = false }) {
+// ── Rut gon ten bai bao ───────────────────────────────────────────────────────
+function shortTitle(title, maxLen = 40) {
+  if (!title) return '—';
+  return title.length > maxLen ? title.substring(0, maxLen) + '...' : title;
+}
+
+const MAX_MAIN = 6;
+
+export default function TopicsTreemap({ articles = [], loading = false }) {
+  const { t } = useTranslation();
 
   // ── Skeleton ─────────────────────────────────────────────────────────────
   if (loading) {
@@ -41,102 +51,70 @@ export default function TopicsTreemap({ topics = [], loading = false }) {
   }
 
   // ── Empty state ───────────────────────────────────────────────────────────
-  if (!topics.length) {
+  if (!articles.length) {
     return (
       <div className="ttm-empty">
         <Icon icon="lucide:grid" className="ttm-empty-icon" />
-        <p className="ttm-empty-text">No topic data available</p>
+        <p className="ttm-empty-text">{t('noTopicData')}</p>
       </div>
     );
   }
 
-  // ── Chuan bi du lieu ─────────────────────────────────────────────────────
-  const mainTopics = topics.slice(0, 6);
-  const otherTopics = topics.slice(6);
+  // ── Sort theo citation_count DESC, lay top 6 ─────────────────────────────
+  const sorted = [...articles]
+    .sort((a, b) => (b.citation_count || 0) - (a.citation_count || 0));
 
-  // Kiem tra xem score co su khac biet khong
-  const scores = topics.map((t) => t.score || 0);
-  const allSameScore = scores.every((s) => s === scores[0]);
-  const totalScore = topics.reduce((sum, t) => sum + (t.score || 1), 0);
-
-  // Tinh pct cho tung topic
-  const getPct = (topic, i) => {
-    if (allSameScore) {
-      // Fallback: chia deu theo so topic
-      return Math.round(100 / topics.length);
-    }
-    return totalScore > 0
-      ? Math.round(((topic.score || 1) / totalScore) * 100)
-      : 0;
-  };
-
-  // Uoc luong cites tu score
-  const getCites = (topic) => {
-    if (!topic.score || topic.score === 0) return null;
-    return Math.round(topic.score * 250);
-  };
-
-  // Pct cho o Others
-  const otherPct = otherTopics.length > 0
-    ? Math.round((otherTopics.length / topics.length) * 100)
-    : 0;
+  const mainArticles = sorted.slice(0, MAX_MAIN);
+  const otherCount   = sorted.length - MAX_MAIN;
+  const totalCites   = sorted.reduce((s, a) => s + (a.citation_count || 0), 0);
 
   return (
     <div>
       <div className="ttm-wrapper">
 
-        {/* ── Top 6 topic cells — bang nhau ───────────────────────── */}
-        {mainTopics.map((topic, i) => {
-          const pct = getPct(topic, i);
-          const cites = getCites(topic);
+        {/* ── Top 6 bai bao ───────────────────────────────────────── */}
+        {mainArticles.map((article, i) => {
+          const cites    = article.citation_count || 0;
+          const pct      = totalCites > 0
+            ? Math.round((cites / totalCites) * 100)
+            : Math.round(100 / sorted.length);
 
-          const bgColor = BLUE_SHADES[i] || BLUE_SHADES[BLUE_SHADES.length - 1];
-
-          // Text mau: o dam (i<4) dung trang, o nhat (i>=4) dung xanh dam
-          const textColor = i >= 4 ? '#1565C0' : '#ffffff';
-          const subTextColor = i >= 4 ? 'rgba(21,101,192,0.75)' : 'rgba(255,255,255,0.85)';
+          const bgColor    = BLUE_SHADES[i] || BLUE_SHADES[BLUE_SHADES.length - 1];
+          const textColor  = i >= 4 ? '#1565C0' : '#ffffff';
+          const subColor   = i >= 4 ? 'rgba(21,101,192,0.75)' : 'rgba(255,255,255,0.85)';
 
           return (
             <div
-              key={topic.topic_id ? String(topic.topic_id) : String(i)}
+              key={article.article_id ? String(article.article_id) : String(i)}
               className="ttm-cell"
-              style={{
-                backgroundColor: bgColor,
-                flexGrow: 1,       // tat ca o chinh bang nhau
-                flexBasis: '14%',  // 6 o = ~16% moi o
-              }}
-              title={topic.display_name}
+              style={{ backgroundColor: bgColor, flexGrow: 1, flexBasis: '14%' }}
+              title={article.title}
             >
-              {/* Noi dung */}
               <div className="ttm-cell-content">
                 <div className="ttm-cell-name" style={{ color: textColor }}>
-                  {topic.display_name || 'Topic ' + String(i + 1)}
+                  {shortTitle(article.title, 35)}
                 </div>
-                <div className="ttm-cell-pct" style={{ color: subTextColor }}>
-                  {cites != null
-                    ? String(pct) + '% (' + fmtCites(cites) + ' cites)'
-                    : String(pct) + '%'}
+                <div className="ttm-cell-pct" style={{ color: subColor }}>
+                  {String(pct) + '% (' + fmtCites(cites) + ' cites)'}
                 </div>
               </div>
             </div>
           );
         })}
 
-        {/* ── O "Others" nho hon ──────────────────────────────────── */}
-        {otherTopics.length > 0 && (
+        {/* ── O "Others" ──────────────────────────────────────────── */}
+        {otherCount > 0 && (
           <div
             className="ttm-cell others"
             style={{ flexGrow: 1, flexBasis: '100%' }}
-            title={'Others (' + String(otherTopics.length) + ' topics)'}
+            title={String(otherCount) + ' more articles'}
           >
             <div className="ttm-cell-content">
               <div className="ttm-cell-name ttm-cell-name--others">
-                {otherTopics.length > 1
-                  ? 'Các hướng khác'
-                  : otherTopics[0]?.display_name || 'Others'}
+                {t('others') || 'Others'}
               </div>
               <div className="ttm-cell-pct ttm-cell-pct--others">
-                {String(otherPct) + '% (' + String(otherTopics.length) + ' chủ đề)'}
+                {String(otherCount) + ' ' + (t('articlesFound') || 'articles')}
               </div>
             </div>
           </div>
@@ -144,10 +122,8 @@ export default function TopicsTreemap({ topics = [], loading = false }) {
 
       </div>
 
-      {/* ── Ghi chu duoi treemap ─────────────────────────────────────── */}
-      <p className="ttm-footnote">
-        Area proportional to citation score. Hover for details.
-      </p>
+      {/* ── Ghi chu duoi treemap ─────────────────────────────────── */}
+      <p className="ttm-footnote">{t('areaProportional')}</p>
     </div>
   );
 }

@@ -88,15 +88,103 @@ export const getSubjectCategoriesApi = (params = {}) =>
   httpClient.get('/catalog/subject-categories', { params });
 
 /**
- * Lấy danh sách keyword nổi bật cho Keyword Momentum Cloud.
- * Endpoint: GET /api/v1/keywords
- * Response: { data: { data: { items: [...] } | [...] } }
- * Fields mỗi keyword: keyword_id, display_name, article_count
+ * Top Journals theo trich dan - endpoint moi tu trendingVn service.
+ * Lay cac bai bao trong N nam gan nhat, xep hang journal theo tong trich dan.
+ * Endpoint: GET /api/v1/trending-vn/top-journals
+ * Response: { data: { window: { from_year, to_year, years }, items: [...] } }
+ * Fields moi item: journal_id, journal_name, total_recent_citations,
+ *                  recent_articles_count, top_keywords, top_topics
  *
  * @param {Object} params
- * @param {number}  [params.limit=20]     - Số keyword tối đa
- * @param {string}  [params.sort_by]      - Sắp xếp theo: keyword_id | display_name | article_count
- * @param {string}  [params.sort_order]   - asc | desc
+ * @param {number} [params.years=2]  -- So nam gan nhat (1-10)
+ * @param {number} [params.limit=7]  -- So journal tra ve (1-50)
+ */
+export const getTopJournalsTrendingApi = (params = {}) =>
+  httpClient.get('/trending-vn/top-journals', { params });
+
+/**
+ * Top Universities theo keyword/topic trending va tac gia chinh.
+ * Endpoint: GET /api/v1/trending-vn/top-universities
+ * Response: { data: { window, hot_basis, items: [...] } }
+ * Fields moi item: rank, institution_id, institution_name,
+ *                  trending_articles_count, first_authors_count,
+ *                  total_recent_citations, avg_recent_citations,
+ *                  top_keywords, top_topics, representative_articles
+ *
+ * @param {Object} params
+ * @param {number} [params.years=2]      -- So nam gan nhat (1-10)
+ * @param {number} [params.limit=6]      -- So university tra ve (1-50)
+ * @param {number} [params.hot_limit=10] -- So keyword/topic hot lam nen chon bai trending
+ */
+export const getTopUniversitiesTrendingApi = (params = {}) =>
+  httpClient.get('/trending-vn/top-universities', { params });
+
+/**
+ * Xep hang University toan bo lich su — khong gioi han nam.
+ * Endpoint: GET /api/v1/trending-vn/ranking/universities
+ * Response: { data: { items: [...] } }
+ * Fields: rank, institution_id, institution_name,
+ *         total_articles_count, first_authors_count,
+ *         total_citations, avg_citations, latest_publication_year
+ *
+ * @param {Object} params
+ * @param {number} [params.limit=6] -- So university tra ve (1-50)
+ */
+export const getUniversityRankingsApi = (params = {}) =>
+  httpClient.get('/trending-vn/ranking/universities', { params });
+
+/**
+ * Xep hang Author toan bo lich su theo h_index + cited_by_count.
+ * Endpoint: GET /api/v1/trending-vn/ranking/authors
+ * Response: { data: { items: [...] } }
+ * Fields: rank, author_id, display_name, last_known_institution,
+ *         h_index, cited_by_count, works_count, local_articles_count
+ *
+ * @param {Object} params
+ * @param {number} [params.limit=5] -- So author tra ve (1-50)
+ */
+export const getAuthorRankingsApi = (params = {}) =>
+  httpClient.get('/trending-vn/ranking/authors', { params });
+
+/**
+ * Top Articles theo trending score (keyword/topic hot + citation + citing works).
+ * Endpoint: GET /api/v1/trending-vn/trending/articles
+ * Response: { data: { window, hot_basis, items: [...] } }
+ * Fields moi item: article_id, title, doi, publication_year, citation_count,
+ *                  trending_score, journal_name, hot_keywords, hot_topics, authors
+ *
+ * @param {Object} params
+ * @param {number} [params.years=2]      -- So nam gan nhat (1-10)
+ * @param {number} [params.limit=6]      -- So article tra ve (1-50)
+ * @param {number} [params.hot_limit=10] -- So keyword/topic hot lam nen
+ */
+export const getTrendingArticlesApi = (params = {}) =>
+  httpClient.get('/trending-vn/trending/articles', { params });
+
+/**
+ * Top Keywords theo so bai bao + citation trong DB.
+ * Endpoint: GET /api/v1/trending-vn/trending/keywords
+ * Response: { data: { hot_basis, items: [...] } }
+ * Fields moi item: keyword_id, display_name, article_count,
+ *                  total_citations, avg_citations, hot_topics
+ *
+ * @param {Object} params
+ * @param {number} [params.limit=7]      -- So keyword tra ve (1-50)
+ * @param {number} [params.hot_limit=10] -- So topic hot lam nen loc keyword
+ */
+export const getTrendingKeywordsApi = (params = {}) =>
+  httpClient.get('/trending-vn/trending/keywords', { params });
+
+/**
+ * Lay danh sach keyword noi bat cho Keyword Momentum Cloud.
+ * Endpoint: GET /api/v1/keywords
+ * Response: { data: { data: { items: [...] } | [...] } }
+ * Fields moi keyword: keyword_id, display_name, article_count
+ *
+ * @param {Object} params
+ * @param {number}  [params.limit=7]       - So keyword toi da
+ * @param {string}  [params.sort_by]       - Sap xep theo: keyword_id | display_name | article_count
+ * @param {string}  [params.sort_order]    - asc | desc
  */
 export const getKeywordsApi = (params = {}) =>
   httpClient.get('/keywords', { params });

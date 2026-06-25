@@ -72,6 +72,8 @@ export default function TrendingPage() {
     stats,
     universities,
     keywords,
+    trendingArticles,
+    trendingArticlesLoading,
     subjectAreas,
     subjectCategories,
     filtersLoading,
@@ -231,7 +233,10 @@ export default function TrendingPage() {
                       <h2 className="trending-section-title">{t('topArticlesByTopic')}</h2>
                       <p className="trending-section-subtitle">{t('topArticlesTopicSubtitle')}</p>
                       <hr className="trending-section-divider" />
-                      <TopicsTreemap topics={topics} loading={topicsLoading} />
+                      <TopicsTreemap
+                        articles={trendingArticles.length > 0 ? trendingArticles : articles}
+                        loading={trendingArticlesLoading || articlesLoading}
+                      />
                     </div>
                   </Col>
                   <Col xs={12} lg={6}>

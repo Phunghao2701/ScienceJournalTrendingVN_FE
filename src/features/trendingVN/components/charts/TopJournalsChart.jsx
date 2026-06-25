@@ -1,26 +1,34 @@
 /**
  * File: src/features/trendingVN/components/charts/TopJournalsChart.jsx
  *
- * Biểu đồ cột (bar chart) hiển thị Top Journals theo số lượng bài báo.
- * Dùng pure div + inline height%, không dùng chart library.
- * Tối đa hiển thị 8 journals để vừa chart.
+ * Bar chart hien thi Top Journals theo trich dan.
+ * Pure div + CSS, khong dung chart library. Toi da 7 cot.
+ * Du lieu tu GET /api/v1/trending-vn/top-journals
  *
- * Dữ liệu từ: GET /api/v1/journal
- * Fields dùng: journal_id, display_name, citation_count, article_count
+ * Fields su dung:
+ * - journal_id: string
+ * - journal_name: string           -- ten hien thi
+ * - total_recent_citations: number -- gia tri chinh de tinh chieu cao cot
+ * - recent_articles_count: number  -- so bai bao (hien thi trong tooltip)
+ * - top_keywords: array            -- keyword pho bien nhat cua journal do
+ * - top_topics: array              -- topic pho bien nhat cua journal do
  *
  * Props:
- * - journals: array    -- Danh sách journal từ API
- * - loading: boolean   -- Đang tải dữ liệu
+ * - journals: array    -- Danh sach journal tu useTrending hook
+ * - loading: boolean   -- Dang tai du lieu
+ * - onViewAll: function -- Callback khi bam "View Top 10 Journals" (optional)
  */
 
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../../shared/components/Icon';
 import './TopJournalsChart.css';
 
-export default function TopJournalsChart({ journals = [], loading = false }) {
+export default function TopJournalsChart({ journals = [], loading = false, onViewAll }) {
+  const { t } = useTranslation();
 
-  // ── Skeleton khi đang tải ─────────────────────────────────────────────────
+  // ── Skeleton khi dang tai ────────────────────────────────────────────────
   if (loading) {
-    const skeletonHeights = [100, 68, 55, 82, 45, 72, 38, 60];
+    const skeletonHeights = [100, 68, 55, 82, 45, 72, 38];
     return (
       <div className="tjc-skeleton-area">
         {skeletonHeights.map((h, i) => (
@@ -39,45 +47,67 @@ export default function TopJournalsChart({ journals = [], loading = false }) {
     return (
       <div className="tjc-empty">
         <Icon icon="lucide:bar-chart-2" className="tjc-empty-icon" />
-        <p className="tjc-empty-text">Chưa có dữ liệu tạp chí</p>
+        <p className="tjc-empty-text">{t('noJournalData')}</p>
       </div>
     );
   }
 
-  // ── Chuẩn bị dữ liệu ─────────────────────────────────────────────────────
-  const chartData = journals.slice(0, 8);
+  // ── Chuan bi du lieu ─────────────────────────────────────────────────────
+  const chartData = journals.slice(0, 7);
 
-  // Lấy giá trị để vẽ bar
-  // Ưu tiên: citation_count → article_count → journal_id (proxy tạm)
-  const getValue = (j) => {
-    if (j.citation_count) return j.citation_count;
-    if (j.article_count) return j.article_count;
-    return j.journal_id || 1;
+  // Uu tien total_recent_citations (endpoint moi), fallback article_count (endpoint cu)
+  const getValue = (j) =>
+    j.total_recent_citations ?? j.citation_count ?? j.article_count ?? 1;
+
+  // Lay ten journal: endpoint moi dung journal_name, endpoint cu dung display_name
+  const getName = (j) => j.journal_name || j.display_name || '—';
+
+  const maxVal = Math.max(...chartData.map(getValue), 1);
+
+  // Format so tren dinh cot
+  const fmtVal = (n) => {
+    if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'K';
+    return String(n);
   };
 
-  const maxVal = Math.max(...chartData.map(getValue));
+  // Viet tat ten journal (toi da 2 tu)
+  const shortLabel = (name) => {
+    if (!name) return '—';
+    const parts = name.split(' ').filter(Boolean);
+    if (parts.length === 1) return parts[0].substring(0, 8);
+    return parts.slice(0, 2).join(' ');
+  };
+
+  // Tooltip: ten day du + so bai bao + trich dan
+  const getTooltip = (j) => {
+    const name = getName(j);
+    const cites = getValue(j);
+    const articles = j.recent_articles_count ?? j.article_count;
+    let tip = name;
+    if (cites)    tip += ` — ${fmtVal(cites)} citations`;
+    if (articles) tip += ` | ${articles} articles`;
+    return tip;
+  };
 
   return (
     <div className="tjc-wrapper">
 
-      {/* ── Khu vực các cột bar ─────────────────────────────────── */}
+      {/* ── Khu vuc cac cot bar ─────────────────────────────────── */}
       <div className="tjc-bars-area">
         {chartData.map((journal, i) => {
-          const val = getValue(journal);
+          const val       = getValue(journal);
           const heightPct = Math.max((val / maxVal) * 100, 6);
 
           return (
             <div
               key={journal.journal_id ? String(journal.journal_id) : String(i)}
               className="tjc-bar-col"
-              title={journal.display_name}
+              title={getTooltip(journal)}
             >
-              {/* Giá trị trên đỉnh cột */}
-              <span className="tjc-bar-value">
-                {val.toLocaleString('vi-VN')}
-              </span>
+              {/* So tren dinh cot */}
+              <span className="tjc-bar-value">{fmtVal(val)}</span>
 
-              {/* Thân cột */}
+              {/* Than cot */}
               <div
                 className="tjc-bar"
                 style={{ height: String(heightPct) + '%' }}
@@ -87,15 +117,20 @@ export default function TopJournalsChart({ journals = [], loading = false }) {
         })}
       </div>
 
-      {/* ── Labels tên journal bên dưới ─────────────────────────── */}
+      {/* ── Labels ten journal phia duoi ────────────────────────── */}
       <div className="tjc-labels-area">
         {chartData.map((journal, i) => (
           <div key={String(i)} className="tjc-bar-label">
-            {journal.display_name
-              ? journal.display_name.split(' ').slice(0, 2).join(' ')
-              : 'J' + String(i + 1)}
+            {shortLabel(getName(journal))}
           </div>
         ))}
+      </div>
+
+      {/* ── Footer link ──────────────────────────────────────────── */}
+      <div className="tjc-footer">
+        <button className="tjc-view-all-btn" onClick={onViewAll}>
+          {t('viewTop10Journals')}
+        </button>
       </div>
 
     </div>

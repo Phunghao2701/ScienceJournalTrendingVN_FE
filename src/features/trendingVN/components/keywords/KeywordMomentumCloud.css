@@ -1,7 +1,6 @@
 /**
  * File: src/features/trendingVN/components/keywords/KeywordMomentumCloud.css
- * Styles cho Keyword Momentum Cloud.
- * Layout: 3 hang keyword, hang tren to + dam, hang duoi nho + nhat.
+ * Horizontal bar chart kieu bieu do thong ke.
  * Scope prefix: kmc- (Keyword Momentum Cloud)
  */
 
@@ -9,96 +8,126 @@
 .kmc-wrapper {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 180px;
+  gap: 0;
 }
 
-/* ─── Container cac hang ─────────────────────────────────────────────────── */
-.kmc-rows {
+/* ─── Chart area (bars + x axis) ────────────────────────────────────────── */
+.kmc-chart {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 0 24px;
-  flex: 1;
+  padding: 4px 0 28px 0; /* padding bottom cho x-axis */
+  position: relative;
 }
 
-/* ─── Mot hang keyword ───────────────────────────────────────────────────── */
-.kmc-row {
+/* ─── Danh sach bars ─────────────────────────────────────────────────────── */
+.kmc-bars {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ─── Mot dong bar ───────────────────────────────────────────────────────── */
+.kmc-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ─── Ten keyword ben trai ───────────────────────────────────────────────── */
+.kmc-bar-label {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--t-text, #1E293B);
+  width: 130px;
+  min-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+/* ─── Track (background xam) ─────────────────────────────────────────────── */
+.kmc-bar-track {
+  flex: 1;
+  height: 26px;
+  background-color: #EDF2F7;
+  border-radius: 4px;
+  overflow: visible;
+  position: relative;
+}
+
+/* ─── Fill (primary blue) ────────────────────────────────────────────────── */
+.kmc-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background-color: var(--t-primary, #1976D2);
+  transition: width 0.45s ease;
+  min-width: 4px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* ─── So hien thi o dau bar ──────────────────────────────────────────────── */
+.kmc-bar-tip {
+  position: absolute;
+  left: calc(100% + 6px);
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--t-primary, #1976D2);
+  white-space: nowrap;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ─── Truc X ─────────────────────────────────────────────────────────────── */
+.kmc-x-axis {
+  position: absolute;
+  bottom: 6px;
+  left: 140px; /* khop voi width label + gap */
+  right: 0;
+  height: 18px;
+  border-top: 1px solid var(--t-border, #E2E8F0);
+}
+
+.kmc-x-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.62rem;
+  color: var(--t-text-muted, #64748B);
+  top: 4px;
+  white-space: nowrap;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────────────────── */
+.kmc-footer {
+  display: flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-/* ─── Mot tu trong cloud ─────────────────────────────────────────────────── */
-.kmc-word {
-  font-family: var(--font-sans, sans-serif);
-  font-weight: 700;
-  line-height: 1.2;
-  cursor: default;
-  white-space: nowrap;
-  transition: opacity 0.15s ease;
-}
-
-.kmc-word:hover {
-  opacity: 0.7;
-}
-
-/* Hang 1 — primary blue dam nhat */
-.kmc-word--primary {
-  color: var(--t-primary, #1976D2);
-}
-
-/* Hang 2 — blue trung */
-.kmc-word--secondary {
-  color: #42A5F5;
-}
-
-/* Hang 3 — muted gray */
-.kmc-word--muted {
-  color: var(--t-text-muted, #64748B);
-  font-weight: 500;
-}
-
-/* ─── Divider ────────────────────────────────────────────────────────────── */
-.kmc-stats-divider {
+  gap: 6px;
+  padding-top: 10px;
   border-top: 1px solid var(--t-border, #E2E8F0);
-  margin-bottom: 14px;
 }
 
-/* ─── Stats row ──────────────────────────────────────────────────────────── */
-.kmc-stats {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-}
-
-.kmc-stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.kmc-stat-label {
+.kmc-footer-label {
   font-family: var(--font-sans, sans-serif);
   font-size: 0.6rem;
-  color: var(--t-text-muted, #64748B);
   font-weight: 700;
+  color: var(--t-text-muted, #64748B);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: 3px;
 }
 
-.kmc-stat-value {
+.kmc-footer-value {
   font-family: var(--font-display, serif);
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--t-text, #1E293B);
-  line-height: 1.2;
 }
 
 /* ─── Empty state ────────────────────────────────────────────────────────── */
@@ -106,7 +135,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 160px;
+  min-height: 200px;
   color: var(--t-text-muted, #64748B);
 }
 

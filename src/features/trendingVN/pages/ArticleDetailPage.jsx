@@ -1,6 +1,6 @@
-﻿/**
- * File source thuá»™c há»‡ thá»‘ng FE ResearchPulse.
- * Thiáº¿t káº¿ trang chi tiáº¿t bÃ i bÃ¡o theo phong cÃ¡ch chuyÃªn nghiá»‡p Ä‘a cá»™t cá»§a Lens.org.
+/**
+ * File source thuộc hệ thống FE ResearchPulse.
+ * Thiết kế trang chi tiết bài báo theo phong cách chuyên nghiệp đa cột của Lens.org.
  *
  * File: trendingVN\pages\ArticleDetailPage.jsx
  */
@@ -50,9 +50,14 @@ export default function ArticleDetailPage() {
     isBookmarked,
     isBookmarking: isBookmarkLoading,
     citingWorks,
+    references,
     recommendedArticles,
     isRelatedLoading,
+    isCitingWorksLoading,
+    isReferencesLoading,
+    isRecommendedLoading,
     searchQuery,
+    setSearchQuery,
     handleBookmarkToggle,
     refetch,
   } = useTrendingArticleDetail(id, currentUser);
@@ -93,18 +98,23 @@ export default function ArticleDetailPage() {
   const hiddenAuthorCount = Math.max((article?.authors?.length || 0) - 3, 0);
 
 
-  const renderRelatedArticleCard = (item) => {
-    const isExpanded = expandedAbstracts[item.article_id] || false;
-    const docId = `VN ${1000000 + Number(item.article_id)} A`;
+  const renderRelatedArticleCard = (item, idx, onTitleClick) => {
+    // For citing works, article_id belongs to the parent article, so use openalex_work_id or doi as unique key
+    const itemKey = item.openalex_work_id || item.doi || item.article_id || idx;
+    const isExpanded = expandedAbstracts[itemKey] || false;
+    // Default title click: navigate to internal article page (only works if item has its own article_id distinct from citing context)
+    const handleTitleClick = onTitleClick
+      ? onTitleClick
+      : () => navigate(`/trending/articles/${item.article_id}`);
 
     return (
-      <div key={item.article_id} className="lens-article-card p-3 mb-3">
+      <div key={itemKey} className="lens-article-card p-3 mb-3">
         <div className="d-flex align-items-start gap-2">
           {/* Chevron/Expand Trigger */}
           <div 
             className="d-flex align-items-center justify-content-center cursor-pointer pt-1" 
             style={{ minWidth: '24px', color: 'var(--primary)' }}
-            onClick={() => toggleAbstract(item.article_id)}
+            onClick={() => toggleAbstract(itemKey)}
           >
             <Icon 
               icon={isExpanded ? "lucide:chevron-down-circle" : "lucide:chevron-right-circle"} 
@@ -118,18 +128,17 @@ export default function ArticleDetailPage() {
             <div
               className="lens-article-title text-primary-hover fw-bold font-sans"
               style={{ fontSize: '1.05rem', cursor: 'pointer', color: 'var(--text-main)' }}
-              onClick={() => navigate(`/trending/articles/${item.article_id}`)}
+              onClick={handleTitleClick}
             >
               {item.title}
             </div>
 
             {/* Meta badges */}
             <div className="lens-meta-line mt-1">
-              <span className="lens-meta-badge">{docId}</span>
               <span className="text-xs text-muted-custom">Journal Article</span>
-              <span>â€¢</span>
-              <span className="text-xs text-muted-custom">{t('yearLabel')}: {item.publication_year || 'â€”'}</span>
-              <span>â€¢</span>
+              <span>•</span>
+              <span className="text-xs text-muted-custom">{t('yearLabel')}: {item.publication_year || '—'}</span>
+              <span>•</span>
               <span className="d-flex align-items-center gap-1 text-xs">
                 <span className="lens-status-dot" style={{ background: '#16a34a', width: '6px', height: '6px', borderRadius: '50%' }} />
                 <span style={{ color: '#16a34a', fontWeight: 650 }}>{t('statusPublished')}</span>
@@ -141,7 +150,16 @@ export default function ArticleDetailPage() {
               <strong>{t('authorsLabel')}: </strong>
               {item.authors && item.authors.length > 0 ? (
                 item.authors.map((au, aIdx) => (
-                  <span key={aIdx} className="text-link" style={{ color: 'var(--primary)', cursor: 'pointer' }}>
+                  <span
+                    key={aIdx}
+                    className="text-link"
+                    style={{
+                      color: 'var(--primary)',
+                      cursor: au.author_id ? 'pointer' : 'default',
+                      textDecoration: au.author_id ? 'underline' : 'none',
+                    }}
+                    onClick={() => au.author_id && navigate(`/authors/${au.author_id}`)}
+                  >
                     {au.display_name || au.name}
                     {aIdx < item.authors.length - 1 ? '; ' : ''}
                   </span>
@@ -194,7 +212,7 @@ export default function ArticleDetailPage() {
               </span>
               <span
                 className="lens-pill lens-pill-abstract cursor-pointer"
-                onClick={() => toggleAbstract(item.article_id)}
+                onClick={() => toggleAbstract(itemKey)}
               >
                 <Icon icon="lucide:text" width="10" />
                 {t('abstract')}
@@ -202,7 +220,7 @@ export default function ArticleDetailPage() {
             </div>
 
             {/* Detailed split-layout collapse block (Lens-style, matched with Tri's search layout) */}
-            <Collapse in={isExpanded}>
+            <Collapse in={isExpanded} key={itemKey}>
               <div className="lens-expanded-box mt-3 p-3 border rounded bg-white" style={{ borderColor: 'var(--border)' }}>
                 <Row className="g-3">
                   {/* Left Column: Abstract, Claims, Applicants, Inventors, Classifications */}
@@ -255,7 +273,12 @@ export default function ArticleDetailPage() {
                       <div className="d-flex flex-wrap gap-2">
                         {item.authors && item.authors.length > 0 ? (
                           item.authors.map((au, idx) => (
-                            <span key={au.author_id || idx} className="text-xs text-primary d-flex align-items-center gap-1 border rounded px-2 py-1 bg-light">
+                            <span
+                              key={au.author_id || idx}
+                              className={`text-xs text-primary d-flex align-items-center gap-1 border rounded px-2 py-1 bg-light${au.author_id ? ' cursor-pointer' : ''}`}
+                              style={{ cursor: au.author_id ? 'pointer' : 'default' }}
+                              onClick={() => au.author_id && navigate(`/authors/${au.author_id}`)}
+                            >
                               <Icon icon="lucide:user" width="12" />
                               {au.display_name || au.name}
                               {au.last_known_institution && (
@@ -288,24 +311,15 @@ export default function ArticleDetailPage() {
                       <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>{t('history')}</div>
                       <div className="history-timeline text-xs d-flex flex-column gap-2">
                         <div className="history-item">
-                          <div className="fw-semibold text-dark">{t('publication')}: {item.publication_year || 'â€”'}</div>
-                          <div className="text-muted font-monospace" style={{ fontSize: '0.68rem' }}>
-                            {docId}
-                          </div>
+                          <div className="fw-semibold text-dark">{t('publication')}: {item.publication_year || '—'}</div>
                         </div>
                         <div className="history-item border-top pt-1.5">
-                          <div className="fw-semibold text-dark">{t('application')}: {item.publication_year || 'â€”'}</div>
-                          <div className="text-muted font-monospace" style={{ fontSize: '0.68rem' }}>
-                            {docId.replace(/\s*[A-Z]$/, '')}
-                          </div>
+                          <div className="fw-semibold text-dark">{t('application')}: {item.publication_year || '—'}</div>
                         </div>
                         <div className="history-item border-top pt-1.5">
                           <div className="fw-semibold text-dark d-flex align-items-center gap-1">
-                            {t('priority')}: {item.publication_year || 'â€”'}
+                            {t('priority')}: {item.publication_year || '—'}
                             <Icon icon="lucide:link" width="10" className="text-muted" />
-                          </div>
-                          <div className="text-muted font-monospace" style={{ fontSize: '0.68rem' }}>
-                            {docId.replace(/\s*[A-Z]$/, '')}
                           </div>
                         </div>
                       </div>
@@ -328,9 +342,9 @@ export default function ArticleDetailPage() {
     }
     try {
       await handleBookmarkToggle();
-      toast.success(isBookmarked ? "Ðã b? luu bài vi?t" : "Ðã luu bài vi?t thành công");
+      toast.success(isBookmarked ? "�� b? luu b�i vi?t" : "�� luu b�i vi?t th�nh c�ng");
     } catch (err) {
-      toast.error("L?i khi c?p nh?t danh sách dã luu");
+      toast.error("L?i khi c?p nh?t danh s�ch d� luu");
     }
   };
 
@@ -339,22 +353,22 @@ export default function ArticleDetailPage() {
     const shareUrl = window.location.href;
     const shareData = {
       title: article?.title || 'Article detail',
-      text: `KhÃ¡m phÃ¡ bÃ i bÃ¡o: ${article?.title || ''}`,
+      text: `Khám phá bài báo: ${article?.title || ''}`,
       url: shareUrl,
     };
 
     try {
       if (navigator.share) {
         await navigator.share(shareData);
-        toast.success('ÄÃ£ má»Ÿ chia sáº» bÃ i bÃ¡o.');
+        toast.success('Đã mở chia sẻ bài báo.');
         return;
       }
       await navigator.clipboard.writeText(shareUrl);
-      toast.success('ÄÃ£ sao chÃ©p liÃªn káº¿t bÃ i bÃ¡o.');
+      toast.success('Đã sao chép liên kết bài báo.');
     } catch (err) {
       if (err?.name === 'AbortError') return;
       console.warn('Unable to share article:', err);
-      toast.error('KhÃ´ng thá»ƒ chia sáº» bÃ i bÃ¡o lÃºc nÃ y.');
+      toast.error('Không thể chia sẻ bài báo lúc này.');
     }
   };
 
@@ -368,7 +382,7 @@ export default function ArticleDetailPage() {
   const generateBibTeX = useCallback(() => {
     if (!article) return '';
     const authorList = (article.authors || [])
-      .map((a) => a.display_name || a.name || 'TÃ¡c giáº£')
+      .map((a) => a.display_name || a.name || 'Tác giả')
       .join(' and ');
     return `@article{article_${article.article_id || '3233'},
   title={${article.title}},
@@ -382,7 +396,7 @@ export default function ArticleDetailPage() {
   const generateRIS = useCallback(() => {
     if (!article) return '';
     const authorList = (article.authors || [])
-      .map((a) => `AU  - ${a.display_name || a.name || 'TÃ¡c giáº£'}`)
+      .map((a) => `AU  - ${a.display_name || a.name || 'Tác giả'}`)
       .join('\n');
     return `TY  - JOUR
 T1  - ${article.title}
@@ -396,10 +410,10 @@ ER  - `;
   const handleCopyCitationText = async (text, formatName) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`ÄÃ£ sao chÃ©p trÃ­ch dáº«n dáº¡ng ${formatName}!`);
+      toast.success(`Đã sao chép trích dẫn dạng ${formatName}!`);
     } catch (err) {
       console.warn('Unable to copy citation:', err);
-      toast.error('KhÃ´ng thá»ƒ sao chÃ©p trÃ­ch dáº«n.');
+      toast.error('Không thể sao chép trích dẫn.');
     }
   };
 
@@ -414,10 +428,10 @@ ER  - `;
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast.success(`ÄÃ£ táº£i xuá»‘ng tá»‡p ${filename}!`);
+      toast.success(`Đã tải xuống tệp ${filename}!`);
     } catch (err) {
       console.warn('Unable to download citation:', err);
-      toast.error('KhÃ´ng thá»ƒ táº£i tá»‡p trÃ­ch dáº«n.');
+      toast.error('Không thể tải tệp trích dẫn.');
     }
   };
 
@@ -475,7 +489,7 @@ ER  - `;
     <div className="article-detail-page-wrapper grid-bg">
       <Header />
 
-      {/* Query Search Bar Top - MÃ´ phá»ng giao diá»‡n Lens.org */}
+      {/* Query Search Bar Top - Mô phỏng giao diện Lens.org */}
       <section className="lens-top-search-section">
         <div className="lens-search-container-fluid d-flex align-items-center justify-content-between flex-wrap gap-3">
           {/* Left Side */}
@@ -497,22 +511,6 @@ ER  - `;
             >
               <span className="fw-bold text-dark">{scholarlyResultsCount}</span> Scholarly Results
             </div>
-            <div 
-              className="lens-active-id-badge font-sans text-xs text-muted-custom border rounded px-2 py-0.5 bg-light cursor-pointer"
-              onClick={() => {
-                const docId = Number.isFinite(Number(article.article_id)) 
-                  ? `VN ${1000000 + Number(article.article_id)} A` 
-                  : article.article_id;
-                navigator.clipboard.writeText(docId);
-                toast.success(`Copied ID ${docId} to clipboard!`);
-              }}
-              title="Click to copy ID to clipboard"
-              style={{ cursor: 'pointer' }}
-            >
-              {Number.isFinite(Number(article.article_id)) 
-                ? `VN ${1000000 + Number(article.article_id)} A` 
-                : article.article_id}
-            </div>
           </div>
 
           {/* Right Side */}
@@ -522,7 +520,7 @@ ER  - `;
                 <Form.Control
                   type="text"
                   value={searchQuery}
-                  onChange={() => {}}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Search database..."
                   className="lens-search-input-field"
@@ -739,18 +737,18 @@ ER  - `;
             
             {/* Breadcrumb */}
             <div className="lens-breadcrumb">
-              <span className="lens-breadcrumb-link" onClick={() => navigate('/articles')}>BÃ i bÃ¡o</span>
+              <span className="lens-breadcrumb-link" onClick={() => navigate('/articles')}>Bài báo</span>
               <Icon icon="lucide:chevron-right" width="12" />
-              <span className="lens-breadcrumb-current">Chi tiáº¿t bÃ i bÃ¡o</span>
+              <span className="lens-breadcrumb-current">Chi tiết bài báo</span>
             </div>
 
-            {/* TiÃªu Ä‘á» & ThÃ´ng tin cÆ¡ báº£n */}
+            {/* Tiêu đề & Thông tin cơ bản */}
             <section className="lens-article-header-section">
               <h1 className="lens-article-title">
                 {article.title}
               </h1>
 
-              {/* DÃ²ng metadata phá»¥ */}
+              {/* Dòng metadata phụ */}
               <div className="lens-meta-line flex-wrap gap-2">
                 <span className="lens-badge-type">
                   <Icon icon="lucide:file-text" className="me-1" />
@@ -776,7 +774,7 @@ ER  - `;
                         {article.journal_name || 'ArXiv.org'}
                       </span>
                       {', '}
-                      {article.publication_date || article.publication_year || 'â€”'}
+                      {article.publication_date || article.publication_year || '—'}
                     </>
                   ) : (
                     <>
@@ -787,26 +785,26 @@ ER  - `;
                           if (article.journal_id) {
                             navigate(`/journals/${article.journal_id}`);
                           } else {
-                            navigate(`/articles?search=${encodeURIComponent(article.journal_name || 'Äang cáº­p nháº­t')}`);
+                            navigate(`/articles?search=${encodeURIComponent(article.journal_name || 'Đang cập nhật')}`);
                           }
                         }}
                       >
-                        {article.journal_name || 'Äang cáº­p nháº­t'}
+                        {article.journal_name || 'Đang cập nhật'}
                       </span>, 
-                      <strong> Vol:</strong> {article.volume_number || 'â€”'}, 
-                      <strong> Issue:</strong> {article.issue_number || 'â€”'}, 
-                      <strong> Published:</strong> {article.publication_date || article.publication_year || 'â€”'}
+                      <strong> Vol:</strong> {article.volume_number || '—'}, 
+                      <strong> Issue:</strong> {article.issue_number || '—'}, 
+                      <strong> Published:</strong> {article.publication_date || article.publication_year || '—'}
                     </>
                   )}
                 </span>
               </div>
 
-              {/* TÃ¡c giáº£ */}
+              {/* Tác giả */}
               <div className="lens-authors-line">
                 <strong>Authors:</strong>{' '}
                 {visibleAuthors.length > 0 ? (
                   visibleAuthors.map((author, index) => {
-                    const name = author.display_name || author.name || 'TÃ¡c giáº£';
+                    const name = author.display_name || author.name || 'Tác giả';
                     return (
                       <span key={index}>
                         <Button 
@@ -822,7 +820,7 @@ ER  - `;
                     );
                   })
                 ) : (
-                  <span className="text-muted-custom">Äang cáº­p nháº­t tÃ¡c giáº£</span>
+                  <span className="text-muted-custom">Đang cập nhật tác giả</span>
                 )}
 
                 {hiddenAuthorCount > 0 && !showAllAuthors && (
@@ -837,18 +835,18 @@ ER  - `;
                 )}
               </div>
 
-              {/* DÃ²ng lÆ°á»£t trÃ­ch dáº«n */}
+              {/* Dòng lượt trích dẫn */}
               <div className="lens-stats-plain-line text-xs font-sans mt-2 mb-2 d-flex flex-wrap gap-4">
                 <span>Citing Patents: <strong className="text-dark">{article.citing_patents ?? 0}</strong></span>
                 <span className="pointer" onClick={() => setShowCitationsModal(true)}>
                   Citing Scholarly Works: <strong className="text-dark">{article.citations ?? 0}</strong>
                 </span>
                 <span>
-                  Reference Count: <strong className="text-dark">{article.reference_count ?? 0}</strong>
+                  Reference Count: <strong className="text-dark">{isReferencesLoading ? (article.reference_count ?? 0) : (references || []).length}</strong>
                 </span>
               </div>
 
-              {/* DÃ²ng nhÃ£n thÃ´ng tin phá»¥ */}
+              {/* Dòng nhãn thông tin phụ */}
               <div className="lens-additional-info-badges d-flex align-items-center gap-2 mt-2 mb-3">
                 <span className="text-xs fw-bold text-muted-custom">Additional Info:</span>
                 {article.is_open_access && (
@@ -877,7 +875,7 @@ ER  - `;
                 )}
               </div>
 
-              {/* Danh sÃ¡ch cÃ¡c biá»ƒu tÆ°á»£ng Ä‘á»‹nh danh (Identifiers & Links) */}
+              {/* Danh sách các biểu tượng định danh (Identifiers & Links) */}
               <div className="lens-external-links-badges gap-3 flex-wrap mt-2">
                 <span className="lens-ext-badge text-uppercase gray">
                   <Icon icon="lucide:file-text" className="me-1 text-dark" />
@@ -889,36 +887,10 @@ ER  - `;
                     Open Access
                   </span>
                 )}
-                <span className="lens-ext-badge">
-                  <Icon icon="lucide:fingerprint" className="me-1" />
-                  {Number.isFinite(Number(article.article_id)) 
-                    ? `VN ${1000000 + Number(article.article_id)} A` 
-                    : article.article_id}
-                </span>
-                <a 
-                  href={article.doi ? `https://libkey.io/doi/${article.doi}` : articleDoiUrl} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="lens-ext-badge gray"
-                  style={{ textDecoration: 'none' }}
-                >
-                  <Icon icon="lucide:globe" className="me-1" />
-                  LibKey
-                </a>
-                <a 
-                  href={`https://www.worldcat.org/search?q=${encodeURIComponent(article.title)}`} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="lens-ext-badge gray"
-                  style={{ textDecoration: 'none' }}
-                >
-                  <Icon icon="lucide:library" className="me-1" />
-                  WorldCat
-                </a>
               </div>
             </section>
 
-            {/* Khu vá»±c Tabs Ä‘iá»u hÆ°á»›ng chÃ­nh: Summary, Citing Works, References, Recommended & Collections */}
+            {/* Khu vực Tabs điều hướng chính: Summary, Citing Works, References, Recommended & Collections */}
             <div className="lens-tab-bar">
               <Button 
                 variant="link" 
@@ -932,29 +904,29 @@ ER  - `;
                 className={`lens-tab-btn ${activeTab === 'citations' ? 'active' : ''}`}
                 onClick={() => setActiveTab('citations')}
               >
-                {article.citations ?? 0} Citing Works
+                {isCitingWorksLoading ? (article.citations ?? 0) : (citingWorks || []).length} Citing Works
               </Button>
               <Button 
                 variant="link" 
                 className={`lens-tab-btn ${activeTab === 'references' ? 'active' : ''}`}
                 onClick={() => setActiveTab('references')}
               >
-                {article.reference_count ?? 0} References
+                {isReferencesLoading ? (article.reference_count ?? 0) : (references || []).length} References
               </Button>
               <Button 
                 variant="link" 
-                className={`lens-tab-btn ${activeTab === 'collections' ? 'active' : ''}`}
-                onClick={() => setActiveTab('collections')}
+                className={`lens-tab-btn ${activeTab === 'recommended' ? 'active' : ''}`}
+                onClick={() => setActiveTab('recommended')}
               >
-                Collections
+                Recommended
               </Button>
             </div>
 
-            {/* Ná»™i dung theo Tab */}
+            {/* Nội dung theo Tab */}
             {activeTab === 'summary' ? (
               <div className="lens-summary-tab-content">
                 
-                {/* Thanh Action nhá»: Share, Add to project, Download Citation */}
+                {/* Thanh Action nhỏ: Share, Add to project, Download Citation */}
                 <div className="lens-actions-bar">
                   <Button variant="link" className="lens-action-btn" onClick={handleShareArticle}>
                     <Icon icon="lucide:share-2" />
@@ -975,10 +947,10 @@ ER  - `;
                   </Button>
                 </div>
 
-                {/* Grid chi tiáº¿t trong Summary */}
+                {/* Grid chi tiết trong Summary */}
                 <div className="lens-summary-grid">
                   
-                  {/* Cá»™t trÃ¡i cá»§a Summary (Abstract, Authors, Field of Study, Identifiers) */}
+                  {/* Cột trái của Summary (Abstract, Authors, Field of Study, Identifiers) */}
                   <div className="lens-summary-left-pane">
                     
                     {/* TL;DR (AI summary) if available */}
@@ -986,7 +958,7 @@ ER  - `;
                       <div className="lens-section-block mb-4 p-3 rounded" style={{ backgroundColor: 'var(--primary-light)', borderLeft: '4px solid var(--primary)' }}>
                         <div className="d-flex align-items-center gap-2 mb-2 font-weight-bold" style={{ color: 'var(--primary)', fontSize: '0.9rem', letterSpacing: '0.5px' }}>
                           <Icon icon="lucide:sparkles" width="16" />
-                          <strong className="text-uppercase">TL;DR (AI TÃ³m táº¯t nhanh)</strong>
+                          <strong className="text-uppercase">TL;DR (AI Tóm tắt nhanh)</strong>
                         </div>
                         <p className="lens-section-text mb-0" style={{ fontSize: '0.88rem', fontWeight: 500, color: 'var(--text-main)' }}>
                           {article.semantic_tldr}
@@ -1008,7 +980,7 @@ ER  - `;
                       <div className="lens-authors-detail-inline text-xs font-sans" style={{ lineHeight: '1.6' }}>
                         {article.authors && article.authors.length > 0 ? (
                           article.authors.map((author, index) => {
-                            const name = author.display_name || author.name || 'TÃ¡c giáº£';
+                            const name = author.display_name || author.name || 'Tác giả';
                             return (
                               <span key={index}>
                                 <span 
@@ -1028,7 +1000,7 @@ ER  - `;
                             );
                           })
                         ) : (
-                          <span className="text-muted-custom">Äang cáº­p nháº­t danh sÃ¡ch tÃ¡c giáº£...</span>
+                          <span className="text-muted-custom">Đang cập nhật danh sách tác giả...</span>
                         )}
                       </div>
                     </div>
@@ -1064,7 +1036,7 @@ ER  - `;
                             </span>
                           ))
                         ) : (
-                          <span className="text-muted-custom">Äang cáº­p nháº­t tá»« khÃ³a...</span>
+                          <span className="text-muted-custom">Đang cập nhật từ khóa...</span>
                         )}
                       </div>
                     </div>
@@ -1073,12 +1045,7 @@ ER  - `;
                     <div className="lens-section-block">
                       <h3 className="lens-section-title">Identifiers</h3>
                       <div className="d-flex flex-wrap gap-2 text-xs">
-                        <span className="lens-ext-badge gray">
-                          <Icon icon="lucide:fingerprint" className="me-1 text-dark" />
-                          {Number.isFinite(Number(article.article_id)) 
-                            ? `VN ${1000000 + Number(article.article_id)} A` 
-                            : article.article_id}
-                        </span>
+
                         {article.doi && (
                           <a 
                             href={articleDoiUrl} 
@@ -1125,7 +1092,7 @@ ER  - `;
 
                   </div>
 
-                  {/* Cá»™t pháº£i cá»§a Summary (Metadata boxes) */}
+                  {/* Cột phải của Summary (Metadata boxes) */}
                   <div className="lens-summary-right-pane">
                     
                     {/* Metadata Card 1 */}
@@ -1136,7 +1103,7 @@ ER  - `;
                             <th>In:</th>
                             <td>
                               <span className="text-primary-hover font-sans" onClick={() => article.journal_id && navigate(`/journals/${article.journal_id}`)}>
-                                {article.journal_name || 'Äang cáº­p nháº­t'}
+                                {article.journal_name || 'Đang cập nhật'}
                               </span>
                               {article.volume_number ? `, Vol: ${article.volume_number}` : ''}
                               {article.issue_number ? `, Issue: ${article.issue_number}` : ''}
@@ -1150,11 +1117,11 @@ ER  - `;
                           </tr>
                           <tr>
                             <th>Published:</th>
-                            <td>{article.publication_year || 'â€”'}</td>
+                            <td>{article.publication_year || '—'}</td>
                           </tr>
                           <tr>
                             <th>E-Published:</th>
-                            <td>{article.publication_year || 'â€”'}</td>
+                            <td>{article.publication_year || '—'}</td>
                           </tr>
                           <tr>
                             <th>Publication Info:</th>
@@ -1162,11 +1129,11 @@ ER  - `;
                           </tr>
                           <tr>
                             <th>Published:</th>
-                            <td>{article.publication_date || article.publication_year || 'â€”'}</td>
+                            <td>{article.publication_date || article.publication_year || '—'}</td>
                           </tr>
                           <tr>
                             <th>E-Published:</th>
-                            <td>{article.publication_date || article.publication_year || 'â€”'}</td>
+                            <td>{article.publication_date || article.publication_year || '—'}</td>
                           </tr>
                           <tr>
                             <th>Publication Info:</th>
@@ -1174,12 +1141,12 @@ ER  - `;
                           </tr>
                           <tr>
                             <th>Publisher:</th>
-                            <td>{article.publisher_name || 'â€”'}</td>
+                            <td>{article.publisher_name || '—'}</td>
                           </tr>
                           <tr>
                             <th>Source ISSN:</th>
                             <td className="font-monospace text-muted-custom">
-                              {article.issn || 'â€”'}
+                              {article.issn || '—'}
                             </td>
                           </tr>
                         </tbody>
@@ -1219,7 +1186,7 @@ ER  - `;
                               </div>
                             </div>
                           ) : (
-                            <div 
+                            <div
                               className="d-flex align-items-center gap-1 text-dark cursor-pointer text-xs fw-semibold"
                               onClick={() => (article.source_url || article.doi_url) && window.open(article.source_url || article.doi_url, '_blank', 'noopener,noreferrer')}
                             >
@@ -1238,102 +1205,103 @@ ER  - `;
               </div>
             ) : activeTab === 'citations' ? (
               <div className="lens-citations-tab-content py-4">
-                <div className="lens-modal-stat-box text-start p-3 mb-4 d-flex align-items-start gap-3 border-orange" style={{ background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary)' }}>
-                  <Icon icon="lucide:sparkles" width="32" className="text-primary mt-1" />
+                <div className="lens-modal-stat-box text-start p-3 mb-4 d-flex align-items-start gap-3" style={{ background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary)' }}>
+                  <Icon icon="lucide:quote" width="32" className="text-primary mt-1" />
                   <div>
                     <h5 className="font-display fw-bold mb-1" style={{ color: 'var(--text-main)' }}>
-                      This work is cited {article.citations ?? 0} times by other scholarly works
+                      Công trình này được trích dẫn {isCitingWorksLoading ? (article.citations ?? 0) : citingWorks.length} lần
                     </h5>
                     <p className="text-muted-custom mb-2 text-xs">
-                      Please load these results as a full search in order to access filtering, sorting, annotations, collection management and more.
+                      Danh sách các bài báo khoa học đã trích dẫn công trình này. Nhấn vào tiêu đề để mở bài báo gốc.
                     </p>
                     <Button variant="outline-primary" size="sm" className="lens-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(article.title)}`)}>
-                      View works in Scholar Search
+                      Tìm kiếm liên quan
                     </Button>
                   </div>
                 </div>
 
-                {isRelatedLoading ? (
+                {isCitingWorksLoading ? (
                   <div className="text-center py-5">
                     <div className="spinner-border text-primary spinner-border-sm me-2" role="status" />
-                    <span className="text-xs text-muted-custom">Loading citing works...</span>
+                    <span className="text-xs text-muted-custom">Đang tải danh sách trích dẫn...</span>
                   </div>
                 ) : citingWorks.length > 0 ? (
                   <div className="d-flex flex-column">
-                    {citingWorks.map((item, idx) => renderRelatedArticleCard(item, idx))}
+                    {citingWorks.map((item, idx) => {
+                      // Tìm kiếm nội bộ theo DOI hoặc tiêu đề
+                      const searchTerm = item.doi || item.title;
+                      const onCitingClick = searchTerm
+                        ? () => navigate(`/trending-vn?search=${encodeURIComponent(searchTerm)}`)
+                        : null;
+                      return renderRelatedArticleCard(item, idx, onCitingClick);
+                    })}
                   </div>
                 ) : (
                   <div className="article-reference-card-empty text-center py-5">
-                    ChÆ°a cÃ³ bÃ i bÃ¡o trÃ­ch dáº«n nÃ o Ä‘Æ°á»£c tÃ¬m tháº¥y.
+                    Chưa có bài báo trích dẫn nào được tìm thấy.
                   </div>
                 )}
               </div>
             ) : activeTab === 'references' ? (
               <div className="lens-references-tab-content py-4">
-                <h4 className="font-display fw-bold mb-3">TÃ i liá»‡u tham kháº£o (References)</h4>
-                <p className="text-muted-custom mb-4 text-sm">
-                  BÃ i bÃ¡o hiá»‡n cÃ³ <strong>{(article.references || []).length}</strong> tÃ i liá»‡u tham kháº£o Ä‘Æ°á»£c Ä‘á»“ng bá»™ trong há»‡ thá»‘ng.
-                </p>
+                <div className="lens-modal-stat-box text-start p-3 mb-4 d-flex align-items-start gap-3" style={{ background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary)' }}>
+                  <Icon icon="lucide:book-open" width="32" className="text-primary mt-1" />
+                  <div>
+                    <h5 className="font-display fw-bold mb-1" style={{ color: 'var(--text-main)' }}>
+                      {isReferencesLoading ? (article.reference_count ?? 0) : (references || []).length} tài liệu tham khảo được đồng bộ
+                    </h5>
+                    <p className="text-muted-custom mb-2 text-xs">
+                      Danh sách công trình nghiên cứu mà bài báo này trích dẫn. Nhấn vào tiêu đề để mở nguồn gốc tài liệu.
+                    </p>
+                    <Button variant="outline-primary" size="sm" className="lens-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(article.title)}`)}>
+                      Tìm kiếm liên quan
+                    </Button>
+                  </div>
+                </div>
 
-                {(article.references || []).length > 0 ? (
-                  <div className="d-grid gap-3">
-                    {article.references.map((referenceUrl, index) => {
-                      return (
-                        <a
-                          key={`${referenceUrl}-${index}`}
-                          href={referenceUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="article-reference-card"
-                        >
-                          <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
-                            <div className="min-w-0">
-                              <div className="article-reference-label">
-                                Reference {index + 1}
-                              </div>
-                              <div className="article-reference-title">
-                                {formatReferenceLabel(referenceUrl, index)}
-                              </div>
-                              <div className="article-reference-url">
-                                {referenceUrl}
-                              </div>
-                            </div>
-                            <span className="article-reference-action">
-                              <Icon icon="lucide:external-link" width="16" />
-                              Má»Ÿ nguá»“n
-                            </span>
-                          </div>
-                        </a>
-                      );
+                {isReferencesLoading ? (
+                  <div className="text-center py-5">
+                    <div className="spinner-border text-primary spinner-border-sm me-2" role="status" />
+                    <span className="text-xs text-muted-custom">Đang tải tài liệu tham khảo...</span>
+                  </div>
+                ) : (references || []).length > 0 ? (
+                  <div className="d-flex flex-column">
+                    {(references || []).map((ref, index) => {
+                      // Tìm kiếm nội bộ theo DOI hoặc tiêu đề
+                      const searchTerm = ref.doi || ref.title;
+                      const onRefClick = searchTerm
+                        ? () => navigate(`/trending-vn?search=${encodeURIComponent(searchTerm)}`)
+                        : null;
+                      return renderRelatedArticleCard(ref, index, onRefClick);
                     })}
                   </div>
                 ) : (
                   <div className="article-reference-card-empty text-center py-5">
-                    ChÆ°a cÃ³ danh sÃ¡ch reference chi tiáº¿t cho bÃ i bÃ¡o nÃ y.
+                    Chưa có danh sách reference chi tiết cho bài báo này.
                   </div>
                 )}
               </div>
             ) : activeTab === 'recommended' ? (
               <div className="lens-recommended-tab-content py-4">
-                <div className="lens-modal-stat-box text-start p-3 mb-4 d-flex align-items-start gap-3 border-orange" style={{ background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary)' }}>
-                  <Icon icon="lucide:sparkles" width="32" className="text-primary mt-1" />
+                <div className="lens-modal-stat-box text-start p-3 mb-4 d-flex align-items-start gap-3" style={{ background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary)' }}>
+                  <Icon icon="lucide:lightbulb" width="32" className="text-primary mt-1" />
                   <div>
                     <h5 className="font-display fw-bold mb-1" style={{ color: 'var(--text-main)' }}>
-                      Recommended Work
+                      Bài báo được đề xuất
                     </h5>
                     <p className="text-muted-custom mb-2 text-xs">
-                      Discover other works you might be interested in, using citations, styling, authors and topic management and more.
+                      Các công trình nghiên cứu cùng chủ đề bạn có thể quan tâm, dựa trên chủ đề và lĩnh vực của bài báo hiện tại.
                     </p>
                     <Button variant="outline-primary" size="sm" className="lens-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(article.primary_topic || '')}`)}>
-                      View works in Scholar Search
+                      Xem thêm trong Scholar Search
                     </Button>
                   </div>
                 </div>
 
-                {isRelatedLoading ? (
+                {isRecommendedLoading ? (
                   <div className="text-center py-5">
                     <div className="spinner-border text-primary spinner-border-sm me-2" role="status" />
-                    <span className="text-xs text-muted-custom">Loading recommended works...</span>
+                    <span className="text-xs text-muted-custom">Đang tải bài báo đề xuất...</span>
                   </div>
                 ) : recommendedArticles.length > 0 ? (
                   <div className="d-flex flex-column">
@@ -1341,16 +1309,17 @@ ER  - `;
                   </div>
                 ) : (
                   <div className="article-reference-card-empty text-center py-5">
-                    ChÆ°a cÃ³ bÃ i bÃ¡o Ä‘á» xuáº¥t nÃ o Ä‘Æ°á»£c tÃ¬m tháº¥y.
+                    Chưa có bài báo đề xuất nào được tìm thấy.
                   </div>
                 )}
               </div>
             ) : (
               <div className="lens-collections-tab-content py-4">
-                <h4 className="font-display fw-bold mb-4">BÃ i bÃ¡o liÃªn quan / Äá» xuáº¥t</h4>
+                <h4 className="font-display fw-bold mb-4">Bài báo liên quan / Đề xuất</h4>
                 <ArticlesTabContent
                   recentArticles={recommendedArticles}
-                  loading={isRelatedLoading}
+                  loading={isRecommendedLoading}
+                  emptyMessage="Bài báo này hiện chưa có đề xuất liên quan nào trong hệ thống."
                   onArticleClick={(articleId) => navigate(`/trending/articles/${articleId}`)}
                 />
               </div>
@@ -1359,35 +1328,35 @@ ER  - `;
           </main>
       </div>
 
-      {/* Modal hiá»ƒn thá»‹ chi tiáº¿t TrÃ­ch dáº«n vÃ  Export Citation */}
+      {/* Modal hiển thị chi tiết Trích dẫn và Export Citation */}
       <Modal show={showCitationsModal} onHide={() => setShowCitationsModal(false)} size="lg" centered>
         <Modal.Header closeButton>
           <Modal.Title className="font-display fw-bold">Citations & Citation Manager</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="row g-4">
-            {/* Cá»™t trÃ¡i: ThÃ´ng tin trÃ­ch dáº«n */}
+            {/* Cột trái: Thông tin trích dẫn */}
             <div className="col-12 col-md-5 border-end">
               <div className="lens-modal-stat-box">
-                <div className="text-muted-custom text-xs fw-bold text-uppercase mb-1">Tá»•ng lÆ°á»£t trÃ­ch dáº«n</div>
+                <div className="text-muted-custom text-xs fw-bold text-uppercase mb-1">Tổng lượt trích dẫn</div>
                 <div className="font-display fw-bold text-dark mb-2" style={{ fontSize: '2.5rem' }}>
                   {(article?.citations ?? 0).toLocaleString('en-US')}
                 </div>
               </div>
               <p className="text-muted-custom mb-3 text-xs" style={{ lineHeight: 1.6 }}>
-                Sá»‘ lÆ°á»£t trÃ­ch dáº«n (Citations) biá»ƒu thá»‹ sá»‘ lÆ°á»£ng bÃ i bÃ¡o, tÃ i liá»‡u há»c thuáº­t khÃ¡c Ä‘Ã£ sá»­ dá»¥ng nguá»“n hoáº·c trÃ­ch dáº«n láº¡i káº¿t quáº£ cá»§a cÃ´ng trÃ¬nh nghiÃªn cá»©u nÃ y.
+                Số lượt trích dẫn (Citations) biểu thị số lượng bài báo, tài liệu học thuật khác đã sử dụng nguồn hoặc trích dẫn lại kết quả của công trình nghiên cứu này.
               </p>
               <div className="text-xs text-muted-custom d-flex flex-column gap-2">
-                <div><strong>DOI:</strong> MÃ£ Ä‘á»‹nh danh Ä‘á»‘i tÆ°á»£ng sá»‘ Ä‘á»‹nh danh bÃ i bÃ¡o cá»‘ Ä‘á»‹nh trá»±c tuyáº¿n.</div>
-                <div><strong>References:</strong> Sá»‘ lÆ°á»£ng cÃ´ng trÃ¬nh nghiÃªn cá»©u Ä‘Æ°á»£c bÃ i bÃ¡o nÃ y trÃ­ch dáº«n láº¡i.</div>
+                <div><strong>DOI:</strong> Mã định danh đối tượng số định danh bài báo cố định trực tuyến.</div>
+                <div><strong>References:</strong> Số lượng công trình nghiên cứu được bài báo này trích dẫn lại.</div>
               </div>
             </div>
 
-            {/* Cá»™t pháº£i: Xuáº¥t trÃ­ch dáº«n */}
+            {/* Cột phải: Xuất trích dẫn */}
             <div className="col-12 col-md-7">
               <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
                 <Icon icon="lucide:download" className="text-primary" />
-                <span>Export Citation (Táº£i trÃ­ch dáº«n)</span>
+                <span>Export Citation (Tải trích dẫn)</span>
               </h6>
               
               {/* BibTeX */}
@@ -1455,7 +1424,7 @@ ER  - `;
         </Modal.Body>
         <Modal.Footer>
           <Button variant="outline-secondary" size="sm" onClick={() => setShowCitationsModal(false)}>
-            ÄÃ³ng
+            Đóng
           </Button>
         </Modal.Footer>
       </Modal>

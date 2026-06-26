@@ -5,13 +5,12 @@
 /* --- TrendingVNPage.css --- */
 /*
  * File: features\trendingVN\pages\TrendingVNPage.css
- * MÃ´ táº£: Thiáº¿t káº¿ láº¡i giao diá»‡n theo bá»‘ cá»¥c Lens.org.
- *        Bá»‘ cá»¥c 2 cá»™t: cá»™t trÃ¡i (káº¿t quáº£ tÃ¬m kiáº¿m), cá»™t pháº£i (sidebar phÃ¢n tÃ­ch).
- *        Thanh stats ngang vá»›i cÃ¡c Ã´ mÃ u, thanh toolbar, card bÃ i bÃ¡o, sidebar panels.
+ * Mô tả: Thiết kế lại giao diện theo bố cục Lens.org.
+ *        Bố cục 2 cột: cột trái (kết quả tìm kiếm), cột phải (sidebar phân tích).
+ *        Thanh stats ngang với các ô màu, thanh toolbar, card bài báo, sidebar panels.
  */
 
-/* ==================== ROOT VARIABLES ==================== */
-.trending-vn-page {
+:root {
   --primary: #1976D2;
   --primary-hover: #1565C0;
   --primary-light: #EAF4FF;
@@ -25,7 +24,9 @@
   --text-muted: #64748B;
   --text-dark: #334155;
   --font-sans: 'Inter', 'Roboto', 'Open Sans', sans-serif;
+}
 
+.trending-vn-page {
   min-height: 100vh;
   padding-top: 85px;
   padding-bottom: 40px;
@@ -35,14 +36,14 @@
 }
 
 /* ==================== LAYOUT WRAPPER (sidebar + main) ==================== */
-/* Bá»c toÃ n bá»™ ná»™i dung trong flex: sidebar trÃ¡i + content pháº£i */
+/* Bọc toàn bộ nội dung trong flex: sidebar trái + content phải */
 .lens-layout-wrapper {
   display: flex;
   min-height: calc(100vh - 85px);
 }
 
 /* ==================== LEFT ICON SIDEBAR ==================== */
-/* Thanh Ä‘iá»u hÆ°á»›ng dá»c bÃªn trÃ¡i, giá»‘ng Lens.org, chá»©a cÃ¡c icon chá»©c nÄƒng */
+/* Thanh điều hướng dọc bên trái, giống Lens.org, chứa các icon chức năng */
 .lens-left-sidebar {
   width: 48px;
   min-width: 48px;
@@ -60,7 +61,7 @@
   z-index: 10;
 }
 
-/* NÃºt icon trong sidebar trÃ¡i */
+/* Nút icon trong sidebar trái */
 .lens-sidebar-icon-btn {
   width: 36px;
   height: 36px;
@@ -80,19 +81,19 @@
   color: var(--text-main);
 }
 
-/* NÃºt Ä‘ang active (trang hiá»‡n táº¡i) â€” viá»n xanh dÆ°Æ¡ng, icon xanh */
+/* Nút đang active (trang hiện tại) — viền xanh dương, icon xanh */
 .lens-sidebar-icon-btn.active {
   background: var(--primary);
   color: #ffffff;
 }
 
-/* ==================== MAIN CONTENT (bÃªn pháº£i sidebar) ==================== */
+/* ==================== MAIN CONTENT (bên phải sidebar) ==================== */
 .lens-main-content {
   flex: 1;
-  min-width: 0; /* TrÃ¡nh overflow flex child */
+  min-width: 0; /* Tránh overflow flex child */
 }
 
-/* áº¨n sidebar trÃªn mobile */
+/* Ẩn sidebar trên mobile */
 @media (max-width: 767px) {
   .lens-left-sidebar {
     display: none;
@@ -332,7 +333,7 @@
 }
 
 /* ==================== CUSTOMISE PANEL ==================== */
-/* Panel dropdown hiá»‡n khi báº¥m "Customise List", chá»©a cÃ¡c checkbox */
+/* Panel dropdown hiện khi bấm "Customise List", chứa các checkbox */
 .lens-customise-panel {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -347,14 +348,14 @@
   margin-bottom: 12px;
 }
 
-/* LÆ°á»›i 2 cá»™t cho danh sÃ¡ch checkbox */
+/* Lưới 2 cột cho danh sách checkbox */
 .lens-customise-panel .customise-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px 24px;
 }
 
-/* Checkbox style â€” viá»n xanh lÃ¡ khi checked giá»‘ng áº£nh Lens */
+/* Checkbox style — viền xanh lá khi checked giống ảnh Lens */
 .lens-customise-panel .customise-check .form-check-input {
   width: 16px;
   height: 16px;
@@ -439,7 +440,7 @@
   border-color: #94a3b8;
 }
 
-/* Checkbox nhá» */
+/* Checkbox nhỏ */
 .lens-checkbox-sm .form-check-input {
   width: 14px;
   height: 14px;
@@ -453,7 +454,7 @@
   border-color: var(--primary);
 }
 
-/* TiÃªu Ä‘á» bÃ i bÃ¡o */
+/* Tiêu đề bài báo */
 .lens-article-title {
   font-size: 0.92rem;
   font-weight: 600;
@@ -468,7 +469,7 @@
   text-decoration: underline;
 }
 
-/* DÃ²ng metadata (badges dÆ°á»›i tiÃªu Ä‘á») */
+/* Dòng metadata (badges dưới tiêu đề) */
 .lens-meta-line {
   display: flex;
   flex-wrap: wrap;
@@ -498,7 +499,7 @@
   border-radius: 50%;
 }
 
-/* DÃ²ng chi tiáº¿t metadata (Authors, Journal, Cited) */
+/* Dòng chi tiết metadata (Authors, Journal, Cited) */
 .lens-detail-line {
   font-size: 0.72rem;
   color: #475569;
@@ -1447,15 +1448,15 @@
 
 /* --- ArticleDetailPage.css --- */
 /**
- * File source thuá»™c há»‡ thá»‘ng FE ResearchPulse.
- * Äá»‹nh nghÄ©a styles cho trang chi tiáº¿t bÃ i bÃ¡o Ä‘a cá»™t cá»§a Lens.org.
+ * File source thuộc hệ thống FE ResearchPulse.
+ * Định nghĩa styles cho trang chi tiết bài báo đa cột của Lens.org.
  *
  * File: trendingVN\pages\ArticleDetailPage.css
  */
 
 .article-detail-page-wrapper {
   min-height: 100vh;
-  padding-top: 80px; /* Chiá»u cao Header */
+  padding-top: 80px; /* Chiều cao Header */
   padding-bottom: 60px;
   background-color: var(--bg-main);
   color: var(--text-main);
@@ -1710,18 +1711,22 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   margin-bottom: 1.25rem;
+  font-family: var(--font-sans), sans-serif;
 }
 
 .lens-breadcrumb-link {
   color: var(--text-muted);
   text-decoration: none;
   cursor: pointer;
+  font-weight: 500;
+  transition: color 0.15s ease;
 }
 
 .lens-breadcrumb-link:hover {
-  color: var(--btn-dark);
+  color: var(--primary);
+  text-decoration: underline;
 }
 
 .lens-breadcrumb-current {
@@ -2229,7 +2234,7 @@
   border-color: #94a3b8;
 }
 
-/* Checkbox nhá» */
+/* Checkbox nhỏ */
 .lens-checkbox-sm .form-check-input {
   width: 16px;
   height: 16px;
@@ -2243,7 +2248,7 @@
   border-color: var(--primary);
 }
 
-/* TiÃªu Ä‘á» bÃ i bÃ¡o */
+/* Tiêu đề bài báo */
 .lens-article-title {
   font-size: 1.1rem;
   font-weight: 600;
@@ -2258,7 +2263,7 @@
   text-decoration: underline;
 }
 
-/* DÃ²ng metadata (badges dÆ°á»›i tiÃªu Ä‘á») */
+/* Dòng metadata (badges dưới tiêu đề) */
 .lens-meta-line {
   display: flex;
   flex-wrap: wrap;
@@ -2288,7 +2293,7 @@
   border-radius: 50%;
 }
 
-/* DÃ²ng chi tiáº¿t metadata (Authors, Journal, Cited) */
+/* Dòng chi tiết metadata (Authors, Journal, Cited) */
 .lens-detail-line {
   font-size: 13.6px;
   color: #475569;

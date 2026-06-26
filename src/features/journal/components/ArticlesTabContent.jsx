@@ -7,7 +7,7 @@ import { Card, Button } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import LoadingSkeleton from '../../../shared/components/LoadingSkeleton';
 
-export default function ArticlesTabContent({ recentArticles = [], loading, onArticleClick }) {
+export default function ArticlesTabContent({ recentArticles = [], loading, onArticleClick, emptyMessage }) {
   if (loading) {
     return (
       <div className="d-flex flex-column gap-3">
@@ -26,7 +26,7 @@ export default function ArticlesTabContent({ recentArticles = [], loading, onArt
   if (!recentArticles || recentArticles.length === 0) {
     return (
       <section className="journal-surface journal-empty-state">
-        Journal này chưa có bài báo gần đây.
+        {emptyMessage || "Journal này chưa có bài báo gần đây."}
       </section>
     );
   }

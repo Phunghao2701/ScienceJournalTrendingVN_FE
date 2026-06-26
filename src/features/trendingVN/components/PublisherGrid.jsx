@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
 import { Spinner, Alert } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import api from '../../../shared/services/api';
+import { useTrendingPublishers } from '../hooks/useTrendingPublishers';
 import '../trendingVN.css';
 
 /**
@@ -23,50 +22,14 @@ const LOGO_MAP = {
 };
 
 /**
- * PublisherGrid – Hiển thị lưới nhà xuất bản lấy từ API GET /publishers.
+ * PublisherGrid – Hiển thị lưới nhà xuất bản lấy từ hook TanStack Query.
  *
  * BE trả về: { success, data: [{ publisher_id, display_name, image_url, created_at }], pagination }
  * Không có trường article_count nên component chỉ hiển thị tên và logo.
  */
 export default function PublisherGrid() {
-  const { t, i18n } = useTranslation();
-  const language = i18n.language || 'vi';
-
-  const [publishers, setPublishers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Gọi endpoint GET /publishers có sẵn trong BE, giới hạn 8 bản ghi
-  useEffect(() => {
-    const fetchPublishers = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        // Sử dụng đúng endpoint GET /publishers (có sẵn trong publisher.route.js)
-        const response = await api.get('/publishers', { params: { limit: 8 } });
-
-        if (response?.data?.success && response?.data?.data) {
-          setPublishers(response.data.data);
-        } else {
-          setError(
-            language.startsWith('vi')
-              ? 'Không lấy được dữ liệu nhà xuất bản'
-              : 'Failed to fetch publisher data'
-          );
-        }
-      } catch (err) {
-        console.error('Error fetching publishers:', err);
-        setError(
-          language.startsWith('vi')
-            ? 'Lỗi kết nối máy chủ'
-            : 'Network error connecting to backend'
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchPublishers();
-  }, [language]);
+  const { t } = useTranslation();
+  const { publishers, isLoading, error } = useTrendingPublishers(8);
 
   /**
    * Trả về URL logo cho nhà xuất bản.

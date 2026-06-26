@@ -117,6 +117,10 @@ export default function useArticleList() {
           journal_id: item.journal_id || null,
           journal_name: item.journal_name || null,
           journal_issn: item.journal_issn || null,
+          publication_date: item.publication_date || item.published_date || null,
+          volume_number: item.volume_number || item.volume || null,
+          issue_number: item.issue_number || item.issue || null,
+          pages: item.pages || item.page_range || item.article_pages || null,
           // Tương thích với component cũ đang dùng article.journal.display_name
           journal: item.journal_id
             ? { journal_id: item.journal_id, display_name: item.journal_name }

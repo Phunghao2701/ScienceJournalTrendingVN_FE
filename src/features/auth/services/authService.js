@@ -7,12 +7,14 @@ import { jwtDecode } from 'jwt-decode';
 import {
   loginApi,
   registerApi,
-  getProfileApi,
-  updateProfileApi,
-  deleteAccountApi,
   loginGoogleApi,
   logoutApi,
 } from '../api/auth.api';
+import {
+  deleteProfileApi,
+  getProfileApi,
+  updateProfileApi,
+} from '../../profile/api/profile.api';
 import { removeToken } from '../../../shared/utils/auth';
 
 /**
@@ -148,7 +150,7 @@ export const updateCurrentProfile = async (profileData) => {
  * @returns {Promise<Object>} Backend response body.
  */
 export const deleteCurrentAccount = async () => {
-  const response = await deleteAccountApi();
+  const response = await deleteProfileApi();
   if (response.data?.success) {
     removeToken();
     return response.data;

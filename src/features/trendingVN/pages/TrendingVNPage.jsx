@@ -17,8 +17,6 @@ import Header from '../../landing/components/Header';
 import useArticleList from '../../article/hooks/useArticleList';
 import ArticleTable from '../../article/components/ArticleTable';
 import AdminPagination from '../../../shared/components/Pagination';
-import { searchJournalsApi } from '../../journal/api/journalApi';
-import { getTopicsApi } from '../../topic/api/topic.api';
 import PublisherGrid from '../components/PublisherGrid';
 import TrendingArticleCard from '../components/TrendingArticleCard';
 import { toast } from '../../../shared/utils/toast';
@@ -87,14 +85,14 @@ export default function TrendingVNPage() {
     year: true,
   });
 
-  // Cấu hình hiển thị cột — chỉ 6 trường theo yêu cầu
+  // Cấu hình hiển thị cột — bỏ Keywords và ISSN khỏi card theo yêu cầu giao diện hiện tại
   const [visibleColumns, setVisibleColumns] = useState({
     doi: true,
     authors: true,
     article: true,
     journal: true,
-    keywords: true,
-    issn: true,
+    keywords: false,
+    issn: false,
   });
 
   // Toggle ẩn/hiện từng cột trong Customise panel
@@ -761,7 +759,7 @@ export default function TrendingVNPage() {
 
         {/* ==================== MAIN CONTENT AREA ==================== */}
         <div className="lens-main-content">
-        <Container fluid className="px-lg-3 py-0">
+        <Container fluid className="p-0">
 
         {/* ==================== 1. TOP INFO BAR ==================== */}
         {/* Thanh thông tin trên cùng: tổng số bài báo + link tìm kiếm */}
@@ -829,24 +827,45 @@ export default function TrendingVNPage() {
           </div>
         </div>
 
-        {/* ==================== 5. MAIN CONTENT (LEFT + RIGHT) ==================== */}
-        <Row className="g-0">
+        {/* ==================== 5. STICKY TOP TOOLBAR (FULL WIDTH) ==================== */}
+        <div className="lens-sticky-results-toolbar">
+          {/* --- Tab row & Search --- */}
+          <div className="lens-tab-row">
+            <div className="tab-group">
+              <button className="tab-item active">
+                {t('articles')}
+              </button>
+              <button className="tab-item" disabled>
+                {t('exploreCitations')}
+                <Icon icon="lucide:check-check" width="13" style={{ color: '#16a34a' }} />
+              </button>
+            </div>
+            
+            <div className="d-flex align-items-center flex-grow-1 justify-content-end gap-2 px-2">
+              <Form onSubmit={handleSearchSubmit} className="lens-search-form" style={{ maxWidth: '400px', margin: 0 }}>
+                <div className="lens-search-group" style={{ height: '32px', minHeight: '32px' }}>
+                  <span className="d-flex align-items-center ps-2 pe-1" style={{ background: 'transparent' }}>
+                    <Icon icon="lucide:search" width="14" className="text-muted" />
+                  </span>
+                  <Form.Control
+                    placeholder={t('searchPlaceholder')}
+                    value={localSearchInput}
+                    onChange={(e) => setLocalSearchInput(e.target.value)}
+                    className="lens-search-input py-1"
+                    style={{ fontSize: '0.8rem' }}
+                  />
+                  {localSearchInput && (
+                    <Button variant="link" className="p-0 px-2 text-muted" onClick={handleClearSearch}>
+                      <Icon icon="lucide:x" width="12" />
+                    </Button>
+                  )}
+                  <Button type="submit" className="lens-search-btn py-1 px-3">
+                    {t('search')}
+                  </Button>
+                </div>
+              </Form>
 
-          {/* ===== CỘT TRÁI: Tabs + Toolbar + Kết quả ===== */}
-          <Col lg={showSidebar ? 8 : 12} md={12} className="transition-col">
-
-            {/* --- Tab row: Articles / Explore Citations + Table/List/Analysis --- */}
-            <div className="lens-tab-row">
-              <div className="tab-group">
-                <button className="tab-item active">
-                  {t('articles')}
-                </button>
-                <button className="tab-item" disabled>
-                  {t('exploreCitations')}
-                  <Icon icon="lucide:check-check" width="13" style={{ color: '#16a34a' }} />
-                </button>
-              </div>
-              <div className="view-toggles">
+              <div className="view-toggles ps-2 border-start">
                 <button
                   className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
                   onClick={() => setViewMode('table')}
@@ -870,138 +889,118 @@ export default function TrendingVNPage() {
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* --- Action toolbar: Expand, Customise, Save, Share, Export, Sort --- */}
-            <div className="lens-action-toolbar">
-              <div className="action-group">
-                <button className="lens-action-btn" onClick={handleToggleAllAbstracts}>
-                  <Icon icon={allExpanded ? "lucide:chevron-up" : "lucide:chevron-down"} width="12" />
-                  {allExpanded ? t('collapseAbstract') : t('expand')}
-                </button>
-                <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                <button className="lens-action-btn" onClick={() => setShowCustomise(!showCustomise)}>
-                  <Icon icon="lucide:list-checks" width="12" />
-                  {t('customiseList')}
-                </button>
-                <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                <button className="lens-action-btn" onClick={() => setShowSaveQueryModal(true)}>
-                  <Icon icon="lucide:save" width="12" />
-                  {t('saveAsQuery')}
-                </button>
-                <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                <button className="lens-action-btn" onClick={() => setShowShareModal(true)}>
-                  <Icon icon="lucide:share-2" width="12" />
-                  {t('share')}
-                </button>
-                <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                <button className="lens-action-btn" onClick={() => setShowExportModal(true)}>
-                  <Icon icon="lucide:download" width="12" />
-                  {t('export')}
-                </button>
-                <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                <button className="lens-action-btn" disabled>
-                  <Icon icon="lucide:sparkles" width="12" />
-                  {t('analysisPreviewOptions')}
-                  <Badge bg="warning" text="dark" style={{ fontSize: '0.58rem', padding: '1px 4px', marginLeft: '3px' }}>{t('badgeNew')}</Badge>
-                </button>
-              </div>
-
-              {/* Sort dropdown */}
-              <div className="d-flex align-items-center gap-2">
-                <Icon icon="lucide:arrow-up-down" width="12" className="text-muted" />
-                <select
-                  className="lens-sort-select"
-                  value={`${filters.sortBy}-${filters.sortOrder}`}
-                  onChange={(e) => {
-                    const [sortBy, sortOrder] = e.target.value.split('-');
-                    updateFilters({ sortBy, sortOrder });
-                  }}
-                >
-                  <option value="created_at-desc">{t('sortDateNewest')}</option>
-                  <option value="created_at-asc">{t('sortDateOldest')}</option>
-                  <option value="title-asc">{t('sortTitleAsc')}</option>
-                  <option value="title-desc">{t('sortTitleDesc')}</option>
-                  <option value="publication_year-desc">{t('sortYearDesc')}</option>
-                  <option value="publication_year-asc">{t('sortYearAsc')}</option>
-                </select>
-              </div>
+          {/* --- Action toolbar: Expand, Customise, Save, Share, Export, Sort --- */}
+          <div className="lens-action-toolbar">
+            <div className="action-group">
+              <button className="lens-action-btn" onClick={handleToggleAllAbstracts}>
+                <Icon icon={allExpanded ? "lucide:chevron-up" : "lucide:chevron-down"} width="12" />
+                {allExpanded ? t('collapseAbstract') : t('expand')}
+              </button>
+              <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+              <button className="lens-action-btn" onClick={() => setShowCustomise(!showCustomise)}>
+                <Icon icon="lucide:list-checks" width="12" />
+                {t('customiseList')}
+              </button>
+              <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+              <button className="lens-action-btn" onClick={() => setShowSaveQueryModal(true)}>
+                <Icon icon="lucide:save" width="12" />
+                {t('saveAsQuery')}
+              </button>
+              <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+              <button className="lens-action-btn" onClick={() => setShowShareModal(true)}>
+                <Icon icon="lucide:share-2" width="12" />
+                {t('share')}
+              </button>
+              <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+              <button className="lens-action-btn" onClick={() => setShowExportModal(true)}>
+                <Icon icon="lucide:download" width="12" />
+                {t('export')}
+              </button>
+              <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+              <button className="lens-action-btn" disabled>
+                <Icon icon="lucide:sparkles" width="12" />
+                {t('analysisPreviewOptions')}
+                <Badge bg="warning" text="dark" style={{ fontSize: '0.58rem', padding: '1px 4px', marginLeft: '3px' }}>{t('badgeNew')}</Badge>
+              </button>
             </div>
 
-            {/* --- Panel Customise Your Results View --- */}
-            {/* Hiện khi bấm nút "Customise List", chứa 6 checkbox */}
-            <Collapse in={showCustomise}>
-              <div className="lens-customise-panel">
-                <div className="customise-title">{t('customiseYourResultsView')}</div>
-                <div className="customise-grid">
-                  {[
-                    { key: 'doi', label: t('colDoi') },
-                    { key: 'authors', label: t('colAuthors') },
-                    { key: 'article', label: t('colArticle') },
-                    { key: 'journal', label: t('colJournal') },
-                    { key: 'keywords', label: t('colKeywords') },
-                    { key: 'issn', label: t('colIssn') },
-                  ].map(col => (
-                    <Form.Check
-                      key={col.key}
-                      type="checkbox"
-                      id={`customise-col-${col.key}`}
-                      label={col.label}
-                      checked={visibleColumns[col.key]}
-                      onChange={() => toggleColumn(col.key)}
-                      className="customise-check"
-                    />
-                  ))}
-                </div>
-              </div>
-            </Collapse>
+            {/* Sort dropdown */}
+            <div className="d-flex align-items-center gap-2">
+              <Icon icon="lucide:arrow-up-down" width="12" className="text-muted" />
+              <select
+                className="lens-sort-select"
+                value={`${filters.sortBy}-${filters.sortOrder}`}
+                onChange={(e) => {
+                  const [sortBy, sortOrder] = e.target.value.split('-');
+                  updateFilters({ sortBy, sortOrder });
+                }}
+              >
+                <option value="created_at-desc">{t('sortDateNewest')}</option>
+                <option value="created_at-asc">{t('sortDateOldest')}</option>
+                <option value="title-asc">{t('sortTitleAsc')}</option>
+                <option value="title-desc">{t('sortTitleDesc')}</option>
+                <option value="publication_year-desc">{t('sortYearDesc')}</option>
+                <option value="publication_year-asc">{t('sortYearAsc')}</option>
+              </select>
+            </div>
+          </div>
 
-            {/* --- Active filter chips --- */}
-            {activeChips.length > 0 && (
-              <div className="lens-chips-bar">
-                <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{t('filterSearch')}:</span>
-                {activeChips.map(chip => (
-                  <span key={chip.key} className="lens-filter-chip">
-                    {chip.label}
-                    <Icon
-                      icon="lucide:x"
-                      width="11"
-                      className="lens-chip-close"
-                      onClick={() => updateFilters({ [chip.key]: chip.value })}
-                    />
-                  </span>
-                ))}
-                {hasActiveFilters && (
-                  <button className="lens-clear-link" onClick={clearFilters}>
-                    {t('clearAll')}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* ==================== SEARCH BAR ==================== */}
-            <div>
-              <Form onSubmit={handleSearchSubmit}>
-                <div className="lens-search-group">
-                  <span className="d-flex align-items-center ps-3 pe-0" style={{ background: 'transparent' }}>
-                    <Icon icon="lucide:search" width="16" className="text-muted" />
-                  </span>
-                  <Form.Control
-                    placeholder={t('searchPlaceholder')}
-                    value={localSearchInput}
-                    onChange={(e) => setLocalSearchInput(e.target.value)}
-                    className="lens-search-input"
+          {/* --- Panel Customise Your Results View --- */}
+          <Collapse in={showCustomise}>
+            <div className="lens-customise-panel">
+              <div className="customise-title">{t('customiseYourResultsView')}</div>
+              <div className="customise-grid">
+                {[
+                  { key: 'doi', label: t('colDoi') },
+                  { key: 'authors', label: t('colAuthors') },
+                  { key: 'article', label: t('colArticle') },
+                  { key: 'journal', label: t('colJournal') },
+                ].map(col => (
+                  <Form.Check
+                    key={col.key}
+                    type="checkbox"
+                    id={`customise-col-${col.key}`}
+                    label={col.label}
+                    checked={visibleColumns[col.key]}
+                    onChange={() => toggleColumn(col.key)}
+                    className="customise-check"
                   />
-                  {localSearchInput && (
-                    <Button variant="link" className="pe-2 text-muted" onClick={handleClearSearch}>
-                      <Icon icon="lucide:x" width="14" />
-                    </Button>
-                  )}
-                  <Button type="submit" className="lens-search-btn">
-                    {t('search')}
-                  </Button>
-                </div>
-              </Form>
+                ))}
+              </div>
             </div>
+          </Collapse>
+
+          {/* --- Active filter chips --- */}
+          {activeChips.length > 0 && (
+            <div className="lens-chips-bar">
+              <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{t('filterSearch')}:</span>
+              {activeChips.map(chip => (
+                <span key={chip.key} className="lens-filter-chip">
+                  {chip.label}
+                  <Icon
+                    icon="lucide:x"
+                    width="11"
+                    className="lens-chip-close"
+                    onClick={() => updateFilters({ [chip.key]: chip.value })}
+                  />
+                </span>
+              ))}
+              {hasActiveFilters && (
+                <button className="lens-clear-link" onClick={clearFilters}>
+                  {t('clearAll')}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ==================== 6. MAIN CONTENT (LEFT + RIGHT) ==================== */}
+        <Row className="g-0">
+
+          {/* ===== CỘT TRÁI: Kết quả ===== */}
+          <Col lg={showSidebar ? 8 : 12} md={12} className="transition-col">
 
             {/* ==================== ARTICLE RESULTS ==================== */}
             <div className="lens-results-body">

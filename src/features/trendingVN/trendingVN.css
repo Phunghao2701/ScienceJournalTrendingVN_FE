@@ -208,7 +208,14 @@
   line-height: 1.2;
 }
 
-/* ==================== TAB ROW (Articles / Explore Citations + Table/List/Analysis) ==================== */
+.lens-sticky-results-toolbar {
+  position: sticky;
+  top: 85px;
+  z-index: 18;
+  background: var(--bg-main);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
 .lens-tab-row {
   display: flex;
   align-items: center;
@@ -290,22 +297,24 @@
 /* ==================== ACTION TOOLBAR ==================== */
 .lens-action-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 8px;
   padding: 6px 12px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-top: none;
   font-size: 0.75rem;
+  overflow-x: auto;
 }
 
 .lens-action-toolbar .action-group {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 4px;
+  min-width: 0;
 }
 
 
@@ -645,9 +654,27 @@
 }
 
 /* ==================== SEARCH BAR ==================== */
+.lens-search-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 37px;
+  padding: 4px 0 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: none;
+}
+
+.lens-search-form {
+  width: min(100%, 430px);
+  margin-left: auto;
+}
+
 .lens-search-group {
   display: flex;
   align-items: stretch;
+  width: 100%;
+  min-height: 30px;
   border-left: 1px solid var(--border);
   background: var(--bg-card);
   overflow: hidden;
@@ -665,7 +692,8 @@
   font-size: 0.85rem !important;
   color: var(--text-main) !important;
   background: transparent !important;
-  padding: 8px 12px !important;
+  padding: 6px 10px !important;
+  min-width: 0;
 }
 
 .lens-search-btn {
@@ -2487,4 +2515,35 @@
   color: #00acc1; /* Distinct Lens teal count color */
   font-family: var(--font-display);
 }
+
+@media (max-width: 767px) {
+  .trending-vn-page {
+    padding-top: 72px;
+  }
+
+  .lens-sticky-results-toolbar {
+    top: 72px;
+  }
+
+  .lens-tab-row,
+  .lens-action-toolbar {
+    overflow-x: auto;
+  }
+
+  .lens-tab-row .tab-group,
+  .lens-tab-row .view-toggles,
+  .lens-action-toolbar .action-group {
+    flex: 0 0 auto;
+  }
+
+  .lens-search-row {
+    justify-content: stretch;
+    padding-left: 0;
+  }
+
+  .lens-search-form {
+    width: 100%;
+  }
+}
+
 

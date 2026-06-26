@@ -5,6 +5,7 @@ import JournalDetailPage from '../../features/journal/pages/JournalDetailPage';
 import CatalogSearchPage from '../../features/catalog/pages/CatalogSearchPage';
 import TrendingVNPage from '../../features/trendingVN/pages/TrendingVNPage';
 import ArticleDetailPage from '../../features/article/pages/ArticleDetailPage';
+import TrendingArticleDetailPage from '../../features/trendingVN/pages/ArticleDetailPage';
 import ArticleVisualDetailPage from '../../features/article/pages/ArticleVisualDetailPage';
 import DashboardPage from '../../features/dashboard/pages/DashboardPage';
 
@@ -67,7 +68,7 @@ import TrendingPage from '../../features/trendingVN/pages/TrendingPage';
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<TrendingVNPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
@@ -120,6 +121,10 @@ export default function AppRoutes() {
         <Route path="/articles" element={<TrendingVNPage />} />
         <Route path="/trending-vn" element={<TrendingVNPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
+        <Route
+          path="/trending/articles/:id"
+          element={<TrendingArticleDetailPage />}
+        />
         <Route path="/articles/:id/visual" element={<ArticleVisualDetailPage />} />
 
         <Route path="/profile" element={<ProfilePage />} />

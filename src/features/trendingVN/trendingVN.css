@@ -2483,3 +2483,129 @@
   font-family: var(--font-display);
 }
 
+/* ==================== META LINE SEPARATORS ==================== */
+.meta-sep {
+  color: #cbd5e1;
+  padding: 0 4px;
+  user-select: none;
+}
+
+.lens-oa-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+/* ==================== IDENTIFIERS LINE ==================== */
+.lens-identifiers-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 2px 0 3px 0;
+  font-size: 0.73rem;
+}
+
+.lens-identifier-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+}
+
+.lens-identifier-copy-btn {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.lens-identifier-copy-btn:hover {
+  opacity: 1;
+  color: var(--primary);
+}
+
+/* ==================== AUTHOR POPOVER ==================== */
+.author-popover-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 1050;
+  background: #ffffff;
+  border: 1px solid var(--border-dark);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 220px;
+  padding: 6px 0;
+  font-size: 0.8rem;
+}
+
+.author-popover-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.author-popover-hr {
+  margin: 4px 0;
+  border-color: var(--border);
+  opacity: 1;
+}
+
+.author-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 6px 12px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.author-popover-item:hover {
+  background: #f1f5f9;
+  color: var(--primary);
+}
+
+/* ==================== PILL BADGES — AFFILIATION & FIELD ==================== */
+.lens-pill-affiliation {
+  background: #fce4ec;
+  color: #c62828;
+  border-color: #f48fb1;
+}
+
+.lens-pill-field {
+  background: #ede7f6;
+  color: #4527a0;
+  border-color: #ce93d8;
+}
+
+/* ==================== EXPANDED SECTION TITLES ==================== */
+.expanded-section-title {
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dark);
+  margin-bottom: 5px;
+}
+

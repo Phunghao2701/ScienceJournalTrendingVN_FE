@@ -340,5 +340,18 @@
   "publicationSource": "Source",
   "featureComingSoon": "This feature is not yet available. Please check back later!",
   "accessTypeLabel": "Access Type",
-  "closedAccessLabel": "Closed Access"
+  "closedAccessLabel": "Closed Access",
+  "colTopic": "Topic",
+  "colOa": "OA",
+  "colDetails": "DETAILS",
+  "needApiAggregate": "Requires API aggregation",
+  "citations": "citations",
+  "inThisPage": "in this page",
+  "noJournalInfo": "No journal information available",
+  "unclassified": "Unclassified",
+  "detailsLink": "Details",
+  "copiedDoiAlert": "DOI copied to clipboard: ",
+  "noArticlesMatching": "No matching articles found",
+  "adjustFiltersTryAgain": "Try changing keywords or clearing the current search filters to find more results.",
+  "clearFiltersLabel": "Clear filters"
 }

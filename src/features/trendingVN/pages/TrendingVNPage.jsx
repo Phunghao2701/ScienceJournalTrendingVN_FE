@@ -48,6 +48,20 @@ export default function TrendingVNPage() {
     handlePageChange,
   } = useArticleList();
 
+  // Derived stats computed from the current page's articles (10 items max)
+  const derivedStats = useMemo(() => {
+    const openAccessCount = articles.filter(a => a.is_open_access).length;
+    const citedCount = articles.filter(a => (a.semantic_citation_count || 0) > 0).length;
+    const totalCitations = articles.reduce((s, a) => s + (a.semantic_citation_count || 0), 0);
+    return { openAccessCount, citedCount, totalCitations };
+  }, [articles]);
+
+  // Sort by column header click — toggles asc/desc for the same field
+  const handleColumnSortChange = (field) => {
+    const newOrder = filters.sortBy === field && filters.sortOrder === 'asc' ? 'desc' : 'asc';
+    updateFilters({ sortBy: field, sortOrder: newOrder });
+  };
+
   // Navigate to article detail page.
   // Uses the trending detail route; hook's handleDetailClick uses /articles/:id/visual (public route).
   const handleDetailClick = (id) => {
@@ -1206,35 +1220,45 @@ export default function TrendingVNPage() {
             {/* ==================== 4. STATS COLOR BAR ==================== */}
             {/* Thanh thống kê ngang — để trống giá trị để người dùng tự điền sau */}
             <div className="lens-stats-bar">
-              <div className="stat-segment">
+              {/* Slot 1: Total articles — uses pagination total (accurate) */}
+              <div className="stat-segment" onClick={() => clearFilters()} style={{ cursor: 'pointer' }}>
                 <div className="stat-color-bar" style={{ background: '#00acc1' }} />
                 <div className="stat-label">{t('statArticleRecords')}</div>
-                <div className="stat-value">—</div>
+                <div className="stat-value">{isLoading ? '...' : fmt(total)}</div>
               </div>
-              <div className="stat-segment">
+              {/* Slot 2: Open Access — computed from current page */}
+              <div className="stat-segment" onClick={() => updateFilters({ access: 'open' })} style={{ cursor: 'pointer' }}>
                 <div className="stat-color-bar" style={{ background: '#0288d1' }} />
-                <div className="stat-label">{t('statSimpleFamilies')}</div>
-                <div className="stat-value">—</div>
+                <div className="stat-label">{t('statSimpleFamilies')} (OA)</div>
+                <div className="stat-value">
+                  {isLoading ? '...' : fmt(derivedStats.openAccessCount)}
+                  <span className="stat-sub">/{fmt(articles.length)} ({t('inThisPage')})</span>
+                </div>
               </div>
-              <div className="stat-segment">
+              {/* Slots 3-5: Require BE aggregate endpoint — show N/A */}
+              <div className="stat-segment stat-segment--disabled">
                 <div className="stat-color-bar" style={{ background: '#7b1fa2' }} />
                 <div className="stat-label">{t('statExtendedFamilies')}</div>
-                <div className="stat-value">—</div>
+                <div className="stat-value stat-value--na" title={t('needApiAggregate')}>N/A</div>
               </div>
-              <div className="stat-segment">
+              <div className="stat-segment stat-segment--disabled">
                 <div className="stat-color-bar" style={{ background: '#c62828' }} />
                 <div className="stat-label">{t('statCitedArticles')}</div>
-                <div className="stat-value">—</div>
+                <div className="stat-value stat-value--na" title={t('needApiAggregate')}>N/A</div>
               </div>
-              <div className="stat-segment">
+              <div className="stat-segment stat-segment--disabled">
                 <div className="stat-color-bar" style={{ background: '#ef6c00' }} />
                 <div className="stat-label">{t('statCitedByArticles')}</div>
-                <div className="stat-value">—</div>
+                <div className="stat-value stat-value--na" title={t('needApiAggregate')}>N/A</div>
               </div>
+              {/* Slot 6: Total citations — computed from current page */}
               <div className="stat-segment">
                 <div className="stat-color-bar" style={{ background: '#2e7d32' }} />
                 <div className="stat-label">{t('statArticleCitations')}</div>
-                <div className="stat-value">—</div>
+                <div className="stat-value">
+                  {isLoading ? '...' : fmt(derivedStats.totalCitations)}
+                  <span className="stat-sub">{t('citations')} ({t('inThisPage')})</span>
+                </div>
               </div>
             </div>
 
@@ -1523,6 +1547,10 @@ export default function TrendingVNPage() {
                         selectedIds={selectedIds}
                         onSelectRow={handleSelectRow}
                         onSelectAll={handleSelectAll}
+                        visibleColumns={visibleColumns}
+                        sortBy={filters.sortBy}
+                        sortOrder={filters.sortOrder}
+                        onSortChange={handleColumnSortChange}
                       />
                     </div>
                   ) : (

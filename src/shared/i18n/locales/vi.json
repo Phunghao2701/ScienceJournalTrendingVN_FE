@@ -340,5 +340,18 @@
   "publicationSource": "Nguồn",
   "featureComingSoon": "Tính năng này chưa được hỗ trợ. Vui lòng chờ cập nhật sau!",
   "accessTypeLabel": "Loại truy cập",
-  "closedAccessLabel": "Truy cập hạn chế"
+  "closedAccessLabel": "Truy cập hạn chế",
+  "colTopic": "Chủ đề",
+  "colOa": "OA",
+  "colDetails": "CHI TIẾT",
+  "needApiAggregate": "Cần API aggregate",
+  "citations": "trích dẫn",
+  "inThisPage": "trong trang này",
+  "noJournalInfo": "Chưa có thông tin tạp chí",
+  "unclassified": "Chưa phân loại",
+  "detailsLink": "Chi tiết",
+  "copiedDoiAlert": "Đã sao chép mã DOI vào bộ nhớ tạm: ",
+  "noArticlesMatching": "Không tìm thấy bài báo phù hợp",
+  "adjustFiltersTryAgain": "Hãy thử thay đổi từ khóa hoặc xóa các bộ lọc tìm kiếm hiện tại để tìm thấy nhiều kết quả hơn.",
+  "clearFiltersLabel": "Xóa bộ lọc"
 }

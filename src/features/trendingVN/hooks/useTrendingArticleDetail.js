@@ -22,11 +22,9 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     staleTime: 1000 * 60 * 5, // 5 phút
   });
 
-  // Effect phụ để khởi tạo các state nội bộ (bookmark, searchQuery) từ article data
+  // Effect phụ để khởi tạo state bookmark từ article data
   useEffect(() => {
     if (article) {
-      setSearchQuery(article.parsedArticle.issn ? `source.issn:"${article.parsedArticle.issn}"` : '');
-      
       const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${id}`;
       const isLocallyBookmarked = localStorage.getItem(localBookmarkKey) === 'true';
       setIsBookmarked(article.apiData.is_bookmarked || isLocallyBookmarked);
@@ -34,8 +32,13 @@ export const useTrendingArticleDetail = (id, currentUser) => {
   }, [article, currentUser, id]);
 
   // 2. Query lấy dữ liệu liên quan (phụ thuộc vào topicId của bài báo)
-  const topicId = Number(article?.parsedArticle?.topic_id || article?.parsedArticle?.primary_topic?.id || article?.parsedArticle?.topic?.id);
-  const isTopicValid = Number.isFinite(topicId);
+  // primary_topic từ API là string chứa topic_id (ví dụ "6"), không phải object.
+  // Fallback: lấy topic_id từ phần tử đầu tiên của mảng topics.
+  const rawTopicId =
+    article?.parsedArticle?.primary_topic ||
+    article?.parsedArticle?.topics?.[0]?.topic_id;
+  const topicId = Number(rawTopicId);
+  const isTopicValid = Number.isFinite(topicId) && topicId > 0;
 
   const { data: citingWorksData, isLoading: isCitingWorksLoading } = useQuery({
     queryKey: ['trendingVN', 'articleCitingWorks', id],
@@ -62,7 +65,7 @@ export const useTrendingArticleDetail = (id, currentUser) => {
   const { data: recommendedArticles = [], isLoading: isRecommendedLoading } = useQuery({
     queryKey: ['trendingVN', 'relatedArticles', topicId],
     queryFn: async () => {
-      const params = { limit: 5, sort_by: 'semantic_citation_count', sort_order: 'desc', topic_id: topicId };
+      const params = { limit: 5, sortBy: 'publication_year', sortOrder: 'DESC', topic_id: topicId };
       const response = await getArticlesListApi(params);
       const payload = response.data?.data || response.data || {};
       const rawItems = payload.items || payload.articles || [];
@@ -115,6 +118,7 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     isReferencesLoading,
     isRecommendedLoading,
     searchQuery,
+    setSearchQuery,
     handleBookmarkToggle,
     refetch,
   };

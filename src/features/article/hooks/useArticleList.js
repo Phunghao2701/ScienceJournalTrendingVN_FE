@@ -5,8 +5,56 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { getArticlesListApi } from '../api/articleApi';
+import { getArticlesListApi, getArticleDetailApi } from '../api/articleApi';
 import { searchJournalsApi } from '../../journal/api/journalApi';
+import keywordApi from '../../keywords/api/keywordApi';
+import { getTopicsApi, getTopicArticlesApi } from '../../topic/api/topic.api';
+
+/**
+ * Gộp dữ liệu detail vào item list vì API /articles hiện chưa trả đủ count/volume/issue.
+ */
+const enrichArticleList = async (rawList) => Promise.all(rawList.map(async (item) => {
+  if (!item.article_id) return item;
+
+  try {
+    const detailResponse = await getArticleDetailApi(item.article_id);
+    const detailData = detailResponse.data?.data || detailResponse.data || {};
+    return { ...item, ...detailData };
+  } catch (detailErr) {
+    console.warn('Failed to enrich article list item with detail metadata:', detailErr);
+    return item;
+  }
+}));
+
+const mapArticleListItem = (item) => ({
+  article_id: item.article_id,
+  version: item.version || null,
+  issue_id: item.issue_id || null,
+  title: item.title || '',
+  abstract: item.abstract || null,
+  publication_year: item.publication_year || null,
+  doi: item.doi || null,
+  primary_topic: item.topic_name
+    || (item.primary_topic ? `Topic #${item.primary_topic}` : null),
+  topic_id: item.primary_topic || null,
+  journal_id: item.journal_id || null,
+  journal_name: item.journal_name || null,
+  journal_issn: item.journal_issn || null,
+  publication_date: item.publication_date || item.published_date || null,
+  volume_number: item.volume_number || item.volume || item.volume_id || null,
+  issue_number: item.issue_number || item.issue || item.issue_id || null,
+  pages: item.pages || item.page_range || item.article_pages || null,
+  journal: item.journal_id
+    ? { journal_id: item.journal_id, display_name: item.journal_name }
+    : null,
+  is_open_access: Boolean(item.is_open_access),
+  semantic_citation_count: Number(
+    item.semantic_citation_count ?? item.citation_count ?? item.citations ?? item.citations_count ?? item.cited_by_count ?? 0
+  ),
+  reference_count: Number(item.reference_count ?? 0),
+  created_at: item.created_at || null,
+  authors: item.authors || [],
+});
 
 /**
  * Hook quản lý trạng thái trang Article List.
@@ -96,40 +144,68 @@ export default function useArticleList() {
         const resData = response.data.data || {};
 
         // Backend giờ trả `articles` (hoặc `items` tùy path cũ), hỗ trợ cả hai
-        const rawList = resData.articles || resData.items || [];
-        const paginationData = resData.pagination || {};
-        const totalCount = paginationData.total || rawList.length;
+        let rawList = resData.articles || resData.items || [];
+        let paginationData = resData.pagination || {};
+        let totalCount = paginationData.total || rawList.length;
 
-        // Map sang shape chuẩn cho FE: không hardcode gì thêm
-        const mappedArticles = rawList.map((item) => ({
-          article_id: item.article_id,
-          version: item.version || null,
-          issue_id: item.issue_id || null,
-          title: item.title || '',
-          abstract: item.abstract || null,
-          publication_year: item.publication_year || null,
-          doi: item.doi || null,
-          // Topic: ưu tiên topic_name (từ JOIN), fallback hiển thị `Topic #ID`
-          primary_topic: item.topic_name
-            || (item.primary_topic ? `Topic #${item.primary_topic}` : null),
-          topic_id: item.primary_topic || null,
-          // Journal: map từ flat fields trả về bởi enriched service
-          journal_id: item.journal_id || null,
-          journal_name: item.journal_name || null,
-          journal_issn: item.journal_issn || null,
-          publication_date: item.publication_date || item.published_date || null,
-          volume_number: item.volume_number || item.volume || null,
-          issue_number: item.issue_number || item.issue || null,
-          pages: item.pages || item.page_range || item.article_pages || null,
-          // Tương thích với component cũ đang dùng article.journal.display_name
-          journal: item.journal_id
-            ? { journal_id: item.journal_id, display_name: item.journal_name }
-            : null,
-          is_open_access: Boolean(item.is_open_access),
-          semantic_citation_count: item.semantic_citation_count !== undefined ? Number(item.semantic_citation_count) : null,
-          created_at: item.created_at || null,
-          authors: item.authors || [],
-        }));
+        // API /articles hiện chỉ search title/abstract/DOI. Nếu không có kết quả,
+        // thử search theo keyword rồi lấy bài từ /keywords/:id/articles.
+        if (rawList.length === 0 && textSearch) {
+          try {
+            const keywordResponse = await keywordApi.getKeywords({ search: textSearch, limit: 1 });
+            const keywordList = keywordResponse.data?.data?.items
+              || keywordResponse.data?.data
+              || [];
+            const matchedKeyword = Array.isArray(keywordList) ? keywordList[0] : null;
+
+            if (matchedKeyword?.keyword_id) {
+              const keywordArticlesResponse = await keywordApi.getArticlesByKeyword(matchedKeyword.keyword_id, {
+                page,
+                limit,
+                sortBy,
+                sortOrder,
+              });
+              const keywordArticlesData = keywordArticlesResponse.data?.data || {};
+              rawList = Array.isArray(keywordArticlesData)
+                ? keywordArticlesData
+                : (keywordArticlesData.articles || keywordArticlesData.items || []);
+              paginationData = keywordArticlesResponse.data?.pagination || keywordArticlesData.pagination || {};
+              totalCount = paginationData.total || rawList.length;
+            }
+          } catch (keywordErr) {
+            console.warn('Failed to fallback article search by keyword:', keywordErr);
+          }
+
+          if (rawList.length === 0) {
+            try {
+              const topicResponse = await getTopicsApi({ search: textSearch, limit: 1 });
+              const topicList = topicResponse.data?.data?.items
+                || topicResponse.data?.data
+                || [];
+              const matchedTopic = Array.isArray(topicList) ? topicList[0] : null;
+
+              if (matchedTopic?.topic_id) {
+                const topicArticlesResponse = await getTopicArticlesApi(matchedTopic.topic_id, {
+                  page,
+                  limit,
+                  sortBy,
+                  sortOrder,
+                });
+                const topicArticlesData = topicArticlesResponse.data?.data || {};
+                rawList = Array.isArray(topicArticlesData)
+                  ? topicArticlesData
+                  : (topicArticlesData.articles || topicArticlesData.items || []);
+                paginationData = topicArticlesData.pagination || topicArticlesResponse.data?.pagination || {};
+                totalCount = paginationData.total || rawList.length;
+              }
+            } catch (topicErr) {
+              console.warn('Failed to fallback article search by topic:', topicErr);
+            }
+          }
+        }
+
+        const enrichedList = await enrichArticleList(rawList);
+        const mappedArticles = enrichedList.map(mapArticleListItem);
 
         setArticles(mappedArticles);
         setTotal(totalCount);

@@ -5,8 +5,6 @@ import { useNavigate } from 'react-router-dom';
 
 export default function TrendingArticleCard({
   article,
-  index,
-  currentPage,
   expandedAbstracts,
   groupingMode,
   visibleColumns,
@@ -18,8 +16,8 @@ export default function TrendingArticleCard({
 
   const publicationDate = article.publication_date || article.publication_year || '—';
   const publicationParts = [
-    article.volume_number ? <> <strong>Volume:</strong> {article.volume_number}</> : null,
-    article.issue_number ? <> <strong>Issue:</strong> {article.issue_number}</> : null,
+    <> <strong>Volume:</strong> {article.volume_number || '—'}</>,
+    <> <strong>Issue:</strong> {article.issue_number || '—'}</>,
     article.pages ? <> <strong>Pages:</strong> {article.pages}</> : null,
     publicationDate,
   ].filter(Boolean);
@@ -27,16 +25,24 @@ export default function TrendingArticleCard({
   const isExpanded = expandedAbstracts[article.article_id]
     || groupingMode === 'simple-expand'
     || groupingMode === 'extended-expand';
-  const itemIndex = (currentPage - 1) * 10 + index + 1;
 
   return (
     <div key={article.article_id} className="lens-article-card">
       <div className="d-flex align-items-start gap-1">
         <div className="d-flex flex-column align-items-center gap-1" style={{ minWidth: '22px' }}>
           <Form.Check type="checkbox" className="lens-checkbox-sm" />
-          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-            {itemIndex}
-          </span>
+          <button
+            type="button"
+            className="lens-article-expand-toggle"
+            onClick={() => toggleAbstract(article.article_id)}
+            aria-label={isExpanded ? 'Thu gọn thông tin bài báo' : 'Mở rộng thông tin bài báo'}
+            title={isExpanded ? 'Thu gọn' : 'Mở rộng'}
+          >
+            <Icon
+              icon={isExpanded ? 'lucide:chevron-up-circle' : 'lucide:chevron-down-circle'}
+              width="14"
+            />
+          </button>
         </div>
 
         <div className="flex-grow-1 min-w-0">
@@ -96,12 +102,11 @@ export default function TrendingArticleCard({
           )}
 
           <div className="lens-detail-line">
-            <strong>Citing Patents:</strong> 0 |{' '}
             <strong>Citing Works:</strong>{' '}
             <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
               {article.semantic_citation_count || 0}
             </span>{' '}
-            | <strong>Reference Count:</strong> 0
+            | <strong>Reference Count:</strong> {article.reference_count ?? 0}
             {visibleColumns.doi && article.doi && (
               <>
                 {' | '}

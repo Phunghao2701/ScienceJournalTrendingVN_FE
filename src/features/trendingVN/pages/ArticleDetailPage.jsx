@@ -18,6 +18,7 @@ import useAuth from '../../auth/hooks/useAuth';
 import { getDoiUrl } from '../../article/utils/articleFormatters';
 import { toast } from '../../../shared/utils/toast';
 import { useTrendingArticleDetail } from '../hooks/useTrendingArticleDetail';
+import { getArticlesListApi } from '../../article/api/articleApi';
 
 // Subcomponents
 import ArticleDetailSkeleton from '../../article/components/ArticleDetailSkeleton';
@@ -44,7 +45,9 @@ export default function ArticleDetailPage() {
     isBookmarked,
     isBookmarking: isBookmarkLoading,
     citingWorks,
+    citingWorksTotal,
     references,
+    referencesTotal,
     recommendedArticles,
     isCitingWorksLoading,
     isReferencesLoading,
@@ -185,9 +188,10 @@ export default function ArticleDetailPage() {
             </div>
 
             <div className="lens-detail-line text-xs mt-1" style={{ color: 'var(--text-main)' }}>
-              <strong>Citing Patents:</strong> {item.citing_patents ?? 0} | {' '}
               <strong>Citing Works:</strong>{' '}
-              <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{item.citations || item.semantic_citation_count || 0}</span> | {' '}
+              <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
+                {item.citations ?? item.citation_count ?? item.semantic_citation_count ?? 0}
+              </span> | {' '}
               <strong>Reference Count:</strong> {item.reference_count ?? 0}
               {item.doi && (
                 <>
@@ -438,6 +442,50 @@ ER  - `;
     const label = topic?.display_name || topic?.name || '';
     if (!label) return;
     navigate(`/articles?search=${encodeURIComponent(label)}`);
+  };
+
+  const normalizeDoiForCompare = (doi = '') => doi.toLowerCase().replace(/^https?:\/\/(dx\.)?doi\.org\//, '').trim();
+
+  // Related API items can carry the parent article_id, so resolve by DOI/title before opening detail.
+  const handleRelatedArticleTitleClick = async (item) => {
+    const currentArticleId = String(article?.article_id || id || '');
+    const directArticleId = item?.target_article_id || item?.related_article_id || item?.citing_article_id || item?.cited_article_id;
+
+    if (directArticleId && String(directArticleId) !== currentArticleId) {
+      navigate(`/trending/articles/${directArticleId}`);
+      return;
+    }
+
+    const rawSearchTerm = item?.doi || item?.title;
+    if (!rawSearchTerm) return;
+
+    const searchTerm = item?.doi ? normalizeDoiForCompare(item.doi) : rawSearchTerm;
+
+    try {
+      const response = await getArticlesListApi({ search: searchTerm, limit: 5 });
+      const payload = response.data?.data || response.data || {};
+      const candidates = payload.items || payload.articles || [];
+      const itemDoi = normalizeDoiForCompare(item?.doi);
+      const itemTitle = (item?.title || '').trim().toLowerCase();
+      const matchedArticle = candidates.find((candidate) => {
+        const candidateId = String(candidate.article_id || '');
+        if (!candidateId || candidateId === currentArticleId) return false;
+
+        const candidateDoi = normalizeDoiForCompare(candidate.doi);
+        const candidateTitle = (candidate.title || '').trim().toLowerCase();
+
+        return (itemDoi && candidateDoi === itemDoi) || (itemTitle && candidateTitle === itemTitle);
+      });
+
+      if (matchedArticle?.article_id) {
+        navigate(`/trending/articles/${matchedArticle.article_id}`);
+        return;
+      }
+    } catch (resolveError) {
+      console.warn('Unable to resolve related article detail route:', resolveError);
+    }
+
+    navigate(`/trending-vn?search=${encodeURIComponent(searchTerm)}`);
   };
 
   const scrollToSection = (id) => {
@@ -836,12 +884,11 @@ ER  - `;
 
               {/* Dòng lượt trích dẫn */}
               <div className="lens-stats-plain-line text-xs font-sans mt-2 mb-2 d-flex flex-wrap gap-4">
-                <span>Citing Patents: <strong className="text-dark">{article.citing_patents ?? 0}</strong></span>
                 <span className="pointer" onClick={() => setShowCitationsModal(true)}>
-                  Citing Works: <strong className="text-dark">{article.citations ?? 0}</strong>
+                  Citing Works: <strong className="text-dark">{isCitingWorksLoading ? (article.citation_count ?? article.citations ?? 0) : citingWorksTotal}</strong>
                 </span>
                 <span>
-                  Reference Count: <strong className="text-dark">{isReferencesLoading ? (article.reference_count ?? 0) : (references || []).length}</strong>
+                  Reference Count: <strong className="text-dark">{isReferencesLoading ? (article.reference_count ?? 0) : referencesTotal}</strong>
                 </span>
               </div>
 
@@ -903,14 +950,14 @@ ER  - `;
                 className={`lens-tab-btn ${activeTab === 'citations' ? 'active' : ''}`}
                 onClick={() => setActiveTab('citations')}
               >
-                {isCitingWorksLoading ? (article.citations ?? 0) : (citingWorks || []).length} Citing Works
+                {isCitingWorksLoading ? (article.citation_count ?? article.citations ?? 0) : citingWorksTotal} Citing Works
               </Button>
               <Button 
                 variant="link" 
                 className={`lens-tab-btn ${activeTab === 'references' ? 'active' : ''}`}
                 onClick={() => setActiveTab('references')}
               >
-                {isReferencesLoading ? (article.reference_count ?? 0) : (references || []).length} References
+                {isReferencesLoading ? (article.reference_count ?? 0) : referencesTotal} References
               </Button>
               <Button 
                 variant="link" 
@@ -1218,7 +1265,7 @@ ER  - `;
                   <Icon icon="lucide:quote" width="32" className="text-primary mt-1" />
                   <div>
                     <h5 className="font-display fw-bold mb-1" style={{ color: 'var(--text-main)' }}>
-                      This work has been cited {isCitingWorksLoading ? (article.citations ?? 0) : citingWorks.length} times
+                      This work has been cited {isCitingWorksLoading ? (article.citation_count ?? article.citations ?? 0) : citingWorksTotal} times
                     </h5>
                     <p className="text-muted-custom mb-2 text-xs">
                       Scientific articles that cite this work. Select a title to open the source article.
@@ -1236,14 +1283,11 @@ ER  - `;
                   </div>
                 ) : citingWorks.length > 0 ? (
                   <div className="d-flex flex-column">
-                    {citingWorks.map((item, idx) => {
-                      // Tìm kiếm nội bộ theo DOI hoặc tiêu đề
-                      const searchTerm = item.doi || item.title;
-                      const onCitingClick = searchTerm
-                        ? () => navigate(`/trending-vn?search=${encodeURIComponent(searchTerm)}`)
-                        : null;
-                      return renderRelatedArticleCard(item, idx, onCitingClick);
-                    })}
+                    {citingWorks.map((item, idx) => renderRelatedArticleCard(
+                      item,
+                      idx,
+                      () => handleRelatedArticleTitleClick(item)
+                    ))}
                   </div>
                 ) : (
                   <div className="article-reference-card-empty text-center py-5">
@@ -1257,7 +1301,7 @@ ER  - `;
                   <Icon icon="lucide:book-open" width="32" className="text-primary mt-1" />
                   <div>
                     <h5 className="font-display fw-bold mb-1" style={{ color: 'var(--text-main)' }}>
-                      {isReferencesLoading ? (article.reference_count ?? 0) : (references || []).length} synced references
+                      {isReferencesLoading ? (article.reference_count ?? 0) : referencesTotal} synced references
                     </h5>
                     <p className="text-muted-custom mb-2 text-xs">
                       Research works cited by this article. Select a title to open the source record.
@@ -1275,14 +1319,11 @@ ER  - `;
                   </div>
                 ) : (references || []).length > 0 ? (
                   <div className="d-flex flex-column">
-                    {(references || []).map((ref, index) => {
-                      // Tìm kiếm nội bộ theo DOI hoặc tiêu đề
-                      const searchTerm = ref.doi || ref.title;
-                      const onRefClick = searchTerm
-                        ? () => navigate(`/trending-vn?search=${encodeURIComponent(searchTerm)}`)
-                        : null;
-                      return renderRelatedArticleCard(ref, index, onRefClick);
-                    })}
+                    {(references || []).map((ref, index) => renderRelatedArticleCard(
+                      ref,
+                      index,
+                      () => handleRelatedArticleTitleClick(ref)
+                    ))}
                   </div>
                 ) : (
                   <div className="article-reference-card-empty text-center py-5">

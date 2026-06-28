@@ -45,7 +45,10 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     queryFn: async () => {
       const response = await getArticleCitingWorksApi(id, { limit: 20 });
       const payload = response.data?.data || response.data || {};
-      return Array.isArray(payload.items) ? payload.items : [];
+      return {
+        items: Array.isArray(payload.items) ? payload.items : [],
+        total: Number(payload.pagination?.total ?? payload.total ?? 0),
+      };
     },
     enabled: !!article && !!id,
     staleTime: 1000 * 60 * 5,
@@ -56,7 +59,10 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     queryFn: async () => {
       const response = await getArticleReferencesApi(id, { limit: 50 });
       const payload = response.data?.data || response.data || {};
-      return Array.isArray(payload.items) ? payload.items : [];
+      return {
+        items: Array.isArray(payload.items) ? payload.items : [],
+        total: Number(payload.pagination?.total ?? payload.total ?? 0),
+      };
     },
     enabled: !!article && !!id,
     staleTime: 1000 * 60 * 5,
@@ -110,8 +116,10 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     error: error ? (error.response?.data?.message || error.message) : null,
     isBookmarked,
     isBookmarking: bookmarkMutation.isPending,
-    citingWorks: citingWorksData || [],
-    references: referencesData || [],
+    citingWorks: citingWorksData?.items || [],
+    citingWorksTotal: citingWorksData?.total ?? 0,
+    references: referencesData?.items || [],
+    referencesTotal: referencesData?.total ?? 0,
     recommendedArticles,
     isRelatedLoading: isCitingWorksLoading || isReferencesLoading || isRecommendedLoading,
     isCitingWorksLoading,

@@ -463,6 +463,24 @@
   border-color: var(--primary);
 }
 
+.lens-article-expand-toggle {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.lens-article-expand-toggle:hover {
+  color: #0d47a1;
+}
+
 /* Tiêu đề bài báo */
 .lens-article-title {
   font-size: 0.92rem;
@@ -2274,6 +2292,24 @@
 .lens-checkbox-sm .form-check-input:checked {
   background-color: var(--primary);
   border-color: var(--primary);
+}
+
+.lens-article-expand-toggle {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.lens-article-expand-toggle:hover {
+  color: #0d47a1;
 }
 
 /* Tiêu đề bài báo */

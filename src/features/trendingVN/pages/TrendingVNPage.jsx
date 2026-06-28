@@ -829,7 +829,7 @@ export default function TrendingVNPage() {
 
         {/* ==================== 5. STICKY TOP TOOLBAR (FULL WIDTH) ==================== */}
         <div className="lens-sticky-results-toolbar">
-          {/* --- Tab row & Search --- */}
+          {/* --- Tab row --- */}
           <div className="lens-tab-row">
             <div className="tab-group">
               <button className="tab-item active">
@@ -841,57 +841,32 @@ export default function TrendingVNPage() {
               </button>
             </div>
             
-            <div className="d-flex align-items-center flex-grow-1 justify-content-end gap-2 px-2">
-              <Form onSubmit={handleSearchSubmit} className="lens-search-form" style={{ maxWidth: '400px', margin: 0 }}>
-                <div className="lens-search-group" style={{ height: '32px', minHeight: '32px' }}>
-                  <span className="d-flex align-items-center ps-2 pe-1" style={{ background: 'transparent' }}>
-                    <Icon icon="lucide:search" width="14" className="text-muted" />
-                  </span>
-                  <Form.Control
-                    placeholder={t('searchPlaceholder')}
-                    value={localSearchInput}
-                    onChange={(e) => setLocalSearchInput(e.target.value)}
-                    className="lens-search-input py-1"
-                    style={{ fontSize: '0.8rem' }}
-                  />
-                  {localSearchInput && (
-                    <Button variant="link" className="p-0 px-2 text-muted" onClick={handleClearSearch}>
-                      <Icon icon="lucide:x" width="12" />
-                    </Button>
-                  )}
-                  <Button type="submit" className="lens-search-btn py-1 px-3">
-                    {t('search')}
-                  </Button>
-                </div>
-              </Form>
-
-              <div className="view-toggles ps-2 border-start">
-                <button
-                  className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
-                  onClick={() => setViewMode('table')}
-                >
-                  <Icon icon="lucide:table" width="13" />
-                  {t('viewTable')}
-                </button>
-                <button
-                  className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
-                  onClick={() => setViewMode('list')}
-                >
-                  <Icon icon="lucide:list" width="13" />
-                  {t('viewList')}
-                </button>
-                <button
-                  className={`view-toggle-btn ${showSidebar ? 'active' : ''}`}
-                  onClick={() => setShowSidebar(!showSidebar)}
-                >
-                  <Icon icon="lucide:bar-chart-3" width="13" />
-                  {t('analysis')}
-                </button>
-              </div>
+            <div className="view-toggles ps-2">
+              <button
+                className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+                onClick={() => setViewMode('table')}
+              >
+                <Icon icon="lucide:table" width="13" />
+                {t('viewTable')}
+              </button>
+              <button
+                className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+                onClick={() => setViewMode('list')}
+              >
+                <Icon icon="lucide:list" width="13" />
+                {t('viewList')}
+              </button>
+              <button
+                className={`view-toggle-btn ${showSidebar ? 'active' : ''}`}
+                onClick={() => setShowSidebar(!showSidebar)}
+              >
+                <Icon icon="lucide:bar-chart-3" width="13" />
+                {t('analysis')}
+              </button>
             </div>
           </div>
 
-          {/* --- Action toolbar: Expand, Customise, Save, Share, Export, Sort --- */}
+          {/* --- Action toolbar: Expand, Customise, Save, Share, Export, Sort, Search --- */}
           <div className="lens-action-toolbar">
             <div className="action-group">
               <button className="lens-action-btn" onClick={handleToggleAllAbstracts}>
@@ -926,24 +901,51 @@ export default function TrendingVNPage() {
               </button>
             </div>
 
-            {/* Sort dropdown */}
-            <div className="d-flex align-items-center gap-2">
-              <Icon icon="lucide:arrow-up-down" width="12" className="text-muted" />
-              <select
-                className="lens-sort-select"
-                value={`${filters.sortBy}-${filters.sortOrder}`}
-                onChange={(e) => {
-                  const [sortBy, sortOrder] = e.target.value.split('-');
-                  updateFilters({ sortBy, sortOrder });
-                }}
-              >
-                <option value="created_at-desc">{t('sortDateNewest')}</option>
-                <option value="created_at-asc">{t('sortDateOldest')}</option>
-                <option value="title-asc">{t('sortTitleAsc')}</option>
-                <option value="title-desc">{t('sortTitleDesc')}</option>
-                <option value="publication_year-desc">{t('sortYearDesc')}</option>
-                <option value="publication_year-asc">{t('sortYearAsc')}</option>
-              </select>
+            {/* Right side of Action toolbar: Sort + Search */}
+            <div className="d-flex align-items-center gap-3">
+              {/* Sort dropdown */}
+              <div className="d-flex align-items-center gap-2">
+                <Icon icon="lucide:arrow-up-down" width="12" className="text-muted" />
+                <select
+                  className="lens-sort-select"
+                  value={`${filters.sortBy}-${filters.sortOrder}`}
+                  onChange={(e) => {
+                    const [sortBy, sortOrder] = e.target.value.split('-');
+                    updateFilters({ sortBy, sortOrder });
+                  }}
+                >
+                  <option value="created_at-desc">{t('sortDateNewest')}</option>
+                  <option value="created_at-asc">{t('sortDateOldest')}</option>
+                  <option value="title-asc">{t('sortTitleAsc')}</option>
+                  <option value="title-desc">{t('sortTitleDesc')}</option>
+                  <option value="publication_year-desc">{t('sortYearDesc')}</option>
+                  <option value="publication_year-asc">{t('sortYearAsc')}</option>
+                </select>
+              </div>
+
+              {/* Search Bar */}
+              <Form onSubmit={handleSearchSubmit} className="lens-search-form" style={{ width: '300px', margin: 0 }}>
+                <div className="lens-search-group" style={{ height: '32px', minHeight: '32px' }}>
+                  <span className="d-flex align-items-center ps-2 pe-1" style={{ background: 'transparent' }}>
+                    <Icon icon="lucide:search" width="14" className="text-muted" />
+                  </span>
+                  <Form.Control
+                    placeholder={t('searchPlaceholder')}
+                    value={localSearchInput}
+                    onChange={(e) => setLocalSearchInput(e.target.value)}
+                    className="lens-search-input py-1"
+                    style={{ fontSize: '0.8rem' }}
+                  />
+                  {localSearchInput && (
+                    <Button variant="link" className="p-0 px-2 text-muted" onClick={handleClearSearch}>
+                      <Icon icon="lucide:x" width="12" />
+                    </Button>
+                  )}
+                  <Button type="submit" className="lens-search-btn py-1 px-3">
+                    {t('search')}
+                  </Button>
+                </div>
+              </Form>
             </div>
           </div>
 

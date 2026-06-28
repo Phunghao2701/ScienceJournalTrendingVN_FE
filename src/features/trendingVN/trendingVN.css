@@ -740,13 +740,24 @@
 }
 
 .lens-chart-bar {
-  transition: opacity 0.15s ease, filter 0.15s ease;
+  transition: opacity 0.15s ease, fill 0.15s ease;
   cursor: pointer;
 }
 
-.lens-chart-bar:hover {
+/* Boost brightness on the whole column group when the SVG <g> is hovered */
+g:hover .lens-chart-bar {
   opacity: 1 !important;
-  filter: brightness(1.1);
+  filter: brightness(1.08);
+}
+
+/* Donut slice hover effect */
+.lens-donut-slice {
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.lens-donut-slice:hover {
+  opacity: 0.85;
+  filter: brightness(1.12);
 }
 
 /* ==================== SEARCH BAR ==================== */

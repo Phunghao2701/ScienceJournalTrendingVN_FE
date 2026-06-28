@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from '../../../shared/utils/toast';
 
 // ── Author popover: hiện khi click tên tác giả ──
-function AuthorPopover({ name, onClose, onFilterByAuthor, onNewSearch }) {
+function AuthorPopover({ name, authorId, onClose, onFilterByAuthor, onNewSearch, onViewProfile }) {
   const { t } = useTranslation();
   const ref = useRef(null);
 
@@ -14,7 +14,7 @@ function AuthorPopover({ name, onClose, onFilterByAuthor, onNewSearch }) {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) onClose();
     };
-    // delay nhỏ để tránh bắt ngay sự kiện click mở popover
+    // delay to avoid catching the same click that opened the popover
     const timer = setTimeout(() => document.addEventListener('mousedown', handler), 50);
     return () => { clearTimeout(timer); document.removeEventListener('mousedown', handler); };
   }, [onClose]);
@@ -26,6 +26,12 @@ function AuthorPopover({ name, onClose, onFilterByAuthor, onNewSearch }) {
         <span>{name}</span>
       </div>
       <hr className="author-popover-hr" />
+      {authorId && (
+        <button className="author-popover-item author-popover-item--profile" onClick={onViewProfile}>
+          <Icon icon="lucide:user-circle" width="12" />
+          {t('viewAuthorProfile')}
+        </button>
+      )}
       <button className="author-popover-item" onClick={onFilterByAuthor}>
         <Icon icon="lucide:filter" width="12" />
         {t('filterByAuthorLabel')}
@@ -41,11 +47,11 @@ function AuthorPopover({ name, onClose, onFilterByAuthor, onNewSearch }) {
 // ── Card chính ──
 export default function TrendingArticleCard({
   article, index, currentPage, expandedAbstracts, groupingMode, visibleColumns,
-  handleDetailClick, updateFilters, handleCopyDoi, toggleAbstract
+  handleDetailClick, updateFilters, handleCopyDoi, toggleAbstract, filters
 }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [openPopover, setOpenPopover] = useState(null); // key của tác giả đang mở popover
+  const [openPopover, setOpenPopover] = useState(null); // key of currently open author popover
 
   const isExpanded = expandedAbstracts[article.article_id]
     || groupingMode === 'simple-expand'
@@ -53,8 +59,37 @@ export default function TrendingArticleCard({
 
   const itemIndex = (currentPage - 1) * 10 + index + 1;
 
-  // Tên đầu tiên có institution (dùng cho pill Affiliation)
+  // First author with known institution (used for Affiliation pill)
   const firstAffiliation = article.authors?.find(a => a.last_known_institution)?.last_known_institution;
+
+  // 1.2.1 — Navigate to author profile page
+  const handleAuthorClick = (e, authorId) => {
+    e.stopPropagation();
+    if (authorId) navigate(`/authors/${authorId}`);
+  };
+
+  // 1.2.2 — Filter by topic_id if available, else fall back to search by name
+  const handleTopicClick = (e) => {
+    e.stopPropagation();
+    if (article.topic_id) {
+      updateFilters({ topic: String(article.topic_id) });
+    } else if (article.primary_topic) {
+      updateFilters({ search: article.primary_topic });
+    }
+  };
+
+  // 1.2.3 — Toggle Open Access filter
+  const handleOAFilter = (e) => {
+    e.stopPropagation();
+    const isAlreadyFiltered = filters?.selectedAccess === 'open';
+    updateFilters({ access: isAlreadyFiltered ? 'all' : 'open' });
+  };
+
+  // 1.2.4 — Cited-by count with conditional styling
+  const citedByCount = article.semantic_citation_count || article.citations || 0;
+  const citedByStyle = citedByCount > 0
+    ? { color: 'var(--primary)', fontWeight: 700 }
+    : { color: 'var(--text-muted)', fontWeight: 400 };
 
   return (
     <div className="lens-article-card">
@@ -126,7 +161,8 @@ export default function TrendingArticleCard({
                   return (
                     <span key={key} style={{ position: 'relative', display: 'inline' }}>
                       <span
-                        className="text-link cursor-pointer"
+                        className="text-link text-link--clickable"
+                        title={au.last_known_institution || name}
                         onClick={(e) => {
                           e.stopPropagation();
                           setOpenPopover(openPopover === key ? null : key);
@@ -139,7 +175,12 @@ export default function TrendingArticleCard({
                       {openPopover === key && (
                         <AuthorPopover
                           name={name}
+                          authorId={au.author_id}
                           onClose={() => setOpenPopover(null)}
+                          onViewProfile={(e) => {
+                            handleAuthorClick(e || { stopPropagation: () => {} }, au.author_id);
+                            setOpenPopover(null);
+                          }}
                           onFilterByAuthor={() => {
                             updateFilters({ search: name });
                             setOpenPopover(null);
@@ -198,8 +239,8 @@ export default function TrendingArticleCard({
             <span>{article.reference_count ?? 0}</span>
             {' | '}
             <strong>{t('citingWorksCount')}:</strong>{' '}
-            <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
-              {article.semantic_citation_count || article.citations || 0}
+            <span style={citedByStyle}>
+              {citedByCount}
             </span>
 
             {/* Keywords inline nếu checkbox bật */}
@@ -220,7 +261,11 @@ export default function TrendingArticleCard({
           {/* ── Pill badges ── */}
           <div className="lens-pill-row">
             {article.is_open_access && (
-              <span className="lens-pill lens-pill-oa">
+              <span
+                className={`lens-pill lens-pill-oa lens-pill--clickable${filters?.selectedAccess === 'open' ? ' lens-pill--active' : ''}`}
+                onClick={handleOAFilter}
+                title={filters?.selectedAccess === 'open' ? t('removeOAFilter') : t('filterOAOnly')}
+              >
                 <Icon icon="lucide:lock-open" width="10" />
                 {t('openAccess')}
               </span>
@@ -253,12 +298,12 @@ export default function TrendingArticleCard({
               </span>
             )}
 
-            {/* Field of Study — dùng updateFilters */}
+            {/* Field of Study — filter by topic_id if available, else search by name */}
             {article.primary_topic && (
               <span
-                className="lens-pill lens-pill-field"
-                style={{ cursor: 'pointer' }}
-                onClick={() => updateFilters({ search: article.primary_topic })}
+                className="lens-pill lens-pill-field lens-pill--clickable"
+                title={`Filter: ${article.primary_topic}`}
+                onClick={handleTopicClick}
               >
                 <Icon icon="lucide:graduation-cap" width="10" />
                 {t('fieldOfStudyLabel')}

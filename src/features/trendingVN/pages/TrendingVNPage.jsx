@@ -1451,6 +1451,7 @@ export default function TrendingVNPage() {
                                   updateFilters={updateFilters}
                                   handleCopyDoi={handleCopyDoi}
                                   toggleAbstract={toggleAbstract}
+                                  filters={filters}
                                 />
                               ))}
                             </div>
@@ -1471,6 +1472,7 @@ export default function TrendingVNPage() {
                             updateFilters={updateFilters}
                             handleCopyDoi={handleCopyDoi}
                             toggleAbstract={toggleAbstract}
+                            filters={filters}
                           />
                         ))
                       )}

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * File source thuá»™c há»‡ thá»‘ng FE ResearchPulse.
  * Thiáº¿t káº¿ trang chi tiáº¿t bÃ i bÃ¡o theo phong cÃ¡ch chuyÃªn nghiá»‡p Ä‘a cá»™t cá»§a Lens.org.
  *
@@ -500,18 +500,14 @@ ER  - `;
             <div 
               className="lens-active-id-badge font-sans text-xs text-muted-custom border rounded px-2 py-0.5 bg-light cursor-pointer"
               onClick={() => {
-                const docId = Number.isFinite(Number(article.article_id)) 
-                  ? `VN ${1000000 + Number(article.article_id)} A` 
-                  : article.article_id;
-                navigator.clipboard.writeText(docId);
-                toast.success(`Copied ID ${docId} to clipboard!`);
+                const textToCopy = article.doi || `ID: ${article.article_id}`;
+                navigator.clipboard.writeText(textToCopy);
+                toast.success(article.doi ? `Copied DOI to clipboard!` : `Copied ID to clipboard!`);
               }}
-              title="Click to copy ID to clipboard"
+              title={article.doi ? "Click to copy DOI to clipboard" : "Click to copy ID to clipboard"}
               style={{ cursor: 'pointer' }}
             >
-              {Number.isFinite(Number(article.article_id)) 
-                ? `VN ${1000000 + Number(article.article_id)} A` 
-                : article.article_id}
+              {article.doi || `ID: ${article.article_id}`}
             </div>
           </div>
 

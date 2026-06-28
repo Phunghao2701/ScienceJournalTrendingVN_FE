@@ -7,7 +7,15 @@ import { Table, Card, Button } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import ArticleTableRow from './ArticleTableRow';
 
-export default function ArticleTable({ articles, isLoading, onDetailClick, onClearFilters }) {
+export default function ArticleTable({ 
+  articles = [], 
+  isLoading, 
+  onDetailClick, 
+  onClearFilters,
+  selectedIds = [],
+  onSelectRow,
+  onSelectAll
+}) {
   
   // Renders a loader with multiple shimmer rows
   const renderSkeletons = () => (
@@ -73,11 +81,11 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
               <th className="bg-transparent text-muted-custom py-3 ps-3 text-xs" style={{ width: '40px' }}>#</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs">TÊN BÀI BÁO</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs">JOURNAL</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs text-center">NĂM</th>
+              <th className="bg-transparent text-muted-custom py-3 text-xs text-center" style={{ width: '80px' }}>NĂM</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs">DOI</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs">TOPIC</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs text-center">OA</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs text-end pe-3">CHI TIẾT</th>
+              <th className="bg-transparent text-muted-custom py-3 text-xs text-center" style={{ width: '80px' }}>OA</th>
+              <th className="bg-transparent text-muted-custom py-3 text-xs text-end pe-3" style={{ width: '100px' }}>CHI TIẾT</th>
             </tr>
           </thead>
           {renderSkeletons()}
@@ -118,21 +126,35 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
     );
   }
 
+  const isSelectable = !!onSelectRow;
+
   return (
     <>
       {/* 1. TABLE LAYOUT (Desktop & Tablet) */}
       <div className="article-table-card w-100 d-none d-md-block">
         <Table responsive hover className="m-0 bg-transparent text-main border-0">
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border)' }}>
-              <th className="bg-transparent text-muted-custom py-3 ps-3 text-xs" style={{ width: '40px', letterSpacing: '0.05em' }}>#</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs" style={{ letterSpacing: '0.05em' }}>TÊN BÀI BÁO</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs" style={{ letterSpacing: '0.05em' }}>JOURNAL</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs text-center" style={{ width: '80px', letterSpacing: '0.05em' }}>NĂM</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs" style={{ letterSpacing: '0.05em' }}>DOI</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs" style={{ letterSpacing: '0.05em' }}>TOPIC</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs text-center" style={{ width: '80px', letterSpacing: '0.05em' }}>OA</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs text-end pe-3" style={{ width: '80px', letterSpacing: '0.05em' }}>CHI TIẾT</th>
+            <tr>
+              <th className="text-center" style={{ width: '45px' }}>
+                {isSelectable ? (
+                  <input 
+                    type="checkbox" 
+                    className="lens-checkbox" 
+                    checked={articles.length > 0 && selectedIds.length === articles.length}
+                    onChange={(e) => onSelectAll && onSelectAll(e.target.checked)}
+                    style={{ cursor: 'pointer' }} 
+                  />
+                ) : (
+                  <input type="checkbox" className="lens-checkbox" disabled style={{ cursor: 'not-allowed' }} />
+                )}
+              </th>
+              <th>Tên Bài Báo</th>
+              <th style={{ width: '180px' }}>Mã Định Danh</th>
+              <th style={{ width: '140px' }}>Phân Loại</th>
+              <th className="text-center" style={{ width: '90px' }}>Năm Công Bố</th>
+              <th className="text-center" style={{ width: '90px' }}>Công Bố Mở</th>
+              <th>Tạp Chí</th>
+              <th className="text-end pe-3" style={{ width: '100px' }}>Chi Tiết</th>
             </tr>
           </thead>
           <tbody>
@@ -142,6 +164,8 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
                 article={article}
                 index={index}
                 onDetailClick={onDetailClick}
+                isSelected={selectedIds.includes(article.article_id)}
+                onSelect={onSelectRow}
               />
             ))}
           </tbody>

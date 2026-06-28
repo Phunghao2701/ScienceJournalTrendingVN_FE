@@ -2488,3 +2488,29 @@
   font-family: var(--font-display);
 }
 
+/* Stats Bar and Customise Column fixes */
+.stat-sub {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 1px;
+}
+
+.stat-segment--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.stat-value--na {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.stat-segment[onclick] {
+  cursor: pointer;
+}
+
+.stat-segment[onclick]:hover {
+  background: var(--primary-light);
+}
+

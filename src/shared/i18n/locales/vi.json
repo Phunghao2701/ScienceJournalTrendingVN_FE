@@ -272,5 +272,18 @@
   "history": "Lịch sử",
   "publication": "Công bố",
   "application": "Nộp đơn",
-  "priority": "Ưu tiên"
+  "priority": "Ưu tiên",
+  "colTopic": "Chủ đề",
+  "colOa": "OA",
+  "colDetails": "CHI TIẾT",
+  "needApiAggregate": "Cần API aggregate",
+  "citations": "trích dẫn",
+  "inThisPage": "trong trang này",
+  "noJournalInfo": "Chưa có thông tin tạp chí",
+  "unclassified": "Chưa phân loại",
+  "detailsLink": "Chi tiết",
+  "copiedDoiAlert": "Đã sao chép mã DOI vào bộ nhớ tạm: ",
+  "noArticlesMatching": "Không tìm thấy bài báo phù hợp",
+  "adjustFiltersTryAgain": "Hãy thử thay đổi từ khóa hoặc xóa các bộ lọc tìm kiếm hiện tại để tìm thấy nhiều kết quả hơn.",
+  "clearFiltersLabel": "Xóa bộ lọc"
 }

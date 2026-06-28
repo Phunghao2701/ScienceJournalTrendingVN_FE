@@ -17,8 +17,6 @@ import Header from '../../landing/components/Header';
 import useArticleList from '../../article/hooks/useArticleList';
 import ArticleTable from '../../article/components/ArticleTable';
 import AdminPagination from '../../../shared/components/Pagination';
-import { searchJournalsApi } from '../../journal/api/journalApi';
-import { getTopicsApi } from '../../topic/api/topic.api';
 import PublisherGrid from '../components/PublisherGrid';
 import TrendingArticleCard from '../components/TrendingArticleCard';
 import { toast } from '../../../shared/utils/toast';
@@ -48,8 +46,20 @@ export default function TrendingVNPage() {
     handlePageChange,
   } = useArticleList();
 
+  const derivedStats = useMemo(() => {
+    const openAccessCount = articles.filter(a => a.is_open_access).length;
+    const citedCount = articles.filter(a => (a.semantic_citation_count || 0) > 0).length;
+    const totalCitations = articles.reduce((s, a) => s + (a.semantic_citation_count || 0), 0);
+    return { openAccessCount, citedCount, totalCitations };
+  }, [articles]);
+
   const handleDetailClick = (id) => {
     navigate(`/trending/articles/${id}`);
+  };
+
+  const handleSortChange = (field) => {
+    const newOrder = filters.sortBy === field && filters.sortOrder === 'asc' ? 'desc' : 'asc';
+    updateFilters({ sortBy: field, sortOrder: newOrder });
   };
 
   // --- State giao diện ---
@@ -551,7 +561,7 @@ export default function TrendingVNPage() {
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }},
                     { key: 'flags', label: t('sbFlags'), icon: 'lucide:flag', action: () => {
-                      updateFilters({ selectedAccess: filters.selectedAccess === 'all' ? 'open' : 'all' });
+                      updateFilters({ access: filters.selectedAccess === 'all' ? 'open' : 'all' });
                     }},
                     { key: 'jurisdiction', label: t('sbJurisdiction'), icon: 'lucide:map-pin' },
                     { key: 'applicants', label: t('sbApplicants'), icon: 'lucide:user-check', action: () => {
@@ -632,7 +642,7 @@ export default function TrendingVNPage() {
                     </Dropdown.Toggle>
                     <Dropdown.Menu className="text-xs">
                       <Dropdown.Item onClick={() => updateFilters({ sortBy: 'created_at', sortOrder: 'desc' })}>{t('sortDateNewest')}</Dropdown.Item>
-                      <Dropdown.Item onClick={() => updateFilters({ selectedAccess: 'open' })}>{t('openAccess')}</Dropdown.Item>
+                      <Dropdown.Item onClick={() => updateFilters({ access: 'open' })}>{t('openAccess')}</Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
                 </div>
@@ -797,35 +807,52 @@ export default function TrendingVNPage() {
         {/* ==================== 4. STATS COLOR BAR ==================== */}
         {/* Thanh thống kê ngang — để trống giá trị để người dùng tự điền sau */}
         <div className="lens-stats-bar">
-          <div className="stat-segment">
+          {/* O 1: Tong so bai bao — dung total tu pagination (chinh xac) */}
+          <div className="stat-segment" onClick={() => clearFilters()} style={{ cursor: "pointer" }}>
             <div className="stat-color-bar" style={{ background: '#00acc1' }} />
             <div className="stat-label">{t('statArticleRecords')}</div>
-            <div className="stat-value">—</div>
+            <div className="stat-value">{isLoading ? "..." : fmt(total)}</div>
           </div>
-          <div className="stat-segment">
+
+          {/* O 2: Open Access — tinh tu articles hien tai */}
+          <div className="stat-segment" onClick={() => updateFilters({ access: "open" })} style={{ cursor: "pointer" }}>
             <div className="stat-color-bar" style={{ background: '#0288d1' }} />
-            <div className="stat-label">{t('statSimpleFamilies')}</div>
-            <div className="stat-value">—</div>
+            <div className="stat-label">{t('statSimpleFamilies')} (OA)</div>
+            <div className="stat-value">
+              {isLoading ? "..." : fmt(derivedStats.openAccessCount)}
+              <span className="stat-sub">/{fmt(articles.length)} ({t("inThisPage")})</span>
+            </div>
           </div>
-          <div className="stat-segment">
+
+          {/* O 3: Extended Families — can BE endpoint aggregate */}
+          <div className="stat-segment stat-segment--disabled">
             <div className="stat-color-bar" style={{ background: '#7b1fa2' }} />
             <div className="stat-label">{t('statExtendedFamilies')}</div>
-            <div className="stat-value">—</div>
+            <div className="stat-value stat-value--na" title={t("needApiAggregate")}>N/A</div>
           </div>
-          <div className="stat-segment">
+
+          {/* O 4: Cited Articles — can BE endpoint aggregate */}
+          <div className="stat-segment stat-segment--disabled">
             <div className="stat-color-bar" style={{ background: '#c62828' }} />
             <div className="stat-label">{t('statCitedArticles')}</div>
-            <div className="stat-value">—</div>
+            <div className="stat-value stat-value--na" title={t("needApiAggregate")}>N/A</div>
           </div>
-          <div className="stat-segment">
+
+          {/* O 5: Cited by Articles — can BE endpoint aggregate */}
+          <div className="stat-segment stat-segment--disabled">
             <div className="stat-color-bar" style={{ background: '#ef6c00' }} />
             <div className="stat-label">{t('statCitedByArticles')}</div>
-            <div className="stat-value">—</div>
+            <div className="stat-value stat-value--na" title={t("needApiAggregate")}>N/A</div>
           </div>
+
+          {/* O 6: Tong trich dan — tinh tu articles hien tai */}
           <div className="stat-segment">
             <div className="stat-color-bar" style={{ background: '#2e7d32' }} />
             <div className="stat-label">{t('statArticleCitations')}</div>
-            <div className="stat-value">—</div>
+            <div className="stat-value">
+              {isLoading ? "..." : fmt(derivedStats.totalCitations)}
+              <span className="stat-sub">{t("citations")} ({t("inThisPage")})</span>
+            </div>
           </div>
         </div>
 
@@ -1099,6 +1126,10 @@ export default function TrendingVNPage() {
                     isLoading={isLoading}
                     onDetailClick={handleDetailClick}
                     onClearFilters={clearFilters}
+                    visibleColumns={visibleColumns}
+                    sortBy={filters.sortBy}
+                    sortOrder={filters.sortOrder}
+                    onSortChange={handleSortChange}
                   />
                 </div>
               )}

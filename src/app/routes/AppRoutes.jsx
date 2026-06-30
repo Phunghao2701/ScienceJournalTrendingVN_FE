@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import ROUTES from './routePaths';
 
 import LandingPage from '../../features/landing/pages/LandingPage';
 import JournalDetailPage from '../../features/journal/pages/JournalDetailPage';
@@ -144,8 +145,8 @@ export default function AppRoutes() {
         <Route path="/geography" element={<GeographyPage />} />
         <Route path="/topics/:topicId" element={<TopicDetailPage />} />
 
-        {/* Trang Theo dõi Xu hướng Nghiên cứu - public, không cần đăng nhập */}
-        <Route path="/trending" element={<TrendingPage />} />
+        {/* Trang Xu hướng cũ đã gộp vào tab Analysis của /articles, giữ redirect tránh link chết */}
+        <Route path="/trending" element={<Navigate to={ROUTES.ARTICLES} replace />} />
 
       </Route>
 

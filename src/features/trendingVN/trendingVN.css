@@ -2901,6 +2901,11 @@ g:hover .lens-chart-bar {
   font-weight: 600;
 }
 
+/* ==================== ANALYSIS TAB (embedded trending dashboard) ==================== */
+.lens-analysis-tab-wrapper {
+  padding: 16px 0 8px;
+}
+
 /* ==================== FILTER DRAWER (Task 4) ==================== */
 .lens-fg-drawer {
   display: flex;

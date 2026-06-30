@@ -22,13 +22,13 @@ export default function Header() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const pathname = location?.pathname || "";
   const auth = useAuth?.() ?? { logout: () => {} };
   const { logout } = auth;
   const email = useUserStore((state) => state.email);
   const userRole = auth.user?.role;
   const accountManagementRoute = userRole === 'ADMINISTRATOR' ? ROUTES.ADMIN_USERS : ROUTES.PROFILE;
   const language = i18n.language || "vi";
+  const isAnalysisTabActive = Boolean(location?.state?.openAnalysisTab);
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -99,23 +99,23 @@ export default function Header() {
             <div className="d-flex align-items-center gap-3 ms-auto">
               {/* (Compact) Language selector moved to the far right below */}
 
-              {/* Xu hướng */}
+              {/* Xu hướng — opens the Articles page directly on the Analysis tab */}
               <Nav.Link
-                onClick={() => navigate(ROUTES.TRENDING)}
+                onClick={() => navigate(ROUTES.ARTICLES, { state: { openAnalysisTab: true } })}
                 className="px-3 py-1 text-sm font-semibold d-flex align-items-center gap-1"
                 style={{
                   borderRadius: '6px',
-                  backgroundColor: pathname.startsWith(ROUTES.TRENDING)
+                  backgroundColor: isAnalysisTabActive
                     ? 'var(--primary-light)'
                     : 'transparent',
-                  color: pathname.startsWith(ROUTES.TRENDING)
+                  color: isAnalysisTabActive
                     ? 'var(--primary)'
                     : 'var(--text-muted)',
-                  border: pathname.startsWith(ROUTES.TRENDING)
+                  border: isAnalysisTabActive
                     ? '1px solid var(--border)'
                     : '1px solid transparent',
                   transition: 'all 0.2s',
-                  fontWeight: pathname.startsWith(ROUTES.TRENDING) ? 700 : 500,
+                  fontWeight: isAnalysisTabActive ? 700 : 500,
                 }}
               >
                 <Icon icon="lucide:trending-up" width="14" />

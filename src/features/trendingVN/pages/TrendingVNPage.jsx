@@ -11,7 +11,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Container, Row, Col, Form, Button, Badge, Collapse, Modal, Dropdown } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Header from '../../landing/components/Header';
 import useArticleList from '../../article/hooks/useArticleList';
@@ -20,6 +20,7 @@ import AdminPagination from '../../../shared/components/Pagination';
 import PublisherGrid from '../components/PublisherGrid';
 import TrendingArticleCard from '../components/TrendingArticleCard';
 import FilterDrawer from '../components/filter-drawer';
+import TrendingAnalysisTab from '../components/TrendingAnalysisTab';
 import { toast } from '../../../shared/utils/toast';
 import { useAuthStore } from '../../../app/store/authStore';
 import { useTrendingFilters } from '../hooks/useTrendingFilters';
@@ -29,6 +30,7 @@ import '../trendingVN.css';
 
 export default function TrendingVNPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const [activeLeftTab, setActiveLeftTab] = useState(null); // 'filters', 'profile', 'info', 'more'
@@ -71,7 +73,7 @@ export default function TrendingVNPage() {
 
   // --- State giao diện ---
   const [showSidebar] = useState(true); // Ẩn/hiện sidebar phân tích
-  const [viewMode, setViewMode] = useState('list');      // 'list' hoặc 'table'
+  const [viewMode, setViewMode] = useState(location.state?.openAnalysisTab ? 'analysis' : 'list');      // 'list' | 'table' | 'analysis'
   const [expandedAbstracts, setExpandedAbstracts] = useState({}); // Toggle abstract từng bài
   const [allExpanded, setAllExpanded] = useState(false);          // Toggle tất cả abstract
   const [showCustomise, setShowCustomise] = useState(false);      // Ẩn/hiện panel Customise
@@ -1245,10 +1247,15 @@ export default function TrendingVNPage() {
             </div>
 
             {/* ==================== 5. MAIN CONTENT (LEFT + RIGHT) ==================== */}
+            {viewMode === 'analysis' ? (
+              <div className="lens-analysis-tab-wrapper">
+                <TrendingAnalysisTab />
+              </div>
+            ) : (
             <Row className="g-0">
 
               {/* ===== CỘT TRÁI: Toolbar + Kết quả ===== */}
-              <Col lg={(viewMode !== 'analysis' && showSidebar) ? 8 : 12} md={12} className="transition-col">
+              <Col lg={showSidebar ? 8 : 12} md={12} className="transition-col">
 
                 {/* --- Action toolbar: Expand, Customise, Save, Share, Export, Sort --- */}
                 {viewMode !== 'analysis' && (
@@ -1532,7 +1539,7 @@ export default function TrendingVNPage() {
                   )}
 
                   {/* Phân trang */}
-                  {viewMode !== 'analysis' && totalPages > 1 && !isLoading && (
+                  {totalPages > 1 && !isLoading && (
                     <div className="lens-pagination-row">
                       <AdminPagination
                         totalItems={total}
@@ -1547,7 +1554,7 @@ export default function TrendingVNPage() {
               </Col>
 
               {/* ===== CỘT PHẢI: Sidebar phân tích (ẩn/hiện bằng nút Analysis) ===== */}
-              {viewMode !== 'analysis' && showSidebar && (
+              {showSidebar && (
                 <Col lg={4} md={12} className="lens-sidebar-col">
                   {/* Search Bar (directly under view toggles, above Nhà xuất bản chính xác) */}
                   <div className="lens-sidebar-search-container mb-3">
@@ -1592,6 +1599,7 @@ export default function TrendingVNPage() {
                 </Col>
               )}
             </Row>
+            )}
           </Container>
         </div>{/* /lens-main-content */}
       </div>{/* /lens-layout-wrapper */}

@@ -1209,6 +1209,37 @@ export default function TrendingVNPage() {
               </div>
             </div>
 
+            {/* ==================== SEARCH BAR (full width, directly below stats bar) ==================== */}
+            <div className="lens-sidebar-search-container mb-3">
+              <Form onSubmit={handleSearchSubmit}>
+                <div className="lens-sidebar-search">
+                  <span className="d-flex align-items-center ps-2 pe-1" style={{ background: 'transparent' }}>
+                    <Icon icon="lucide:search" width="15" className="text-muted" />
+                  </span>
+                  <input
+                    type="text"
+                    className="lens-sidebar-search-input"
+                    placeholder={t('searchPlaceholder')}
+                    value={localSearchInput}
+                    onChange={(e) => setLocalSearchInput(e.target.value)}
+                  />
+                  {localSearchInput && (
+                    <button
+                      type="button"
+                      className="lens-sidebar-search-clear"
+                      onClick={handleClearSearch}
+                      aria-label="Clear"
+                    >
+                      <Icon icon="lucide:x" width="12" />
+                    </button>
+                  )}
+                  <button type="submit" className="lens-sidebar-search-btn">
+                    {t('search')}
+                  </button>
+                </div>
+              </Form>
+            </div>
+
             {/* --- Tab row: Articles / Explore Citations + Table/List/Analysis --- */}
             <div className="lens-tab-row">
               <div className="tab-group">
@@ -1556,37 +1587,6 @@ export default function TrendingVNPage() {
               {/* ===== CỘT PHẢI: Sidebar phân tích (ẩn/hiện bằng nút Analysis) ===== */}
               {showSidebar && (
                 <Col lg={4} md={12} className="lens-sidebar-col">
-                  {/* Search Bar (directly under view toggles, above Nhà xuất bản chính xác) */}
-                  <div className="lens-sidebar-search-container mb-3">
-                    <Form onSubmit={handleSearchSubmit}>
-                      <div className="lens-sidebar-search">
-                        <span className="d-flex align-items-center ps-2 pe-1" style={{ background: 'transparent' }}>
-                          <Icon icon="lucide:search" width="15" className="text-muted" />
-                        </span>
-                        <input
-                          type="text"
-                          className="lens-sidebar-search-input"
-                          placeholder={t('searchPlaceholder')}
-                          value={localSearchInput}
-                          onChange={(e) => setLocalSearchInput(e.target.value)}
-                        />
-                        {localSearchInput && (
-                          <button
-                            type="button"
-                            className="lens-sidebar-search-clear"
-                            onClick={handleClearSearch}
-                            aria-label="Clear"
-                          >
-                            <Icon icon="lucide:x" width="12" />
-                          </button>
-                        )}
-                        <button type="submit" className="lens-sidebar-search-btn">
-                          {t('search')}
-                        </button>
-                      </div>
-                    </Form>
-                  </div>
-
                   {/* --- Panel 1: Applicant Name Exact (lưới nhà xuất bản) --- */}
                   <div className="lens-sidebar-panel">
                     <PublisherGrid />

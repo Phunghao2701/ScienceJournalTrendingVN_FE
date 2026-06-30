@@ -25,7 +25,6 @@ import { useState } from 'react';
 import { Spinner, Container, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Icon from '../../../shared/components/Icon';
 import Header from '../../landing/components/Header';
 import { useAuthStore } from '../../../app/store/authStore';
 import useTrending from '../hooks/useTrending';
@@ -264,7 +263,7 @@ export default function TrendingPage() {
                       <h2 className="trending-section-title">{t('researchTrendTitle')}</h2>
                       <p className="trending-section-subtitle">{t('researchTrendSubtitle')}</p>
                       <hr className="trending-section-divider" />
-                      <TrendMomentumCards topics={topics} authors={authors} loading={topicsLoading} />
+                      <TrendMomentumCards topics={topics} authors={authors} universities={universities} loading={topicsLoading} />
                     </div>
                   </Col>
                 </Row>

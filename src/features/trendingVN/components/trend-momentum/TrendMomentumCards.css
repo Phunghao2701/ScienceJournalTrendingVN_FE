@@ -93,6 +93,15 @@
   color: #0891B2;
 }
 
+/* N/A — chua co API tinh toan, lam mo giong stat-value--na o stats bar */
+.tmc-badge--na {
+  background-color: transparent;
+  color: var(--t-text-muted, #64748B);
+  opacity: 0.55;
+  cursor: not-allowed;
+  font-weight: 600;
+}
+
 /* ─── Skeleton loading ───────────────────────────────────────────────────── */
 .tmc-skeleton {
   height: 62px;

@@ -388,5 +388,8 @@
   "sortCitationsMost": "Citations (most)",
   "sortCitationsLeast": "Citations (least)",
   "typeToSearchJournal": "Type 2+ characters to search journal...",
-  "loadSubjectAreasFailed": "Failed to load subject areas. Please try again."
+  "loadSubjectAreasFailed": "Failed to load subject areas. Please try again.",
+  "totalPapersLabel": "Total Papers",
+  "hIndexLabel": "H-Index",
+  "noTrendData": "No trend data available"
 }

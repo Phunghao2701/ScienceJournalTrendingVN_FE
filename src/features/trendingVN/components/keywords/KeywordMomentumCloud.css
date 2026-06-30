@@ -20,10 +20,12 @@
 }
 
 /* ─── Danh sach bars ─────────────────────────────────────────────────────── */
+/* padding-right danh cho so hien thi o dau bar (vd: "744.2K"), tranh tran ra ngoai khung */
 .kmc-bars {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding-right: 60px;
 }
 
 /* ─── Mot dong bar ───────────────────────────────────────────────────────── */
@@ -89,7 +91,7 @@
   position: absolute;
   bottom: 6px;
   left: 140px; /* khop voi width label + gap */
-  right: 0;
+  right: 60px; /* khop voi padding-right cua .kmc-bars de tick thang hang voi bar */
   height: 18px;
   border-top: 1px solid var(--t-border, #E2E8F0);
 }

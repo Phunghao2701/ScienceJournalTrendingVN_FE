@@ -39,12 +39,25 @@ function fmtVal(n) {
   return String(n);
 }
 
-// ── Tinh tick labels cho truc X ──────────────────────────────────────────────
+// ── Tinh "nice" step (1/2/5 x 10^n) de tick la so tron nhu 200K, 500K ────────
+function getNiceStep(roughStep) {
+  const magnitude   = Math.pow(10, Math.floor(Math.log10(roughStep)));
+  const residual     = roughStep / magnitude;
+  let niceResidual;
+  if (residual > 5)      niceResidual = 10;
+  else if (residual > 2) niceResidual = 5;
+  else if (residual > 1) niceResidual = 2;
+  else                   niceResidual = 1;
+  return niceResidual * magnitude;
+}
+
+// ── Tinh tick labels cho truc X (so tron, axisMax luon > maxVal) ─────────────
 function getXTicks(maxVal) {
-  const ticks = [0];
-  const step  = Math.ceil(maxVal / 4 / 10) * 10 || 1;
-  for (let v = step; v <= maxVal; v += step) ticks.push(v);
-  if (ticks[ticks.length - 1] < maxVal) ticks.push(Math.ceil(maxVal / step) * step);
+  if (maxVal <= 0) return [0];
+  const step = getNiceStep(maxVal / 4) || 1;
+  const axisMax = Math.ceil(maxVal / step) * step;
+  const ticks = [];
+  for (let v = 0; v <= axisMax; v += step) ticks.push(v);
   return ticks;
 }
 

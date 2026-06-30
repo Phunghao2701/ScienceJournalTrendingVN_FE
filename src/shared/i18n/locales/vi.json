@@ -388,6 +388,9 @@
   "sortCitationsMost": "Trích dẫn (nhiều nhất)",
   "sortCitationsLeast": "Trích dẫn (ít nhất)",
   "typeToSearchJournal": "Gõ tối thiểu 2 ký tự để tìm tạp chí...",
-  "loadSubjectAreasFailed": "Không thể tải danh sách lĩnh vực. Vui lòng thử lại."
+  "loadSubjectAreasFailed": "Không thể tải danh sách lĩnh vực. Vui lòng thử lại.",
+  "totalPapersLabel": "Tổng bài báo",
+  "hIndexLabel": "Chỉ số H",
+  "noTrendData": "Chưa có dữ liệu xu hướng"
 }
 

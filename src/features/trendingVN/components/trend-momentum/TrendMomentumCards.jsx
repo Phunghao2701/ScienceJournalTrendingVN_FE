@@ -4,26 +4,30 @@
  * 4 highlight cards "Research Trend Momentum" theo mau Vietnam Research Index.
  * Layout: border trai mau | label nho uppercase | ten to | badge ben phai.
  *
- * 4 cards:
- *   1. FASTEST GROWING TOPIC   -- topic[0].display_name | badge "+86%"
- *   2. MOST ACTIVE UNIVERSITY  -- tu authors data        | badge "42 New Papers"
- *   3. MOST INFLUENTIAL AUTHOR -- authors[0].display_name| badge "Score 98.4"
- *   4. HIGHEST CITATION GROWTH -- topic cuoi hoac topic co score tang | badge "+142% MoM"
+ * 4 cards (chi dung gia tri that tu API, khong fabricate % tang truong):
+ *   1. TOP TRENDING TOPIC      -- topics[0].display_name | badge N/A (BE chua co data tang truong theo thoi gian)
+ *   2. MOST ACTIVE UNIVERSITY  -- universities[].papers cao nhat (du lieu that tu getUniversityRankingsApi)
+ *   3. MOST INFLUENTIAL AUTHOR -- authors[0].display_name | badge h_index (du lieu that)
+ *   4. MOST CITED TOPIC        -- topics[1].display_name | badge N/A (khong co citation growth that)
  *
  * Props:
- * - topics: array    -- Danh sach topics tu useTrending
- * - authors: array   -- Danh sach authors tu useTrending
- * - loading: boolean -- Dang tai du lieu
+ * - topics: array        -- Danh sach topics tu useTrending (da sort theo score giam dan)
+ * - authors: array       -- Danh sach authors tu useTrending (da sort theo cited_by_count/h_index)
+ * - universities: array  -- Danh sach universities tu useTrending, item: { name, papers, cites }
+ * - loading: boolean     -- Dang tai du lieu
  */
 
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../../shared/components/Icon';
 import './TrendMomentumCards.css';
 
 export default function TrendMomentumCards({
   topics = [],
   authors = [],
+  universities = [],
   loading = false,
 }) {
+  const { t } = useTranslation();
 
   // ── Skeleton ─────────────────────────────────────────────────────────────
   if (loading) {
@@ -39,52 +43,34 @@ export default function TrendMomentumCards({
   // ── Empty state ───────────────────────────────────────────────────────────
   if (!topics.length && !authors.length) {
     return (
-      <div className="tmc-empty">No trend data available</div>
+      <div className="tmc-empty">{t('noTrendData')}</div>
     );
   }
 
-  // ── Lay du lieu cho tung card ────────────────────────────────────────────
+  // ── Lay du lieu that cho tung card (khong fabricate cong thuc gia) ───────
   const topTopic = topics[0] || null;
+  const secondTopic = topics[1] || null;
   const topAuthor = authors[0] || null;
-  const growthTopic = topics[topics.length - 1] || null;
 
-  // Uoc tinh % growth tu score (score cao nhat / score trung binh)
-  const avgScore = topics.length
-    ? topics.reduce((s, t) => s + (t.score || 0), 0) / topics.length
-    : 0;
-  const topScore = topTopic?.score || 0;
-  const growthPct = (avgScore > 0 && topScore > 0)
-    ? '+' + Math.round((topScore / avgScore) * 50) + '%'
-    : null;
-
-  // Score tac gia top (0-100 scale)
-  const maxCited = Math.max(...authors.map((a) => a.cited_by_count || 0), 1);
-  const topAuthorScore = (topAuthor && topAuthor.cited_by_count)
-    ? +((topAuthor.cited_by_count / maxCited) * 100).toFixed(1)
-    : null;
-
-  // Uoc tinh new papers tu works_count
-  const topUniPapers = topAuthor?.works_count || null;
-
-  // Uoc tinh MoM citation growth
-  const citationGrowth = (growthTopic && growthTopic.score)
-    ? '+' + Math.round(growthTopic.score * 15) + '% MoM'
+  // University hoat dong nhieu nhat: chon theo so bai bao that (papers), khong dua vao thu tu BE tra ve
+  const mostActiveUni = universities.length
+    ? universities.reduce((best, u) => ((u.papers || 0) > (best.papers || 0) ? u : best), universities[0])
     : null;
 
   // ── 4 cards data ─────────────────────────────────────────────────────────
   const CARDS = [
     {
-      label: 'FASTEST GROWING TOPIC',
+      label: 'TOP TRENDING TOPIC',
       value: topTopic?.display_name || null,
-      badge: growthPct,
+      badge: null, // BE chua co du lieu so sanh theo thoi gian de tinh % tang truong that
       badgeVariant: 'tmc-badge--up',
       badgeIcon: 'lucide:trending-up',
       borderColor: '#16A34A',
     },
     {
       label: 'MOST ACTIVE UNIVERSITY',
-      value: topAuthor?.last_known_institution || null,
-      badge: topUniPapers ? String(topUniPapers) + ' New Papers' : null,
+      value: mostActiveUni?.name || null,
+      badge: mostActiveUni?.papers ? mostActiveUni.papers + ' ' + t('totalPapersLabel') : null,
       badgeVariant: 'tmc-badge--neutral',
       badgeIcon: null,
       borderColor: '#1976D2',
@@ -92,15 +78,15 @@ export default function TrendMomentumCards({
     {
       label: 'MOST INFLUENTIAL AUTHOR',
       value: topAuthor?.display_name || null,
-      badge: topAuthorScore != null ? 'Score ' + String(topAuthorScore) : null,
+      badge: topAuthor?.h_index ? t('hIndexLabel') + ' ' + topAuthor.h_index : null,
       badgeVariant: 'tmc-badge--neutral',
       badgeIcon: null,
       borderColor: '#7C3AED',
     },
     {
-      label: 'HIGHEST CITATION GROWTH',
-      value: growthTopic?.display_name || null,
-      badge: citationGrowth,
+      label: 'MOST CITED TOPIC',
+      value: secondTopic?.display_name || null,
+      badge: null, // Khong co API tinh citation growth that theo thoi gian
       badgeVariant: 'tmc-badge--teal',
       badgeIcon: null,
       borderColor: '#0891B2',
@@ -127,13 +113,18 @@ export default function TrendMomentumCards({
             </div>
           </div>
 
-          {/* ── Badge ben phai (chi hien khi co data) ───────────── */}
-          {card.badge && (
+          {/* ── Badge ben phai: hien thi that, hoac N/A neu chua co API ───── */}
+          {card.value && card.badge && (
             <div className={'tmc-badge ' + card.badgeVariant}>
               {card.badgeIcon && (
                 <Icon icon={card.badgeIcon} width="11" />
               )}
               {card.badge}
+            </div>
+          )}
+          {card.value && !card.badge && (
+            <div className="tmc-badge tmc-badge--na" title={t('needApiAggregate')}>
+              N/A
             </div>
           )}
 

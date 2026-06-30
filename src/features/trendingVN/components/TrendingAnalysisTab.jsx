@@ -40,6 +40,10 @@ export default function TrendingAnalysisTab() {
   } = useTrending();
 
   return (
+    // "trending-root" scopes the --t-* CSS tokens that TrendingStatCard/charts
+    // depend on (defined in TrendingPage.css), since this tab now renders
+    // inside TrendingVNPage's own .trending-vn-page CSS scope instead.
+    <div className="trending-root">
     <Container fluid="xl" className="px-0">
       {/* Stat Cards */}
       <Row className="g-3 mb-4">
@@ -138,24 +142,25 @@ export default function TrendingAnalysisTab() {
       </Row>
 
       {/* Row 3: Keyword Cloud + Trend Momentum */}
-      <Row className="g-3 mb-4">
-        <Col xs={12} lg={5}>
-          <div className="trending-section-card">
+      <Row className="g-3 mb-4 align-items-stretch">
+        <Col xs={12} lg={6}>
+          <div className="trending-section-card h-100">
             <h2 className="trending-section-title">{t('keywordMomentumTitle')}</h2>
             <p className="trending-section-subtitle">{t('keywordMomentumSubtitle')}</p>
             <hr className="trending-section-divider" />
             <KeywordMomentumCloud keywords={keywords} />
           </div>
         </Col>
-        <Col xs={12} lg={7}>
-          <div className="trending-section-card">
+        <Col xs={12} lg={6}>
+          <div className="trending-section-card h-100">
             <h2 className="trending-section-title">{t('researchTrendTitle')}</h2>
             <p className="trending-section-subtitle">{t('researchTrendSubtitle')}</p>
             <hr className="trending-section-divider" />
-            <TrendMomentumCards topics={topics} authors={authors} loading={topicsLoading} />
+            <TrendMomentumCards topics={topics} authors={authors} universities={universities} loading={topicsLoading} />
           </div>
         </Col>
       </Row>
     </Container>
+    </div>
   );
 }

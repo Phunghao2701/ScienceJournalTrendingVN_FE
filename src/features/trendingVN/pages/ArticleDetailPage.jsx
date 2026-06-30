@@ -5,7 +5,7 @@
  * File: trendingVN\pages\ArticleDetailPage.jsx
  */
 import React, { useState, useCallback, useMemo } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Container, Button, Modal, Form, Collapse, Row, Col, Dropdown, ButtonGroup } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
@@ -40,6 +40,7 @@ import '../trendingVN.css';
 export default function ArticleDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = useAuth();
   const currentUser = auth?.user;
 
@@ -76,11 +77,42 @@ export default function ArticleDetailPage() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [activeLeftTab, setActiveLeftTab] = useState(null); // 'filters' | 'profile' | 'info' | 'more'
   const [scholarlyResultsCount] = useState(0);
+  const returnToResults = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const encodedReturnTo = params.get('returnTo');
+    if (location.state?.fromTrendingResults) return location.state.fromTrendingResults;
+    if (encodedReturnTo) return encodedReturnTo;
+    return '/trending-vn';
+  }, [location.search, location.state]);
+
+  const returnContext = useMemo(() => {
+    const queryIndex = returnToResults.indexOf('?');
+    if (queryIndex < 0) {
+      return { query: '', filterCount: 0, page: '1' };
+    }
+
+    const params = new URLSearchParams(returnToResults.slice(queryIndex));
+    const filterKeys = ['search', 'year', 'journal', 'journal_id', 'publisher_id', 'author_id', 'topic', 'topic_id', 'keyword_id', 'access'];
+    const filterCount = filterKeys.filter((key) => {
+      const value = params.get(key);
+      return value && value !== 'all';
+    }).length;
+
+    return {
+      query: params.get('search') || location.state?.query || '',
+      filterCount,
+      page: params.get('page') || '1',
+    };
+  }, [location.state, returnToResults]);
+
+  const handleBackToResults = () => {
+    navigate(returnToResults);
+  };
 
   const handleSearchSubmit = (e) => {
     if (e) e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/articles?search=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/trending-vn?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -654,13 +686,13 @@ ER  - `;
         <div className="lens-search-container-fluid d-flex align-items-center justify-content-between flex-wrap gap-3">
           {/* Left Side */}
           <div className="lens-top-search-left d-flex align-items-center gap-2">
-            <Button 
+          <Button 
               variant="link" 
               className="lens-home-btn p-1 text-muted d-flex align-items-center justify-content-center"
-              onClick={() => navigate('/articles')}
+              onClick={handleBackToResults}
               title="Home"
             >
-              <Icon icon="lucide:home" width="18" height="18" />
+              <Icon icon="lucide:arrow-left" width="18" height="18" />
             </Button>
             <div className="lens-top-search-divider" />
             <div 
@@ -669,7 +701,7 @@ ER  - `;
               title="Click to run this search query"
               style={{ cursor: 'pointer' }}
             >
-              <span className="fw-bold text-dark">{scholarlyResultsCount}</span> Scholarly Results
+              <span className="fw-bold text-dark">{location.state?.resultCount ?? scholarlyResultsCount}</span> Scholarly Results
             </div>
           </div>
 
@@ -712,6 +744,22 @@ ER  - `;
         </div>
       </section>
 
+      <section className="lens-return-context">
+        <button type="button" className="lens-return-link" onClick={handleBackToResults}>
+          <Icon icon="lucide:arrow-left" width="15" />
+          Back to Trending results
+        </button>
+        <div className="lens-return-summary">
+          {returnContext.query ? (
+            <span>Query: <strong>{returnContext.query}</strong></span>
+          ) : (
+            <span>Vietnamese publication trend workspace</span>
+          )}
+          <span>{returnContext.filterCount} active filter{returnContext.filterCount === 1 ? '' : 's'}</span>
+          <span>Page {returnContext.page}</span>
+        </div>
+      </section>
+
       {/* Main Layout Wrapper */}
       <div className="lens-layout-wrapper">
         {/* Left Icon Sidebar (Lens-style) */}
@@ -725,7 +773,7 @@ ER  - `;
               <Icon icon="lucide:home" width="18" />
             </button>
           )}
-          <button className="lens-sidebar-icon-btn" title={t('articleSearch')} onClick={() => navigate('/articles')}>
+          <button className="lens-sidebar-icon-btn" title={t('articleSearch')} onClick={handleBackToResults}>
             <Icon icon="lucide:chevron-right" width="18" />
           </button>
           <button className={`lens-sidebar-icon-btn ${activeLeftTab === 'filters' ? 'active' : ''}`} title={t('filtersLabel')} onClick={() => setActiveLeftTab(activeLeftTab === 'filters' ? null : 'filters')}>
@@ -750,7 +798,7 @@ ER  - `;
               <div className="lens-drawer-content">
                 <div className="lens-drawer-header">
                   <span className="lens-drawer-title">{t('sbFilters') || 'Filters'}</span>
-                  <Icon icon="lucide:info" className="info-icon" width="14" style={{ color: '#ef6c00', cursor: 'pointer' }} />
+                  <Icon icon="lucide:info" className="info-icon" width="14" style={{ color: 'var(--primary-hover)', cursor: 'pointer' }} />
                 </div>
                 <div className="lens-drawer-scrollable">
                   {[

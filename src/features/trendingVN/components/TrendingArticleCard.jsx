@@ -209,7 +209,7 @@ export default function TrendingArticleCard({
                       <div className="expanded-section">
                         <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1 d-flex align-items-center gap-1" style={{ letterSpacing: '0.5px' }}>
                           Topic
-                          <Icon icon="lucide:info" width="12" style={{ color: '#ef6c00', cursor: 'pointer' }} />
+                          <Icon icon="lucide:info" width="12" style={{ color: 'var(--primary-hover)', cursor: 'pointer' }} />
                         </div>
                         <div className="text-xs">
                           <button

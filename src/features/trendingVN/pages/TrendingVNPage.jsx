@@ -19,6 +19,7 @@ import ArticleTable from '../../article/components/ArticleTable';
 import AdminPagination from '../../../shared/components/Pagination';
 import PublisherGrid from '../components/PublisherGrid';
 import TrendingArticleCard from '../components/TrendingArticleCard';
+import FilterDrawer from '../components/filter-drawer';
 import { toast } from '../../../shared/utils/toast';
 import { useAuthStore } from '../../../app/store/authStore';
 import { useTrendingFilters } from '../hooks/useTrendingFilters';
@@ -99,7 +100,7 @@ export default function TrendingVNPage() {
 
   const handleCreateCollection = () => {
     if (!user) {
-      toast.warning('Vui lòng đăng nhập để tạo bộ sưu tập!');
+      toast.warning(t('loginToCreateCollection'));
       navigate('/login');
       return;
     }
@@ -108,7 +109,7 @@ export default function TrendingVNPage() {
 
   const handleAddToCollection = async () => {
     if (!user) {
-      toast.warning('Vui lòng đăng nhập để quản lý bộ sưu tập!');
+      toast.warning(t('loginToManageCollection'));
       navigate('/login');
       return;
     }
@@ -129,17 +130,17 @@ export default function TrendingVNPage() {
       });
 
       await Promise.all(promises);
-      toast.success(`Đã thêm thành công ${selectedIds.length} bài viết vào bộ sưu tập lưu trữ (Bookmarks).`);
+      toast.success(t('addedToCollection', { count: selectedIds.length }));
       setSelectedIds([]);
     } catch (err) {
       console.error(err);
-      toast.error('Lỗi khi thêm bài viết vào bộ sưu tập.');
+      toast.error(t('errorAddingToCollection'));
     }
   };
 
   const handleRemoveFromCollection = async () => {
     if (!user) {
-      toast.warning('Vui lòng đăng nhập để quản lý bộ sưu tập!');
+      toast.warning(t('loginToManageCollection'));
       navigate('/login');
       return;
     }
@@ -160,11 +161,11 @@ export default function TrendingVNPage() {
       });
 
       await Promise.all(promises);
-      toast.success(`Đã xóa thành công ${selectedIds.length} bài viết khỏi bộ sưu tập lưu trữ (Bookmarks).`);
+      toast.success(t('removedFromCollection', { count: selectedIds.length }));
       setSelectedIds([]);
     } catch (err) {
       console.error(err);
-      toast.error('Lỗi khi xóa bài viết khỏi bộ sưu tập.');
+      toast.error(t('errorRemovingFromCollection'));
     }
   };
 
@@ -278,7 +279,7 @@ export default function TrendingVNPage() {
   const handleSaveQuery = (e) => {
     e.preventDefault();
     if (!queryTitle.trim()) {
-      toast.error('Vui lòng nhập tiêu đề truy vấn');
+      toast.error(t('queryTitleRequired'));
       return;
     }
 
@@ -298,15 +299,15 @@ export default function TrendingVNPage() {
       const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
       localStorage.setItem(storageKey, JSON.stringify([...existing, newQuery]));
 
-      toast.success('Lưu truy vấn thành công!');
+      toast.success(t('querySavedSuccess'));
       setShowSaveQueryModal(false);
       setQueryTitle('');
       setQueryDesc('');
       setQueryNotify(false);
       setQueryEmailAlerts(false);
     } catch (err) {
-      console.error('Lỗi khi lưu truy vấn:', err);
-      toast.error('Không thể lưu truy vấn');
+      console.error(err);
+      toast.error(t('querySaveFailed'));
     }
   };
 
@@ -317,7 +318,7 @@ export default function TrendingVNPage() {
     // Giới hạn số bài báo xuất theo cấu hình của người dùng (mặc định lấy tối đa số bài hiện có)
     const docsToExport = articles.slice(0, exportDocCount);
     if (docsToExport.length === 0) {
-      toast.warning('Không có bài báo nào để xuất');
+      toast.warning(t('noArticlesToExport'));
       return;
     }
 
@@ -389,11 +390,11 @@ export default function TrendingVNPage() {
       link.click();
       document.body.removeChild(link);
 
-      toast.success('Xuất dữ liệu thành công!');
+      toast.success(t('exportSuccess'));
       setShowExportModal(false);
     } catch (err) {
-      console.error('Lỗi khi tải file xuất:', err);
-      toast.error('Xuất dữ liệu thất bại');
+      console.error(err);
+      toast.error(t('exportFailed'));
     }
   };
 
@@ -427,7 +428,7 @@ export default function TrendingVNPage() {
       chips.push({ key: 'topic', label: `${t('researchTopics')}: ${tName}`, value: 'all' });
     }
     if (filters.selectedAccess && filters.selectedAccess !== 'all') {
-      chips.push({ key: 'access', label: `${t('accessStatus')}: Open Access`, value: 'all' });
+      chips.push({ key: 'access', label: `${t('accessStatus')}: ${t('openAccess')}`, value: 'all' });
     }
     return chips;
   }, [filters, journalOptions, topicOptions, t]);
@@ -822,10 +823,10 @@ export default function TrendingVNPage() {
                 }}
               >
                 <div style={{ color: 'var(--text-muted)' }}>
-                  Author: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{activeTooltip.name}</span>
+                  {t('authorLabel')}: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{activeTooltip.name}</span>
                 </div>
                 <div style={{ color: 'var(--text-muted)' }}>
-                  Articles: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{fmt(activeTooltip.count)}</span>
+                  {t('articles')}: <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{fmt(activeTooltip.count)}</span>
                 </div>
                 <div style={{ color: 'var(--primary)', fontSize: '0.62rem', marginTop: '3px' }}>
                   {t('clickToViewAuthorProfile')}
@@ -952,69 +953,13 @@ export default function TrendingVNPage() {
                   <Icon icon="lucide:info" className="info-icon" width="14" style={{ color: '#ef6c00', cursor: 'pointer' }} />
                 </div>
                 <div className="lens-drawer-scrollable">
-                  {[
-                    {
-                      key: 'dateRange', label: t('sbDateRange'), icon: 'lucide:calendar', action: () => {
-                        const el = document.querySelector('.lens-sidebar-panel');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    },
-                    {
-                      key: 'flags', label: t('sbFlags'), icon: 'lucide:flag', action: () => {
-                        updateFilters({ selectedAccess: filters.selectedAccess === 'all' ? 'open' : 'all' });
-                      }
-                    },
-                    { key: 'jurisdiction', label: t('sbJurisdiction'), icon: 'lucide:map-pin' },
-                    {
-                      key: 'applicants', label: t('sbApplicants'), icon: 'lucide:user-check', action: () => {
-                        const el = document.querySelector('.publisher-grid-container');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    },
-                    {
-                      key: 'inventors', label: t('sbInventors'), icon: 'lucide:users', action: () => {
-                        const el = document.querySelector('.author-lens-grid');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    },
-                    { key: 'owners', label: t('sbOwners'), icon: 'lucide:award' },
-                    { key: 'agents', label: t('sbAgents'), icon: 'lucide:briefcase' },
-                    {
-                      key: 'legalStatus', label: t('sbLegalStatus'), icon: 'lucide:scale', action: () => {
-                        const el = document.querySelector('.legal-status-chart');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    },
-                    { key: 'docType', label: t('sbDocType'), icon: 'lucide:file-text' },
-                    { key: 'citedWorks', label: t('sbCitedWorks'), icon: 'lucide:book-open' },
-                    { key: 'biologicals', label: t('sbBiologicals'), icon: 'lucide:dna' },
-                    { key: 'classifications', label: t('sbClassifications'), icon: 'lucide:list' },
-                    {
-                      key: 'docFamily', label: t('sbDocFamily'), icon: 'lucide:folder-git2', action: () => {
-                        setGroupingMode(prev => prev === 'none' ? 'simple-group' : 'none');
-                      }
-                    },
-                    {
-                      key: 'queryTools', label: t('sbQueryTools'), icon: 'lucide:settings', action: () => {
-                        setShowCustomise(prev => !prev);
-                      }
-                    },
-                    {
-                      key: 'newSearch', label: t('sbNewSearch'), icon: 'lucide:search', action: () => {
-                        handleClearSearch();
-                      }
-                    }
-                  ].map(item => (
-                    <div
-                      key={item.key}
-                      className="lens-drawer-item"
-                      onClick={item.action || (() => { })}
-                    >
-                      <Icon icon={item.icon} width="16" className="item-icon" />
-                      <span className="item-label">{item.label}</span>
-                      <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
-                    </div>
-                  ))}
+                  <FilterDrawer
+                    filters={filters}
+                    updateFilters={updateFilters}
+                    clearFilters={clearFilters}
+                    journalOptions={journalOptions}
+                    topicOptions={topicOptions}
+                  />
                 </div>
               </div>
             )}
@@ -1055,7 +1000,7 @@ export default function TrendingVNPage() {
                     </Dropdown.Toggle>
                     <Dropdown.Menu className="text-xs">
                       <Dropdown.Item onClick={() => updateFilters({ sortBy: 'created_at', sortOrder: 'desc' })}>{t('sortDateNewest')}</Dropdown.Item>
-                      <Dropdown.Item onClick={() => updateFilters({ selectedAccess: 'open' })}>{t('openAccess')}</Dropdown.Item>
+                      <Dropdown.Item onClick={() => updateFilters({ access: 'open' })}>{t('openAccess')}</Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
                 </div>
@@ -1319,6 +1264,14 @@ export default function TrendingVNPage() {
                         {t('customiseList')}
                       </button>
                       <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+                      <button
+                        className={`lens-action-btn ${groupingMode === 'simple-group' ? 'active' : ''}`}
+                        onClick={() => setGroupingMode(prev => prev === 'none' ? 'simple-group' : 'none')}
+                      >
+                        <Icon icon="lucide:folder-git2" width="12" />
+                        {t('sbDocFamily')}
+                      </button>
+                      <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
                       <button className="lens-action-btn" onClick={() => setShowSaveQueryModal(true)}>
                         <Icon icon="lucide:save" width="12" />
                         {t('saveAsQuery')}
@@ -1514,28 +1467,28 @@ export default function TrendingVNPage() {
                             onClick={handleCreateCollection}
                           >
                             <Icon icon="lucide:folder-plus" className="text-primary" width="15" />
-                            <span>Create Collection</span>
+                            <span>{t('createCollection')}</span>
                           </button>
                           <button
                             className="btn btn-link text-decoration-none text-main d-flex align-items-center gap-1.5 p-0 text-xs font-weight-medium"
                             onClick={handleAddToCollection}
                           >
                             <Icon icon="lucide:plus-circle" className="text-success" width="15" />
-                            <span>Add to Collection</span>
+                            <span>{t('addToCollection')}</span>
                           </button>
                           <button
                             className="btn btn-link text-decoration-none text-main d-flex align-items-center gap-1.5 p-0 text-xs font-weight-medium"
                             onClick={handleRemoveFromCollection}
                           >
                             <Icon icon="lucide:minus-circle" className="text-danger" width="15" />
-                            <span>Remove from Collection</span>
+                            <span>{t('removeFromCollection')}</span>
                           </button>
                           <button
                             className="btn btn-link text-decoration-none text-main d-flex align-items-center gap-1.5 p-0 text-xs font-weight-medium ms-auto"
                             onClick={() => setSelectedIds([])}
                           >
                             <Icon icon="lucide:x-circle" className="text-muted" width="15" />
-                            <span>Clear Selection</span>
+                            <span>{t('clearSelection')}</span>
                           </button>
                         </div>
                       )}
@@ -1873,7 +1826,7 @@ export default function TrendingVNPage() {
                         title: true, authors: true, journal: true, doi: true,
                         issn: true, keywords: true, citations: true, year: true
                       })}
-                      title={t('selectAll', 'Select All')}
+                      title={t('selectAll')}
                     >
                       <Icon icon="lucide:check-circle-2" width="16" />
                     </button>
@@ -1884,7 +1837,7 @@ export default function TrendingVNPage() {
                         title: false, authors: false, journal: false, doi: false,
                         issn: false, keywords: false, citations: false, year: false
                       })}
-                      title={t('deselectAll', 'Deselect All')}
+                      title={t('deselectAll')}
                     >
                       <Icon icon="lucide:minus-circle" width="16" />
                     </button>

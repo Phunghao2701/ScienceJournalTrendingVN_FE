@@ -13,6 +13,9 @@ export default function ArticleTable({
   isLoading,
   onDetailClick,
   onClearFilters,
+  selectedIds = [],
+  onSelectRow,
+  onSelectAll,
   visibleColumns = {
     doi: true,
     authors: true,
@@ -41,6 +44,10 @@ export default function ArticleTable({
     <tbody>
       {[1, 2, 3, 4, 5].map((i) => (
         <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+          {/* Checkbox column */}
+          <td className="ps-3 py-3" style={{ width: '32px' }}>
+            <div className="bg-secondary opacity-10 rounded" style={{ width: '12px', height: '12px' }} />
+          </td>
           {/* Index column */}
           <td className="ps-3 py-3" style={{ width: '40px' }}>
             <div className="bg-secondary opacity-10 rounded" style={{ width: '15px', height: '14px' }} />
@@ -129,6 +136,14 @@ export default function ArticleTable({
         <Table responsive hover className="m-0 bg-transparent text-main border-0">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
+              <th className="bg-transparent text-muted-custom py-3 ps-3 text-xs" style={{ width: '32px' }}>
+                <input
+                  type="checkbox"
+                  style={{ cursor: 'pointer' }}
+                  checked={articles.length > 0 && selectedIds.length === articles.length}
+                  onChange={(e) => onSelectAll && onSelectAll(e.target.checked)}
+                />
+              </th>
               <th className="bg-transparent text-muted-custom py-3 ps-3 text-xs" style={{ width: '40px' }}>#</th>
               {SORTABLE_COLS.filter(c => c.visible).map(col => (
                 <th key={col.key} className="bg-transparent text-muted-custom py-3 text-xs">
@@ -187,9 +202,17 @@ export default function ArticleTable({
         <Table responsive hover className="m-0 bg-transparent text-main border-0">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
+              <th className="bg-transparent text-muted-custom py-3 ps-3 text-xs" style={{ width: '32px' }}>
+                <input
+                  type="checkbox"
+                  style={{ cursor: 'pointer' }}
+                  checked={articles.length > 0 && selectedIds.length === articles.length}
+                  onChange={(e) => onSelectAll && onSelectAll(e.target.checked)}
+                />
+              </th>
               <th className="bg-transparent text-muted-custom py-3 ps-3 text-xs" style={{ width: '40px' }}>#</th>
               {SORTABLE_COLS.filter(c => c.visible).map(col => (
-                <th 
+                <th
                   key={col.key}
                   style={{ cursor: col.sortField ? "pointer" : "default" }}
                   onClick={() => col.sortField && onSortChange && onSortChange(col.sortField)}
@@ -208,12 +231,14 @@ export default function ArticleTable({
           </thead>
           <tbody>
             {articles.map((article, index) => (
-              <ArticleTableRow 
+              <ArticleTableRow
                 key={article.article_id}
                 article={article}
                 index={index}
                 onDetailClick={onDetailClick}
                 visibleColumns={visibleColumns}
+                selected={selectedIds.includes(article.article_id)}
+                onSelectRow={onSelectRow}
               />
             ))}
           </tbody>

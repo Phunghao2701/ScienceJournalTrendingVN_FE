@@ -7,8 +7,9 @@ import { Button } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from '../../../shared/utils/toast';
 
-export default function ArticleTableRow({ article, index, onDetailClick, visibleColumns = {} }) {
+export default function ArticleTableRow({ article, index, onDetailClick, visibleColumns = {}, selected = false, onSelectRow }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -37,7 +38,7 @@ export default function ArticleTableRow({ article, index, onDetailClick, visible
     e.stopPropagation();
     if (!doi) return;
     navigator.clipboard.writeText(doi);
-    alert(t('copiedDoiAlert') + doi);
+    toast.success(t('copiedDoiAlert') + doi);
   };
 
   const handleJournalClick = (e, journalId) => {
@@ -57,6 +58,16 @@ export default function ArticleTableRow({ article, index, onDetailClick, visible
       }}
       className="align-middle article-table-row"
     >
+      {/* Checkbox */}
+      <td className="ps-3 text-center" style={{ width: '32px' }} onClick={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          style={{ cursor: 'pointer' }}
+          checked={selected}
+          onChange={() => onSelectRow && onSelectRow(article.article_id)}
+        />
+      </td>
+
       {/* Index */}
       <td className="text-muted-custom ps-3 font-display" style={{ width: '40px', fontSize: '0.8rem' }}>
         {index + 1}

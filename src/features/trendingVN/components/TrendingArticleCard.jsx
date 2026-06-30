@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from '../../../shared/utils/toast';
 
-// ── Author popover: hiện khi click tên tác giả ──
+// ── Author popover: shown when clicking an author name ──
 function AuthorPopover({ name, authorId, onClose, onFilterByAuthor, onNewSearch, onViewProfile }) {
   const { t } = useTranslation();
   const ref = useRef(null);
@@ -44,7 +44,7 @@ function AuthorPopover({ name, authorId, onClose, onFilterByAuthor, onNewSearch,
   );
 }
 
-// ── Card chính ──
+// ── Main card component ──
 export default function TrendingArticleCard({
   article, index, currentPage, expandedAbstracts, groupingMode, visibleColumns,
   handleDetailClick, updateFilters, handleCopyDoi, toggleAbstract, filters
@@ -95,7 +95,7 @@ export default function TrendingArticleCard({
     <div className="lens-article-card">
       <div className="d-flex align-items-start gap-1">
 
-        {/* ── Checkbox + số thứ tự ── */}
+        {/* ── Checkbox + item index ── */}
         <div className="d-flex flex-column align-items-center gap-1" style={{ minWidth: '22px' }}>
           <Form.Check type="checkbox" className="lens-checkbox-sm" />
           <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
@@ -103,17 +103,17 @@ export default function TrendingArticleCard({
           </span>
         </div>
 
-        {/* ── Nội dung ── */}
+        {/* ── Main content ── */}
         <div className="flex-grow-1 min-w-0">
 
-          {/* Tiêu đề */}
+          {/* Article title */}
           {visibleColumns.article && (
             <div className="lens-article-title" onClick={() => handleDetailClick(article.article_id)}>
               {article.title}
             </div>
           )}
 
-          {/* ── Dòng meta: loại | Open Access | tạp chí, năm ── */}
+          {/* ── Meta line: type | Open Access | journal, year ── */}
           <div className="lens-meta-line">
             <span>{t('journalArticleType')}</span>
 
@@ -150,7 +150,7 @@ export default function TrendingArticleCard({
             )}
           </div>
 
-          {/* ── Dòng tác giả (với popover) ── */}
+          {/* ── Authors line (with popover) ── */}
           {visibleColumns.authors && (
             <div className="lens-detail-line">
               <strong>{t('authorsLabel')}: </strong>
@@ -200,7 +200,7 @@ export default function TrendingArticleCard({
             </div>
           )}
 
-          {/* ── Dòng ISSN (ẩn/hiện theo checkbox) ── */}
+          {/* ── ISSN line (toggled by checkbox) ── */}
           {visibleColumns.issn && article.journal_issn && (
             <div className="lens-detail-line">
               <strong>{t('issnLabel')}: </strong>
@@ -208,7 +208,7 @@ export default function TrendingArticleCard({
             </div>
           )}
 
-          {/* ── Dòng identifiers: DOI + OpenAlex ID ── */}
+          {/* ── Identifiers line: DOI + OpenAlex ID ── */}
           {(article.doi || article.article_id) && (
             <div className="lens-identifiers-line">
               {visibleColumns.doi && article.doi && (
@@ -233,7 +233,7 @@ export default function TrendingArticleCard({
             </div>
           )}
 
-          {/* ── Dòng citation counts ── */}
+          {/* ── Citation counts line ── */}
           <div className="lens-detail-line">
             <strong>{t('referenceCount')}:</strong>{' '}
             <span>{article.reference_count ?? 0}</span>
@@ -243,7 +243,7 @@ export default function TrendingArticleCard({
               {citedByCount}
             </span>
 
-            {/* Keywords inline nếu checkbox bật */}
+            {/* Keywords inline when checkbox is enabled */}
             {visibleColumns.keywords && article.primary_topic && (
               <>
                 {' | '}
@@ -285,7 +285,7 @@ export default function TrendingArticleCard({
               {t('abstract')}
             </span>
 
-            {/* Affiliation — chưa có API lọc theo institution → toast */}
+            {/* Affiliation — no institution filter API yet, show coming-soon toast */}
             {firstAffiliation && (
               <span
                 className="lens-pill lens-pill-affiliation"
@@ -316,7 +316,7 @@ export default function TrendingArticleCard({
             <div className="lens-expanded-box mt-3 p-3 border rounded bg-white" style={{ borderColor: 'var(--border)' }}>
               <Row className="g-3">
 
-                {/* Cột trái: Abstract, Publisher, Research Topic, Authors */}
+                {/* Left column: Abstract, Publisher, Research Topic, Authors */}
                 <Col md={8} className="expanded-left-col">
 
                   {/* Abstract */}
@@ -391,7 +391,7 @@ export default function TrendingArticleCard({
                   </div>
                 </Col>
 
-                {/* Cột phải: Document Preview + Publication info */}
+                {/* Right column: Document Preview + Publication info */}
                 <Col md={4} className="expanded-right-col border-start ps-3">
 
                   {/* Document Preview */}

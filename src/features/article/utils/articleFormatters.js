@@ -44,6 +44,7 @@ export const normalizeAuthors = (authors) => {
       works_count: author.works_count ?? null,
       orcid: author.orcid || '',
       url_image: author.url_image || '',
+      institutions: Array.isArray(author.institutions) ? author.institutions : [],
     };
   }).filter((author) => author.display_name);
 };
@@ -97,6 +98,8 @@ export const normalizeArticleDetail = (apiData = {}, id = '') => {
   const citingPatentsRaw = apiData.citing_patents_count ?? apiData.citing_patents ?? apiData.patent_citation_count;
   const citationsByYearRaw = apiData.citations_by_year ?? apiData.counts_by_year ?? {};
   const referenceCountRaw = apiData.reference_count ?? (Array.isArray(apiData.references) ? apiData.references.length : 0);
+  const citingWorksCountRaw = apiData.citing_works_count ?? apiData.citingWorksCount;
+  const availableReferencesCountRaw = apiData.available_references_count ?? apiData.availableReferencesCount;
 
   return {
     ...apiData,
@@ -112,15 +115,18 @@ export const normalizeArticleDetail = (apiData = {}, id = '') => {
     keywords,
     topics,
     authors,
+    institutions: Array.isArray(apiData.institutions) ? apiData.institutions : [],
     is_open_access: Boolean(apiData.is_open_access),
     citations: citationsRaw !== undefined && citationsRaw !== null ? Number(citationsRaw) : null,
     citation_count: citationsRaw !== undefined && citationsRaw !== null ? Number(citationsRaw) : 0,
+    citing_works_count: citingWorksCountRaw !== undefined && citingWorksCountRaw !== null ? Number(citingWorksCountRaw) : null,
     citing_patents: citingPatentsRaw !== undefined && citingPatentsRaw !== null ? Number(citingPatentsRaw) : 0,
     citing_patents_count: citingPatentsRaw !== undefined && citingPatentsRaw !== null ? Number(citingPatentsRaw) : 0,
     citations_by_year: citationsByYearRaw || {},
     semantic_tldr: apiData.semantic_tldr || null,
     references: Array.isArray(apiData.references) ? apiData.references : [],
     reference_count: referenceCountRaw !== undefined && referenceCountRaw !== null ? Number(referenceCountRaw) : 0,
+    available_references_count: availableReferencesCountRaw !== undefined && availableReferencesCountRaw !== null ? Number(availableReferencesCountRaw) : null,
     volume_id: apiData.volume_id || apiData.volume?.volume_id || '',  
     volume_number: apiData.volume_number || apiData.volume || '',
     issue_id: apiData.issue_id || apiData.issue?.issue_id || '',

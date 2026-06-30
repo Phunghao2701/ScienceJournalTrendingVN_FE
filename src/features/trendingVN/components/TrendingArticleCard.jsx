@@ -1,7 +1,9 @@
-import React from 'react';
+﻿import React from 'react';
 import { Row, Col, Form, Collapse } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
+import ScientificMathText from '../../../shared/components/ScientificMathText';
+import { toScientificPlainText } from '../../../shared/utils/scientificMath';
 
 export default function TrendingArticleCard({
   article,
@@ -14,13 +16,35 @@ export default function TrendingArticleCard({
 }) {
   const navigate = useNavigate();
 
-  const publicationDate = article.publication_date || article.publication_year || '—';
+  const placeholder = '-';
+  const publicationDate = article.publication_date || article.publication_year || placeholder;
   const publicationParts = [
-    <> <strong>Volume:</strong> {article.volume_number || '—'}</>,
-    <> <strong>Issue:</strong> {article.issue_number || '—'}</>,
+    <> <strong>Volume:</strong> {article.volume_number || placeholder}</>,
+    <> <strong>Issue:</strong> {article.issue_number || placeholder}</>,
     article.pages ? <> <strong>Pages:</strong> {article.pages}</> : null,
     publicationDate,
   ].filter(Boolean);
+
+  const navigateEntityFilter = (paramName, id, fallbackText) => {
+    const params = new URLSearchParams();
+    if (id) {
+      params.set(paramName, id);
+    } else if (fallbackText) {
+      params.set('search', fallbackText);
+    }
+    params.set('page', '1');
+    navigate(`/articles?${params.toString()}`);
+  };
+
+  const entityButtonStyle = {
+    background: 'none',
+    border: 0,
+    padding: 0,
+    color: 'var(--primary)',
+    cursor: 'pointer',
+    font: 'inherit',
+    textAlign: 'left',
+  };
 
   const isExpanded = expandedAbstracts[article.article_id]
     || groupingMode === 'simple-expand'
@@ -35,8 +59,8 @@ export default function TrendingArticleCard({
             type="button"
             className="lens-article-expand-toggle"
             onClick={() => toggleAbstract(article.article_id)}
-            aria-label={isExpanded ? 'Thu gọn thông tin bài báo' : 'Mở rộng thông tin bài báo'}
-            title={isExpanded ? 'Thu gọn' : 'Mở rộng'}
+            aria-label={isExpanded ? 'Collapse article details' : 'Expand article details'}
+            title={isExpanded ? 'Collapse' : 'Expand'}
           >
             <Icon
               icon={isExpanded ? 'lucide:chevron-up-circle' : 'lucide:chevron-down-circle'}
@@ -51,7 +75,9 @@ export default function TrendingArticleCard({
               className="lens-article-title"
               onClick={() => handleDetailClick(article.article_id)}
             >
-              {article.title}
+              <ScientificMathText title={article.title_plain || toScientificPlainText(article.title)}>
+                {article.title}
+              </ScientificMathText>
             </div>
           )}
 
@@ -60,12 +86,14 @@ export default function TrendingArticleCard({
             {visibleColumns.journal && article.journal_name && (
               <>
                 {' '}
-                <span
+                <button
+                  type="button"
                   className="text-link"
-                  onClick={() => navigate(`/journals/${article.journal_id}`)}
+                  style={entityButtonStyle}
+                  onClick={() => navigateEntityFilter('journal_id', article.journal_id, article.journal_name)}
                 >
                   {article.journal_name}
-                </span>
+                </button>
               </>
             )}
             {publicationParts.length > 0 && (
@@ -86,14 +114,16 @@ export default function TrendingArticleCard({
               <strong>Authors: </strong>
               {article.authors && article.authors.length > 0 ? (
                 article.authors.map((au, aIdx) => (
-                  <span
+                  <button
+                    type="button"
                     key={au.author_id || aIdx}
                     className="text-link cursor-pointer"
-                    onClick={() => au.author_id && navigate(`/authors/${au.author_id}`)}
+                    style={entityButtonStyle}
+                    onClick={() => navigateEntityFilter('author_id', au.author_id, au.display_name || au.name)}
                   >
                     {au.display_name || au.name}
                     {aIdx < article.authors.length - 1 ? '; ' : ''}
-                  </span>
+                  </button>
                 ))
               ) : (
                 <span style={{ fontStyle: 'italic' }}>Any author</span>
@@ -102,9 +132,9 @@ export default function TrendingArticleCard({
           )}
 
           <div className="lens-detail-line">
-            <strong>Citing Works:</strong>{' '}
+            <strong>Citation Count:</strong>{' '}
             <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
-              {article.semantic_citation_count || 0}
+              {article.citation_count || article.semantic_citation_count || 0}
             </span>{' '}
             | <strong>Reference Count:</strong> {article.reference_count ?? 0}
             {visibleColumns.doi && article.doi && (
@@ -158,25 +188,21 @@ export default function TrendingArticleCard({
                     </p>
                   </div>
 
-                  <div className="expanded-section mb-3">
-                    <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
-                      Claims
-                    </div>
-                    <p className="text-muted text-xs mb-0" style={{ fontStyle: 'italic' }}>
-                      Claims are unavailable for this record.
-                    </p>
-                  </div>
-
                   <Row className="mb-3">
                     <Col sm={6}>
                       <div className="expanded-section">
                         <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
                           Publisher
                         </div>
-                        <div className="text-xs text-primary d-flex align-items-center gap-1 font-semibold">
+                        <button
+                          type="button"
+                          className="text-xs text-primary d-flex align-items-center gap-1 font-semibold"
+                          style={entityButtonStyle}
+                          onClick={() => navigateEntityFilter('publisher_id', article.publisher_id, article.publisher_name || article.journal_name)}
+                        >
                           <Icon icon="lucide:building-2" width="12" />
                           {article.publisher_name || article.journal_name || 'Any journal'}
-                        </div>
+                        </button>
                       </div>
                     </Col>
                     <Col sm={6}>
@@ -186,13 +212,43 @@ export default function TrendingArticleCard({
                           <Icon icon="lucide:info" width="12" style={{ color: '#ef6c00', cursor: 'pointer' }} />
                         </div>
                         <div className="text-xs">
-                          <span className="badge bg-light text-dark border px-2 py-1 font-monospace" style={{ fontSize: '0.68rem', fontWeight: 500 }}>
+                          <button
+                            type="button"
+                            className="badge bg-light text-dark border px-2 py-1 font-monospace"
+                            style={{ ...entityButtonStyle, fontSize: '0.68rem', fontWeight: 500 }}
+                            onClick={() => navigateEntityFilter('topic_id', article.topic_id, article.primary_topic)}
+                          >
                             {article.primary_topic || 'Any topic'}
-                          </span>
+                          </button>
                         </div>
                       </div>
                     </Col>
                   </Row>
+
+                  {article.keywords && article.keywords.length > 0 && (
+                    <div className="expanded-section mb-3">
+                      <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
+                        Keywords
+                      </div>
+                      <div className="d-flex flex-wrap gap-2">
+                        {article.keywords.map((keyword, idx) => {
+                          const keywordId = keyword.keyword_id || keyword.id;
+                          const keywordName = keyword.display_name || keyword.name || keyword.keyword;
+                          return (
+                            <button
+                              key={keywordId || keywordName || idx}
+                              type="button"
+                              className="badge bg-light text-dark border px-2 py-1"
+                              style={{ ...entityButtonStyle, fontSize: '0.68rem', fontWeight: 500 }}
+                              onClick={() => navigateEntityFilter('keyword_id', keywordId, keywordName)}
+                            >
+                              {keywordName}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="expanded-section">
                     <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
@@ -201,7 +257,13 @@ export default function TrendingArticleCard({
                     <div className="d-flex flex-wrap gap-2">
                       {article.authors && article.authors.length > 0 ? (
                         article.authors.map((au, idx) => (
-                          <span key={au.author_id || idx} className="text-xs text-primary d-flex align-items-center gap-1 border rounded px-2 py-1 bg-light">
+                          <button
+                            key={au.author_id || idx}
+                            type="button"
+                            className="text-xs text-primary d-flex align-items-center gap-1 border rounded px-2 py-1 bg-light"
+                            style={entityButtonStyle}
+                            onClick={() => navigateEntityFilter('author_id', au.author_id, au.display_name || au.name)}
+                          >
                             <Icon icon="lucide:user" width="12" />
                             {au.display_name || au.name}
                             {au.last_known_institution && (
@@ -209,7 +271,7 @@ export default function TrendingArticleCard({
                                 ({au.last_known_institution})
                               </span>
                             )}
-                          </span>
+                          </button>
                         ))
                       ) : (
                         <span className="text-xs text-muted font-italic">Any author</span>
@@ -231,19 +293,18 @@ export default function TrendingArticleCard({
 
                   <div className="expanded-section">
                     <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
-                      History
+                      Publication Details
                     </div>
                     <div className="history-timeline text-xs d-flex flex-column gap-2">
                       <div className="history-item">
-                        <div className="fw-semibold text-dark">Publication: {article.publication_year || '—'}</div>
+                        <div className="fw-semibold text-dark">Publication: {article.publication_year || placeholder}</div>
                       </div>
                       <div className="history-item border-top pt-1.5">
-                        <div className="fw-semibold text-dark">Application: {article.publication_year || '—'}</div>
+                        <div className="fw-semibold text-dark">Volume: {article.volume_number || '—'}</div>
                       </div>
                       <div className="history-item border-top pt-1.5">
                         <div className="fw-semibold text-dark d-flex align-items-center gap-1">
-                          Priority: {article.publication_year || '—'}
-                          <Icon icon="lucide:link" width="10" className="text-muted" />
+                          Issue: {article.issue_number || '—'}
                         </div>
                       </div>
                     </div>

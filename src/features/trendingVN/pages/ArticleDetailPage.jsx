@@ -1,11 +1,11 @@
-/**
- * File source thuộc hệ thống FE ResearchPulse.
- * Thiết kế trang chi tiết bài báo theo phong cách chuyên nghiệp đa cột của Lens.org.
+﻿/**
+ * File source for the ResearchPulse FE system.
+ * Lens-style scientific article detail page.
  *
  * File: trendingVN\pages\ArticleDetailPage.jsx
  */
 import React, { useState, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Container, Button, Modal, Form, Collapse, Row, Col, Dropdown, ButtonGroup } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +19,12 @@ import { getDoiUrl } from '../../article/utils/articleFormatters';
 import { toast } from '../../../shared/utils/toast';
 import { useTrendingArticleDetail } from '../hooks/useTrendingArticleDetail';
 import { getArticlesListApi } from '../../article/api/articleApi';
+import ScientificMathText from '../../../shared/components/ScientificMathText';
+import { toScientificPlainText } from '../../../shared/utils/scientificMath';
+import {
+  buildArticleAuthorFilterPath,
+  buildAuthorDetailPath,
+} from '../../../app/routes/routePaths';
 
 // Subcomponents
 import ArticleDetailSkeleton from '../../article/components/ArticleDetailSkeleton';
@@ -46,8 +52,11 @@ export default function ArticleDetailPage() {
     isBookmarking: isBookmarkLoading,
     citingWorks,
     citingWorksTotal,
+    isCitingWorksError,
+    citingWorksAnalytics,
     references,
     referencesTotal,
+    isReferencesError,
     recommendedArticles,
     isCitingWorksLoading,
     isReferencesLoading,
@@ -103,13 +112,39 @@ export default function ArticleDetailPage() {
       ? onTitleClick
       : () => navigate(`/trending/articles/${item.article_id}`);
 
-    const relatedPublicationDate = item.publication_date || item.publication_year || '—';
+    const relatedPublicationDate = item.publication_date || item.publication_year || null;
     const relatedPublicationParts = [
       item.volume_number ? <> <strong>Volume:</strong> {item.volume_number}</> : null,
       item.issue_number ? <> <strong>Issue:</strong> {item.issue_number}</> : null,
       item.pages ? <> <strong>Pages:</strong> {item.pages}</> : null,
       relatedPublicationDate,
     ].filter(Boolean);
+    const renderRelatedAuthor = (author, authorIndex) => {
+      const authorId = author.author_id || author.id;
+      const authorName = author.display_name || author.name || 'Author';
+      const separator = authorIndex < item.authors.length - 1 ? '; ' : '';
+
+      if (!authorId) {
+        return (
+          <span key={`${authorName}-${authorIndex}`}>
+            {authorName}{separator}
+          </span>
+        );
+      }
+
+      return (
+        <Link
+          key={authorId}
+          to={buildAuthorDetailPath(authorId)}
+          className="text-link"
+          style={{ color: 'var(--primary)', textDecoration: 'underline' }}
+          onClick={(event) => event.stopPropagation()}
+          title={`View ${authorName} profile`}
+        >
+          {authorName}{separator}
+        </Link>
+      );
+    };
 
     return (
       <div key={itemKey} className="lens-article-card p-3 mb-3">
@@ -134,18 +169,20 @@ export default function ArticleDetailPage() {
               style={{ fontSize: '1.05rem', cursor: 'pointer', color: 'var(--text-main)' }}
               onClick={handleTitleClick}
             >
-              {item.title}
+              <ScientificMathText title={toScientificPlainText(item.title)}>
+                {item.title}
+              </ScientificMathText>
             </div>
 
             <div className="lens-detail-line text-xs mt-1" style={{ color: 'var(--text-main)' }}>
-              <strong>Journal Article</strong>
+              {item.publication_info && <strong>{item.publication_info}</strong>}
               {item.journal_name && (
                 <>
-                  {' '}
+                  {item.publication_info ? ' ' : ''}
                   <span
                     className="text-link"
                     style={{ color: 'var(--primary)', cursor: 'pointer' }}
-                    onClick={() => navigate(`/journals/${item.journal_id}`)}
+                    onClick={() => navigateEntityFilter('journal_id', item.journal_id, item.journal_name)}
                   >
                     {item.journal_name}
                   </span>
@@ -167,28 +204,14 @@ export default function ArticleDetailPage() {
             <div className="lens-detail-line text-xs mt-1" style={{ color: 'var(--text-main)' }}>
               <strong>Authors: </strong>
               {item.authors && item.authors.length > 0 ? (
-                item.authors.map((au, aIdx) => (
-                  <span
-                    key={aIdx}
-                    className="text-link"
-                    style={{
-                      color: 'var(--primary)',
-                      cursor: au.author_id ? 'pointer' : 'default',
-                      textDecoration: au.author_id ? 'underline' : 'none',
-                    }}
-                    onClick={() => au.author_id && navigate(`/authors/${au.author_id}`)}
-                  >
-                    {au.display_name || au.name}
-                    {aIdx < item.authors.length - 1 ? '; ' : ''}
-                  </span>
-                ))
+                item.authors.map(renderRelatedAuthor)
               ) : (
                 <span style={{ fontStyle: 'italic' }}>Any author</span>
               )}
             </div>
 
             <div className="lens-detail-line text-xs mt-1" style={{ color: 'var(--text-main)' }}>
-              <strong>Citing Works:</strong>{' '}
+              <strong>Citation Count:</strong>{' '}
               <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
                 {item.citations ?? item.citation_count ?? item.semantic_citation_count ?? 0}
               </span> | {' '}
@@ -226,7 +249,7 @@ export default function ArticleDetailPage() {
             <Collapse in={isExpanded} key={itemKey}>
               <div className="lens-expanded-box mt-3 p-3 border rounded bg-white" style={{ borderColor: 'var(--border)' }}>
                 <Row className="g-3">
-                  {/* Left Column: Abstract, Claims, Applicants, Inventors, Classifications */}
+                  {/* Left Column: Abstract, Article Notes, Publishers, Authors, Classifications */}
                   <Col md={8} className="expanded-left-col">
                     {/* 1. Abstract */}
                     <div className="expanded-section mb-3">
@@ -236,23 +259,28 @@ export default function ArticleDetailPage() {
                       </p>
                     </div>
 
-                    {/* 2. Claims */}
+                    {/* 2. Article Notes */}
                     <div className="expanded-section mb-3">
-                      <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>Claims</div>
+                      <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>Article Notes</div>
                       <p className="text-muted text-xs mb-0" style={{ fontStyle: 'italic' }}>
-                        Claims are unavailable for this record.
+                        No additional article section is available for this record.
                       </p>
                     </div>
 
-                    {/* 3. Applicants & Classifications (Row layout) */}
+                    {/* 3. Publishers & Classifications (Row layout) */}
                     <Row className="mb-3">
                       <Col sm={6}>
                         <div className="expanded-section">
                           <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>Publisher</div>
-                          <div className="text-xs text-primary d-flex align-items-center gap-1 font-semibold">
+                          <button
+                            type="button"
+                            className="text-xs text-primary d-flex align-items-center gap-1 font-semibold"
+                            style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                            onClick={() => navigateEntityFilter('publisher_id', item.publisher_id, item.publisher_name || item.journal_name)}
+                          >
                             <Icon icon="lucide:building-2" width="12" />
                             {item.publisher_name || item.journal_name || 'Any journal'}
-                          </div>
+                          </button>
                         </div>
                       </Col>
                       <Col sm={6}>
@@ -262,35 +290,62 @@ export default function ArticleDetailPage() {
                             <Icon icon="lucide:info" width="12" style={{ color: '#ef6c00', cursor: 'pointer' }} />
                           </div>
                           <div className="text-xs">
-                            <span className="badge bg-light text-dark border px-2 py-1 font-monospace" style={{ fontSize: '0.68rem', fontWeight: 500 }}>
+                            <button
+                              type="button"
+                              className="badge bg-light text-dark border px-2 py-1 font-monospace"
+                              style={{ background: 'none', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 500 }}
+                              onClick={() => navigateEntityFilter('topic_id', item.topic_id || item.primary_topic, item.primary_topic)}
+                            >
                               {item.primary_topic || 'Any topic'}
-                            </span>
+                            </button>
                           </div>
                         </div>
                       </Col>
                     </Row>
 
-                    {/* 4. Inventors (Authors) */}
+                    {/* 4. Authors (Authors) */}
                     <div className="expanded-section">
                       <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>Authors</div>
                       <div className="d-flex flex-wrap gap-2">
                         {item.authors && item.authors.length > 0 ? (
-                          item.authors.map((au, idx) => (
-                            <span
-                              key={au.author_id || idx}
-                              className={`text-xs text-primary d-flex align-items-center gap-1 border rounded px-2 py-1 bg-light${au.author_id ? ' cursor-pointer' : ''}`}
-                              style={{ cursor: au.author_id ? 'pointer' : 'default' }}
-                              onClick={() => au.author_id && navigate(`/authors/${au.author_id}`)}
-                            >
-                              <Icon icon="lucide:user" width="12" />
-                              {au.display_name || au.name}
-                              {au.last_known_institution && (
-                                <span className="text-muted font-normal" style={{ fontSize: '0.62rem' }}>
-                                  ({au.last_known_institution})
+                          item.authors.map((au, idx) => {
+                            const authorId = au.author_id || au.id;
+                            const authorName = au.display_name || au.name || 'Author';
+                            const content = (
+                              <>
+                                <Icon icon="lucide:user" width="12" />
+                                {authorName}
+                                {au.last_known_institution && (
+                                  <span className="text-muted font-normal" style={{ fontSize: '0.62rem' }}>
+                                    ({au.last_known_institution})
+                                  </span>
+                                )}
+                              </>
+                            );
+
+                            if (!authorId) {
+                              return (
+                                <span
+                                  key={`${authorName}-${idx}`}
+                                  className="text-xs text-muted d-flex align-items-center gap-1 border rounded px-2 py-1 bg-light"
+                                >
+                                  {content}
                                 </span>
-                              )}
-                            </span>
-                          ))
+                              );
+                            }
+
+                            return (
+                              <Link
+                                key={authorId}
+                                to={buildAuthorDetailPath(authorId)}
+                                className="text-xs text-primary d-flex align-items-center gap-1 border rounded px-2 py-1 bg-light"
+                                onClick={(event) => event.stopPropagation()}
+                                title={`View ${authorName} profile`}
+                              >
+                                {content}
+                              </Link>
+                            );
+                          })
                         ) : (
                           <span className="text-xs text-muted font-italic">Any author</span>
                         )}
@@ -313,18 +368,23 @@ export default function ArticleDetailPage() {
                     <div className="expanded-section">
                       <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>History</div>
                       <div className="history-timeline text-xs d-flex flex-column gap-2">
-                        <div className="history-item">
-                          <div className="fw-semibold text-dark">Publication: {item.publication_year || '—'}</div>
-                        </div>
-                        <div className="history-item border-top pt-1.5">
-                          <div className="fw-semibold text-dark">Application: {item.publication_year || '—'}</div>
-                        </div>
-                        <div className="history-item border-top pt-1.5">
-                          <div className="fw-semibold text-dark d-flex align-items-center gap-1">
-                            Priority: {item.publication_year || '—'}
-                            <Icon icon="lucide:link" width="10" className="text-muted" />
+                        {(item.publication_date || item.publication_year) && (
+                          <div className="history-item">
+                            <div className="fw-semibold text-dark">
+                              Publication: {item.publication_date || item.publication_year}
+                            </div>
                           </div>
-                        </div>
+                        )}
+                        {item.volume_number && (
+                          <div className="history-item border-top pt-1.5">
+                            <div className="fw-semibold text-dark">Volume: {item.volume_number}</div>
+                          </div>
+                        )}
+                        {item.issue_number && (
+                          <div className="history-item border-top pt-1.5">
+                            <div className="fw-semibold text-dark">Issue: {item.issue_number}</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </Col>
@@ -375,20 +435,31 @@ export default function ArticleDetailPage() {
     }
   };
 
-  const handleKeywordClick = (keyword) => {
-    const label = keyword.display_name || keyword.name || keyword.keyword;
-    if (label) {
-      navigate(`/articles?search=${encodeURIComponent(label)}`);
+  const navigateEntityFilter = (paramName, idValue, fallbackText) => {
+    const params = new URLSearchParams();
+    if (idValue) {
+      params.set(paramName, idValue);
+    } else if (fallbackText) {
+      params.set('search', fallbackText);
     }
+    params.set('page', '1');
+    navigate(`/articles?${params.toString()}`);
+  };
+
+  const handleKeywordClick = (keyword) => {
+    const keywordId = keyword.keyword_id || keyword.id;
+    const label = keyword.display_name || keyword.name || keyword.keyword;
+    navigateEntityFilter('keyword_id', keywordId, label);
   };
 
   const generateBibTeX = useCallback(() => {
     if (!article) return '';
+    const articleTitle = toScientificPlainText(article.title);
     const authorList = (article.authors || [])
       .map((a) => a.display_name || a.name || 'Author')
       .join(' and ');
     return `@article{article_${article.article_id || '3233'},
-  title={${article.title}},
+  title={${articleTitle}},
   author={${authorList}},
   journal={${article.journal_name || 'ArXiv.org'}},
   year={${article.publication_year || '2025'}},
@@ -398,11 +469,12 @@ export default function ArticleDetailPage() {
 
   const generateRIS = useCallback(() => {
     if (!article) return '';
+    const articleTitle = toScientificPlainText(article.title);
     const authorList = (article.authors || [])
       .map((a) => `AU  - ${a.display_name || a.name || 'Author'}`)
       .join('\n');
     return `TY  - JOUR
-T1  - ${article.title}
+T1  - ${articleTitle}
 ${authorList}
 JO  - ${article.journal_name || 'ArXiv.org'}
 PY  - ${article.publication_year || '2025'}
@@ -439,9 +511,9 @@ ER  - `;
   };
 
   const handleTopicClick = (topic) => {
+    const topicId = topic?.topic_id || topic?.id;
     const label = topic?.display_name || topic?.name || '';
-    if (!label) return;
-    navigate(`/articles?search=${encodeURIComponent(label)}`);
+    navigateEntityFilter('topic_id', topicId, label);
   };
 
   const normalizeDoiForCompare = (doi = '') => doi.toLowerCase().replace(/^https?:\/\/(dx\.)?doi\.org\//, '').trim();
@@ -532,11 +604,52 @@ ER  - `;
     );
   }
 
+  const citationMetric = article.citation_count ?? article.citations ?? 0;
+  const referenceMetric = article.reference_count ?? 0;
+  const citingWorksRelationTotal = citingWorksTotal ?? article.citing_works_count ?? 0;
+  const availableReferencesTotal = referencesTotal ?? article.available_references_count ?? 0;
+  const publicationLabel = article.publication_date
+    ? ['Published', article.publication_date]
+    : article.publication_year
+      ? ['Publication Year', article.publication_year]
+      : null;
+  const publicationMetadataRows = [
+    article.journal_name ? ['Journal', article.journal_name, 'journal'] : null,
+    article.publisher_name ? ['Publisher', article.publisher_name, 'publisher'] : null,
+    article.volume_number ? ['Volume', article.volume_number] : null,
+    article.issue_number ? ['Issue', article.issue_number] : null,
+    publicationLabel,
+    article.publication_info ? ['Publication Info', article.publication_info] : null,
+    article.issn ? ['ISSN', article.issn] : null,
+    article.doi ? ['DOI', article.doi] : null,
+  ].filter(Boolean);
+  const articleInstitutions = article.institutions?.length
+    ? article.institutions
+    : Array.from(new Map(
+      (article.authors || [])
+        .flatMap((author) => author.institutions || [])
+        .map((institution) => [
+          institution.institution_id || institution.id || institution.display_name,
+          institution,
+        ])
+    ).values());
+  const institutionIndexById = new Map(
+    articleInstitutions.map((institution, index) => [
+      String(institution.institution_id || institution.id || institution.display_name),
+      index + 1,
+    ])
+  );
+  const citingYearDistribution = citingWorksAnalytics?.yearDistribution || [];
+  const maxCitingYearCount = Math.max(
+    ...citingYearDistribution.map((item) => Number(item.count || 0)),
+    1
+  );
+
   return (
     <div className="article-detail-page-wrapper grid-bg">
       <Header />
 
-      {/* Query Search Bar Top - Mô phỏng giao diện Lens.org */}
+      {/* Lens-style query search bar */}
       <section className="lens-top-search-section">
         <div className="lens-search-container-fluid d-flex align-items-center justify-content-between flex-wrap gap-3">
           {/* Left Side */}
@@ -586,9 +699,9 @@ ER  - `;
                 <Dropdown.Toggle split className="lens-btn-search-toggle" />
                 <Dropdown.Menu align="end" className="shadow-sm border">
                   <Dropdown.Item onClick={() => {
-                    toast.info("Patent Search is not active in this edition. Redirecting to Scholarly search.");
+                    toast.info("Scholarly search is active in this edition.");
                     navigate('/articles');
-                  }}>New Patent Search</Dropdown.Item>
+                  }}>New Scholarly Search</Dropdown.Item>
                   <Dropdown.Item onClick={() => navigate('/articles?search=')}>New Scholar Search</Dropdown.Item>
                   <Dropdown.Item onClick={() => navigate('/authors')}>Profile Search</Dropdown.Item>
                   <Dropdown.Item onClick={() => navigate('/keywords')}>Classification Explorer</Dropdown.Item>
@@ -644,10 +757,10 @@ ER  - `;
                     { key: 'dateRange', label: t('sbDateRange') || 'Date Range', icon: 'lucide:calendar', action: () => navigate('/articles') },
                     { key: 'flags', label: t('sbFlags') || 'Flags', icon: 'lucide:flag', action: () => navigate('/articles?access=open') },
                     { key: 'jurisdiction', label: t('sbJurisdiction') || 'Jurisdiction', icon: 'lucide:map-pin', action: () => navigate('/geography') },
-                    { key: 'applicants', label: t('sbApplicants') || 'Applicants', icon: 'lucide:user-check', action: () => navigate('/journals') },
-                    { key: 'inventors', label: t('sbInventors') || 'Inventors', icon: 'lucide:users', action: () => navigate('/authors') },
-                    { key: 'owners', label: t('sbOwners') || 'Owners', icon: 'lucide:award', action: () => navigate('/articles') },
-                    { key: 'legalStatus', label: t('sbLegalStatus') || 'Legal Status', icon: 'lucide:scale', action: () => navigate('/articles') },
+                    { key: 'applicants', label: t('sbPublishers') || 'Publishers', icon: 'lucide:user-check', action: () => navigate('/journals') },
+                    { key: 'inventors', label: t('sbAuthors') || 'Authors', icon: 'lucide:users', action: () => navigate('/authors') },
+                    { key: 'topics', label: 'Topics', icon: 'lucide:tags', action: () => navigate('/articles') },
+                    { key: 'legalStatus', label: t('sbLegalStatus') || 'Access Status', icon: 'lucide:scale', action: () => navigate('/articles') },
                     { key: 'docType', label: t('sbDocType') || 'Document Type', icon: 'lucide:file-text', action: () => navigate('/articles') },
                     { key: 'citedWorks', label: t('sbCitedWorks') || 'Cited Works', icon: 'lucide:book-open', action: () => navigate('/articles') },
                     { key: 'classifications', label: t('sbClassifications') || 'Classifications', icon: 'lucide:list', action: () => navigate('/keywords') },
@@ -789,18 +902,22 @@ ER  - `;
               <span className="lens-breadcrumb-current">Article Details</span>
             </div>
 
-            {/* Tiêu đề & Thông tin cơ bản */}
+            {/* Title and core metadata */}
             <section className="lens-article-header-section">
               <h1 className="lens-article-title">
-                {article.title}
+                <ScientificMathText title={toScientificPlainText(article.title)}>
+                  {article.title}
+                </ScientificMathText>
               </h1>
 
-              {/* Dòng metadata phụ */}
+              {/* Secondary metadata */}
               <div className="lens-meta-line flex-wrap gap-2">
-                <span className="lens-badge-type">
-                  <Icon icon="lucide:file-text" className="me-1" />
-                  {article.publication_info || 'Journal Article'}
-                </span>
+                {article.publication_info && (
+                  <span className="lens-badge-type">
+                    <Icon icon="lucide:file-text" className="me-1" />
+                    {article.publication_info}
+                  </span>
+                )}
                 <span className={`lens-badge-access ${article.is_open_access ? 'open' : 'restricted'}`}>
                   <Icon icon={article.is_open_access ? 'lucide:lock-keyhole-open' : 'lucide:lock-keyhole'} className="me-1" />
                   {article.is_open_access ? 'Open Access' : 'Restricted Access'}
@@ -812,16 +929,15 @@ ER  - `;
                         className="text-primary-hover cursor-pointer font-semibold" 
                         onClick={() => {
                           if (article.journal_id) {
-                            navigate(`/journals/${article.journal_id}`);
+                            navigateEntityFilter('journal_id', article.journal_id, article.journal_name || 'ArXiv.org');
                           } else {
-                            navigate(`/articles?search=${encodeURIComponent(article.journal_name || 'ArXiv.org')}`);
+                            navigateEntityFilter('journal_id', null, article.journal_name || 'ArXiv.org');
                           }
                         }}
                       >
                         {article.journal_name || 'ArXiv.org'}
                       </span>
-                      {', '}
-                      {article.publication_date || article.publication_year || '—'}
+                      {publicationLabel ? `, ${publicationLabel[1]}` : ''}
                     </>
                   ) : (
                     <>
@@ -830,38 +946,52 @@ ER  - `;
                         className="text-primary-hover cursor-pointer font-semibold" 
                         onClick={() => {
                           if (article.journal_id) {
-                            navigate(`/journals/${article.journal_id}`);
+                            navigateEntityFilter('journal_id', article.journal_id, article.journal_name);
                           } else {
-                            navigate(`/articles?search=${encodeURIComponent(article.journal_name || 'Updating')}`);
+                            navigateEntityFilter('journal_id', null, article.journal_name || 'Updating');
                           }
                         }}
                       >
                         {article.journal_name || 'Updating'}
-                      </span>, 
-                      <strong> Vol:</strong> {article.volume_number || '—'}, 
-                      <strong> Issue:</strong> {article.issue_number || '—'}, 
-                      <strong> Published:</strong> {article.publication_date || article.publication_year || '—'}
+                      </span>
+                      {article.volume_number ? <><strong>, Vol:</strong> {article.volume_number}</> : null}
+                      {article.issue_number ? <><strong>, Issue:</strong> {article.issue_number}</> : null}
+                      {publicationLabel ? <><strong>, {publicationLabel[0]}:</strong> {publicationLabel[1]}</> : null}
                     </>
                   )}
                 </span>
               </div>
 
-              {/* Tác giả */}
+              {/* Authors */}
               <div className="lens-authors-line">
                 <strong>Authors:</strong>{' '}
                 {visibleAuthors.length > 0 ? (
                   visibleAuthors.map((author, index) => {
                     const name = author.display_name || author.name || 'Author';
+                    const affiliations = (author.institutions || [])
+                      .map((institution) => institutionIndexById.get(String(institution.institution_id || institution.id || institution.display_name)))
+                      .filter(Boolean);
                     return (
                       <span key={index}>
-                        <Button 
-                          variant="link" 
-                          className="lens-author-link p-0"
-                          onClick={() => author.author_id && navigate(`/authors/${author.author_id}`)}
-                          disabled={!author.author_id}
-                        >
-                          {name}
-                        </Button>
+                        {author.author_id || author.id ? (
+                          <Link
+                            to={buildAuthorDetailPath(author.author_id || author.id)}
+                            className="lens-author-link p-0"
+                            title={`View ${name} profile`}
+                          >
+                            {name}
+                            {affiliations.length > 0 && (
+                              <sup className="ms-1">{affiliations.join(',')}</sup>
+                            )}
+                          </Link>
+                        ) : (
+                          <span className="lens-author-link p-0">
+                            {name}
+                            {affiliations.length > 0 && (
+                              <sup className="ms-1">{affiliations.join(',')}</sup>
+                            )}
+                          </span>
+                        )}
                         {index < visibleAuthors.length - 1 ? ', ' : ''}
                       </span>
                     );
@@ -882,17 +1012,38 @@ ER  - `;
                 )}
               </div>
 
-              {/* Dòng lượt trích dẫn */}
+              {visibleAuthors.some((author) => author.author_id || author.id) && (
+                <div className="d-flex flex-wrap gap-2 mt-2">
+                  {visibleAuthors.map((author, index) => {
+                    const authorId = author.author_id || author.id;
+                    if (!authorId) return null;
+                    const name = author.display_name || author.name || 'Author';
+                    return (
+                      <Link
+                        key={`author-filter-${authorId}-${index}`}
+                        to={buildArticleAuthorFilterPath(authorId)}
+                        className="lens-pill lens-pill-abstract"
+                        title={`Filter articles by ${name}`}
+                      >
+                        <Icon icon="lucide:filter" width="10" />
+                        View articles by {name}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Count metrics */}
               <div className="lens-stats-plain-line text-xs font-sans mt-2 mb-2 d-flex flex-wrap gap-4">
                 <span className="pointer" onClick={() => setShowCitationsModal(true)}>
-                  Citing Works: <strong className="text-dark">{isCitingWorksLoading ? (article.citation_count ?? article.citations ?? 0) : citingWorksTotal}</strong>
+                  Citation Count: <strong className="text-dark">{citationMetric}</strong>
                 </span>
                 <span>
-                  Reference Count: <strong className="text-dark">{isReferencesLoading ? (article.reference_count ?? 0) : referencesTotal}</strong>
+                  Reference Count: <strong className="text-dark">{referenceMetric}</strong>
                 </span>
               </div>
 
-              {/* Dòng nhãn thông tin phụ */}
+              {/* Additional information badges */}
               <div className="lens-additional-info-badges d-flex align-items-center gap-2 mt-2 mb-3">
                 <span className="text-xs fw-bold text-muted-custom">Additional Info:</span>
                 {article.is_open_access && (
@@ -921,12 +1072,14 @@ ER  - `;
                 )}
               </div>
 
-              {/* Danh sách các biểu tượng định danh (Identifiers & Links) */}
+              {/* Identifiers and links */}
               <div className="lens-external-links-badges gap-3 flex-wrap mt-2">
-                <span className="lens-ext-badge text-uppercase gray">
-                  <Icon icon="lucide:file-text" className="me-1 text-dark" />
-                  {article.publication_info || 'Journal Article'}
-                </span>
+                {article.publication_info && (
+                  <span className="lens-ext-badge text-uppercase gray">
+                    <Icon icon="lucide:file-text" className="me-1 text-dark" />
+                    {article.publication_info}
+                  </span>
+                )}
                 {article.is_open_access && (
                   <span className="lens-ext-badge text-uppercase" style={{ color: '#d97706', borderColor: '#fcd34d', backgroundColor: '#fef3c7' }}>
                     <Icon icon="lucide:lock-keyhole-open" className="me-1" />
@@ -936,7 +1089,7 @@ ER  - `;
               </div>
             </section>
 
-            {/* Khu vực Tabs điều hướng chính: Summary, Citing Works, References, Recommended & Collections */}
+            {/* Main tabs */}
             <div className="lens-tab-bar">
               <Button 
                 variant="link" 
@@ -950,14 +1103,14 @@ ER  - `;
                 className={`lens-tab-btn ${activeTab === 'citations' ? 'active' : ''}`}
                 onClick={() => setActiveTab('citations')}
               >
-                {isCitingWorksLoading ? (article.citation_count ?? article.citations ?? 0) : citingWorksTotal} Citing Works
+                Citing Works ({citingWorksRelationTotal})
               </Button>
               <Button 
                 variant="link" 
                 className={`lens-tab-btn ${activeTab === 'references' ? 'active' : ''}`}
                 onClick={() => setActiveTab('references')}
               >
-                {isReferencesLoading ? (article.reference_count ?? 0) : referencesTotal} References
+                Available References ({availableReferencesTotal})
               </Button>
               <Button 
                 variant="link" 
@@ -968,11 +1121,11 @@ ER  - `;
               </Button>
             </div>
 
-            {/* Nội dung theo Tab */}
+            {/* Tab content */}
             {activeTab === 'summary' ? (
               <div className="lens-summary-tab-content">
                 
-                {/* Thanh Action nhỏ: Share, Add to project, Download Citation */}
+                {/* Action bar */}
                 <div className="lens-actions-bar">
                   <Button variant="link" className="lens-action-btn" onClick={handleShareArticle}>
                     <Icon icon="lucide:share-2" />
@@ -993,10 +1146,10 @@ ER  - `;
                   </Button>
                 </div>
 
-                {/* Grid chi tiết trong Summary */}
+                {/* Summary grid */}
                 <div className="lens-summary-grid">
                   
-                  {/* Cột trái của Summary (Abstract, Authors, Keyword, Topic, Identifiers) */}
+                  {/* Summary left pane */}
                   <div className="lens-summary-left-pane">
                     
                     {/* TL;DR (AI summary) if available */}
@@ -1004,7 +1157,7 @@ ER  - `;
                       <div className="lens-section-block mb-4 p-3 rounded" style={{ backgroundColor: 'var(--primary-light)', borderLeft: '4px solid var(--primary)' }}>
                         <div className="d-flex align-items-center gap-2 mb-2 font-weight-bold" style={{ color: 'var(--primary)', fontSize: '0.9rem', letterSpacing: '0.5px' }}>
                           <Icon icon="lucide:sparkles" width="16" />
-                          <strong className="text-uppercase">TL;DR (AI Tóm tắt nhanh)</strong>
+                          <strong className="text-uppercase">TL;DR</strong>
                         </div>
                         <p className="lens-section-text mb-0" style={{ fontSize: '0.88rem', fontWeight: 500, color: 'var(--text-main)' }}>
                           {article.semantic_tldr}
@@ -1027,15 +1180,31 @@ ER  - `;
                         {article.authors && article.authors.length > 0 ? (
                           article.authors.map((author, index) => {
                             const name = author.display_name || author.name || 'Author';
+                            const affiliations = (author.institutions || [])
+                              .map((institution) => institutionIndexById.get(String(institution.institution_id || institution.id || institution.display_name)))
+                              .filter(Boolean);
                             return (
                               <span key={index}>
-                                <span 
-                                  className="text-primary-hover cursor-pointer" 
-                                  style={{ color: 'var(--primary)', fontWeight: 600 }}
-                                  onClick={() => author.author_id && navigate(`/authors/${author.author_id}`)}
-                                >
-                                  {name}
-                                </span>
+                                {author.author_id || author.id ? (
+                                  <Link
+                                    to={buildAuthorDetailPath(author.author_id || author.id)}
+                                    className="text-primary-hover"
+                                    style={{ color: 'var(--primary)', fontWeight: 600 }}
+                                    title={`View ${name} profile`}
+                                  >
+                                    {name}
+                                    {affiliations.length > 0 && (
+                                      <sup className="ms-1">{affiliations.join(',')}</sup>
+                                    )}
+                                  </Link>
+                                ) : (
+                                  <span style={{ fontWeight: 600 }}>
+                                    {name}
+                                    {affiliations.length > 0 && (
+                                      <sup className="ms-1">{affiliations.join(',')}</sup>
+                                    )}
+                                  </span>
+                                )}
                                 {author.orcid && (
                                   <a href={author.orcid} target="_blank" rel="noreferrer" className="ms-1 align-middle">
                                     <Icon icon="simple-icons:orcid" className="text-success" width="13" />
@@ -1050,6 +1219,22 @@ ER  - `;
                         )}
                       </div>
                     </div>
+
+                    {articleInstitutions.length > 0 && (
+                      <div className="lens-section-block">
+                        <h3 className="lens-section-title">Institutions</h3>
+                        <ol className="text-xs mb-0 ps-3" style={{ lineHeight: '1.7' }}>
+                          {articleInstitutions.map((institution, index) => (
+                            <li key={institution.institution_id || institution.id || institution.display_name || index}>
+                              {institution.display_name || institution.name}
+                              {institution.country_code ? (
+                                <span className="text-muted-custom"> ({institution.country_code})</span>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
 
                     {/* Keyword */}
                     <div id="field-of-study-section" className="lens-section-block">
@@ -1116,7 +1301,7 @@ ER  - `;
                         )}
                         <span className="lens-ext-badge gray">
                           <Icon icon="lucide:database" className="me-1 text-dark" />
-                          W{article.article_id}
+                          ResearchPulse ID: {article.article_id}
                         </span>
                       </div>
                     </div>
@@ -1148,61 +1333,79 @@ ER  - `;
 
                   </div>
 
-                  {/* Cột phải của Summary (Metadata boxes) */}
+                  {/* Summary right pane */}
                   <div className="lens-summary-right-pane">
+                    {citingYearDistribution.length > 0 && (
+                      <div className="lens-meta-card">
+                        <div className="lens-section-title mb-3">Citing Scholarly Works</div>
+                        <div className="d-flex align-items-end gap-2" style={{ minHeight: '130px' }}>
+                          {citingYearDistribution.map((item) => {
+                            const count = Number(item.count || 0);
+                            const height = Math.max(8, Math.round((count / maxCitingYearCount) * 100));
+                            const yearLabel = item.year ?? 'Unknown';
+                            return (
+                              <button
+                                key={yearLabel}
+                                type="button"
+                                className="p-0 border-0 bg-transparent d-flex flex-column align-items-center flex-fill"
+                                title={`${yearLabel}: ${count} citing works`}
+                              >
+                                <span
+                                  style={{
+                                    width: '100%',
+                                    maxWidth: '28px',
+                                    height: `${height}px`,
+                                    background: 'var(--primary)',
+                                    display: 'block',
+                                  }}
+                                />
+                                <span className="text-muted-custom mt-1" style={{ fontSize: '0.62rem' }}>
+                                  {yearLabel}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="text-xs text-muted-custom mt-2">
+                          Total citing works: {citingWorksAnalytics?.total ?? citingWorksRelationTotal}
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Metadata Card 1 */}
                     <div className="lens-meta-card">
                       <table className="lens-meta-table">
                         <tbody>
+                          {publicationMetadataRows.map(([label, value, entityType]) => (
+                            <tr key={label}>
+                              <th>{label}:</th>
+                              <td className={label === 'DOI' || label === 'ISSN' ? 'font-monospace text-muted-custom' : undefined}>
+                                {entityType === 'journal' ? (
+                                  <Button
+                                    variant="link"
+                                    className="p-0 text-start"
+                                    disabled={!article.journal_id && !article.journal_name}
+                                    onClick={() => navigateEntityFilter('journal_id', article.journal_id, article.journal_name)}
+                                  >
+                                    {value}
+                                  </Button>
+                                ) : entityType === 'publisher' ? (
+                                  <Button
+                                    variant="link"
+                                    className="p-0 text-start"
+                                    disabled={!article.publisher_id && !article.publisher_name}
+                                    onClick={() => navigateEntityFilter('publisher_id', article.publisher_id, article.publisher_name)}
+                                  >
+                                    {value}
+                                  </Button>
+                                ) : value}
+                              </td>
+                            </tr>
+                          ))}
                           <tr>
-                            <th>In:</th>
-                            <td>
-                              <span className="text-primary-hover font-sans" onClick={() => article.journal_id && navigate(`/journals/${article.journal_id}`)}>
-                                {article.journal_name || 'Updating'}
-                              </span>
-                              {article.volume_number ? `, Vol: ${article.volume_number}` : ''}
-                              {article.issue_number ? `, Issue: ${article.issue_number}` : ''}
-                            </td>
-                          </tr>
-                          <tr>
-                            <th>Journal is Open Access:</th>
+                            <th>Open Access:</th>
                             <td className="text-uppercase text-muted-custom fw-semibold">
                               {article.is_open_access ? 'true' : 'false'}
-                            </td>
-                          </tr>
-                          <tr>
-                            <th>Published:</th>
-                            <td>{article.publication_year || '—'}</td>
-                          </tr>
-                          <tr>
-                            <th>E-Published:</th>
-                            <td>{article.publication_year || '—'}</td>
-                          </tr>
-                          <tr>
-                            <th>Publication Info:</th>
-                            <td>Journal Article</td>
-                          </tr>
-                          <tr>
-                            <th>Published:</th>
-                            <td>{article.publication_date || article.publication_year || '—'}</td>
-                          </tr>
-                          <tr>
-                            <th>E-Published:</th>
-                            <td>{article.publication_date || article.publication_year || '—'}</td>
-                          </tr>
-                          <tr>
-                            <th>Publication Info:</th>
-                            <td>{article.publication_info || 'Journal Article'}</td>
-                          </tr>
-                          <tr>
-                            <th>Publisher:</th>
-                            <td>{article.publisher_name || '—'}</td>
-                          </tr>
-                          <tr>
-                            <th>Source ISSN:</th>
-                            <td className="font-monospace text-muted-custom">
-                              {article.issn || '—'}
                             </td>
                           </tr>
                         </tbody>
@@ -1218,37 +1421,19 @@ ER  - `;
                           <Icon icon="lucide:info" className="ms-auto text-muted-custom cursor-pointer" />
                         </div>
                         <div className="lens-oa-card-body">
-                          <div className="mb-2">
-                            <span className="text-muted-custom me-2">License:</span>
-                            <strong>Unknown</strong>
+                          <div className="mb-2 text-xs text-muted-custom">
+                            This record is marked as open access by the source data.
                           </div>
-                          {article.journal_name === 'ArXiv.org' ? (
-                            <div className="d-flex flex-column gap-2 mt-2">
-                              <div 
-                                className="d-flex align-items-center gap-2 text-danger cursor-pointer text-xs fw-semibold"
-                                onClick={() => article.source_url && window.open(article.source_url, '_blank', 'noopener,noreferrer')}
-                                title="Open PDF / Abstract source"
-                              >
-                                <Icon icon="lucide:file-text" />
-                                <span>arXiv</span>
-                              </div>
-                              <div 
-                                className="d-flex align-items-center gap-2 text-danger cursor-pointer text-xs fw-semibold"
-                                onClick={() => article.doi_url && window.open(article.doi_url, '_blank', 'noopener,noreferrer')}
-                                title="Open DOI link"
-                              >
-                                <Icon icon="lucide:file-text" />
-                                <span>arXiv</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div
-                              className="d-flex align-items-center gap-1 text-dark cursor-pointer text-xs fw-semibold"
-                              onClick={() => (article.source_url || article.doi_url) && window.open(article.source_url || article.doi_url, '_blank', 'noopener,noreferrer')}
+                          {(article.source_url || article.doi_url) && (
+                            <a
+                              className="d-flex align-items-center gap-1 text-dark text-xs fw-semibold"
+                              href={article.source_url || article.doi_url}
+                              target="_blank"
+                              rel="noreferrer"
                             >
                               <Icon icon="lucide:external-link" />
-                              <span>Repository Link</span>
-                            </div>
+                              <span>Open sourced link</span>
+                            </a>
                           )}
                         </div>
                       </div>
@@ -1265,12 +1450,13 @@ ER  - `;
                   <Icon icon="lucide:quote" width="32" className="text-primary mt-1" />
                   <div>
                     <h5 className="font-display fw-bold mb-1" style={{ color: 'var(--text-main)' }}>
-                      This work has been cited {isCitingWorksLoading ? (article.citation_count ?? article.citations ?? 0) : citingWorksTotal} times
+                      {citingWorksRelationTotal} citing works are available
                     </h5>
                     <p className="text-muted-custom mb-2 text-xs">
                       Scientific articles that cite this work. Select a title to open the source article.
+                      {isCitingWorksError ? ' The relation list could not be refreshed, so the detail count is shown.' : ''}
                     </p>
-                    <Button variant="outline-primary" size="sm" className="lens-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(article.title)}`)}>
+                    <Button variant="outline-primary" size="sm" className="lens-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(toScientificPlainText(article.title))}`)}>
                       Find related works
                     </Button>
                   </div>
@@ -1301,12 +1487,13 @@ ER  - `;
                   <Icon icon="lucide:book-open" width="32" className="text-primary mt-1" />
                   <div>
                     <h5 className="font-display fw-bold mb-1" style={{ color: 'var(--text-main)' }}>
-                      {isReferencesLoading ? (article.reference_count ?? 0) : referencesTotal} synced references
+                      {availableReferencesTotal} available references
                     </h5>
                     <p className="text-muted-custom mb-2 text-xs">
                       Research works cited by this article. Select a title to open the source record.
+                      {isReferencesError ? ' The reference list could not be refreshed, so the detail count is shown.' : ''}
                     </p>
-                    <Button variant="outline-primary" size="sm" className="lens-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(article.title)}`)}>
+                    <Button variant="outline-primary" size="sm" className="lens-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(toScientificPlainText(article.title))}`)}>
                       Find related works
                     </Button>
                   </div>
@@ -1378,19 +1565,19 @@ ER  - `;
           </main>
       </div>
 
-      {/* Modal hiển thị chi tiết Trích dẫn và Export Citation */}
+      {/* Citation export modal */}
       <Modal show={showCitationsModal} onHide={() => setShowCitationsModal(false)} size="lg" centered>
         <Modal.Header closeButton>
-          <Modal.Title className="font-display fw-bold">Citations & Citation Manager</Modal.Title>
+          <Modal.Title className="font-display fw-bold">Citation Count & Citation Manager</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="row g-4">
-            {/* Cột trái: Thông tin trích dẫn */}
+            {/* Citation information */}
             <div className="col-12 col-md-5 border-end">
               <div className="lens-modal-stat-box">
-                <div className="text-muted-custom text-xs fw-bold text-uppercase mb-1">Total citations</div>
+                <div className="text-muted-custom text-xs fw-bold text-uppercase mb-1">Citation Count</div>
                 <div className="font-display fw-bold text-dark mb-2" style={{ fontSize: '2.5rem' }}>
-                  {(article?.citations ?? 0).toLocaleString('en-US')}
+                  {Number(article?.citation_count ?? article?.citations ?? 0).toLocaleString('en-US')}
                 </div>
               </div>
               <p className="text-muted-custom mb-3 text-xs" style={{ lineHeight: 1.6 }}>
@@ -1402,7 +1589,7 @@ ER  - `;
               </div>
             </div>
 
-            {/* Cột phải: Xuất trích dẫn */}
+            {/* Citation export */}
             <div className="col-12 col-md-7">
               <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
                 <Icon icon="lucide:download" className="text-primary" />

@@ -1,11 +1,13 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * ResearchPulse FE source file.
  *
  * File: features\article\components\ArticleTable.jsx
  */
 import { Table, Card, Button } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import ArticleTableRow from './ArticleTableRow';
+import ScientificMathText from '../../../shared/components/ScientificMathText';
+import { toScientificPlainText } from '../../../shared/utils/scientificMath';
 
 export default function ArticleTable({ articles, isLoading, onDetailClick, onClearFilters }) {
   
@@ -71,13 +73,13 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               <th className="bg-transparent text-muted-custom py-3 ps-3 text-xs" style={{ width: '40px' }}>#</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs">TÊN BÀI BÁO</th>
+              <th className="bg-transparent text-muted-custom py-3 text-xs">ARTICLE TITLE</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs">JOURNAL</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs text-center">NĂM</th>
+              <th className="bg-transparent text-muted-custom py-3 text-xs text-center">YEAR</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs">DOI</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs">TOPIC</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs text-center">OA</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs text-end pe-3">CHI TIẾT</th>
+              <th className="bg-transparent text-muted-custom py-3 text-xs text-end pe-3">DETAILS</th>
             </tr>
           </thead>
           {renderSkeletons()}
@@ -100,9 +102,9 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
         <div className="article-empty-icon mb-3">
           <Icon icon="lucide:search-code" width="30" height="30" />
         </div>
-        <h5 className="text-main font-weight-bold mb-2 font-display">Không tìm thấy bài báo phù hợp</h5>
+        <h5 className="text-main font-weight-bold mb-2 font-display">No matching articles found</h5>
         <p className="text-muted-custom mb-4 text-sm max-w-md">
-          Hãy thử thay đổi từ khóa hoặc xóa các bộ lọc tìm kiếm hiện tại để tìm thấy nhiều kết quả hơn.
+          Try changing the keyword or clearing the current search filters to find more results.
         </p>
         {onClearFilters && (
           <Button 
@@ -111,7 +113,7 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
             className="d-flex align-items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-pill"
           >
             <Icon icon="lucide:rotate-ccw" width="14" />
-            <span>Xóa bộ lọc</span>
+            <span>Clear filters</span>
           </Button>
         )}
       </div>
@@ -126,13 +128,13 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               <th className="bg-transparent text-muted-custom py-3 ps-3 text-xs" style={{ width: '40px', letterSpacing: '0.05em' }}>#</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs" style={{ letterSpacing: '0.05em' }}>TÊN BÀI BÁO</th>
+              <th className="bg-transparent text-muted-custom py-3 text-xs" style={{ letterSpacing: '0.05em' }}>ARTICLE TITLE</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs" style={{ letterSpacing: '0.05em' }}>JOURNAL</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs text-center" style={{ width: '80px', letterSpacing: '0.05em' }}>NĂM</th>
+              <th className="bg-transparent text-muted-custom py-3 text-xs text-center" style={{ width: '80px', letterSpacing: '0.05em' }}>YEAR</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs" style={{ letterSpacing: '0.05em' }}>DOI</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs" style={{ letterSpacing: '0.05em' }}>TOPIC</th>
               <th className="bg-transparent text-muted-custom py-3 text-xs text-center" style={{ width: '80px', letterSpacing: '0.05em' }}>OA</th>
-              <th className="bg-transparent text-muted-custom py-3 text-xs text-end pe-3" style={{ width: '80px', letterSpacing: '0.05em' }}>CHI TIẾT</th>
+              <th className="bg-transparent text-muted-custom py-3 text-xs text-end pe-3" style={{ width: '80px', letterSpacing: '0.05em' }}>DETAILS</th>
             </tr>
           </thead>
           <tbody>
@@ -164,7 +166,7 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
                     <span className="text-muted-custom text-xs font-display">#{index + 1}</span>
                     <div className="d-flex gap-1.5 align-items-center">
                       <span className={`article-topic-badge ${topicClassName}`}>
-                        {article.primary_topic || 'Chưa phân loại'}
+                        {article.primary_topic || 'Unclassified'}
                       </span>
                       {article.is_open_access && (
                         <span className="article-oa-badge">
@@ -175,7 +177,9 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
                   </div>
 
                   <h6 className="text-main font-weight-semibold mb-2" style={{ lineHeight: '1.4', fontSize: '0.9rem' }}>
-                    {article.title}
+                    <ScientificMathText title={article.title_plain || toScientificPlainText(article.title)}>
+                      {article.title}
+                    </ScientificMathText>
                   </h6>
 
                   {article.abstract && (
@@ -192,11 +196,11 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
                         </div>
                       )}
                       <div className="text-muted-custom text-xs font-display mt-0.5" style={{ fontSize: '0.7rem' }}>
-                        Năm: {article.publication_year} {article.doi ? `· DOI: ${article.doi}` : ''}
+                        Year: {article.publication_year} {article.doi ? `· DOI: ${article.doi}` : ''}
                       </div>
                     </div>
                     <span className="article-action-link d-flex align-items-center gap-0.5">
-                      Chi tiết
+                      Details
                       <Icon icon="lucide:arrow-right" width="12" />
                     </span>
                   </div>

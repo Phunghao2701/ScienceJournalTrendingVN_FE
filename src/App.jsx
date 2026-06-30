@@ -3,20 +3,29 @@
  *
  * File: App.jsx
  */
-import { useEffect } from 'react';
+import { MathJaxContext } from 'better-react-mathjax';
 import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './app/routes/AppRoutes';
 import AppToast from './shared/components/AppToast';
-import { isAuthenticated } from './shared/utils/auth';
+
+const mathJaxConfig = {
+  loader: { load: ['input/mml', 'output/chtml'] },
+  options: {
+    enableMenu: false,
+    renderActions: {
+      addMenu: [],
+    },
+  },
+};
 
 function App() {
   return (
-    <>
+    <MathJaxContext version={3} config={mathJaxConfig}>
       <AppToast />
       <BrowserRouter>
         <AppRoutes />
       </BrowserRouter>
-    </>
+    </MathJaxContext>
   );
 }
 

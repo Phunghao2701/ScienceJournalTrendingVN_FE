@@ -69,4 +69,14 @@ const ROUTES = {
   TRENDING_VN:           "/trending-vn",
 };
 
+export const buildAuthorDetailPath = (authorId) =>
+  `/authors/${encodeURIComponent(authorId)}`;
+
+export const buildArticleAuthorFilterPath = (authorId) => {
+  const params = new URLSearchParams();
+  params.set('author_id', authorId);
+  params.set('page', '1');
+  return `${ROUTES.ARTICLES}?${params.toString()}`;
+};
+
 export default ROUTES;

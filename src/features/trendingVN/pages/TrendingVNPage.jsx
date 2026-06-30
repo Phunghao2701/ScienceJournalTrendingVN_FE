@@ -1,37 +1,48 @@
-/**
- * File source thuộc hệ thống FE ResearchPulse.
+﻿/**
  *
  * File: features\trendingVN\pages\TrendingVNPage.jsx
- * Mô tả: Trang tìm kiếm bài báo khoa học Việt Nam — bố cục tham chiếu Lens.org.
- *        Gồm: thanh thống kê ngang, toolbar hành động, danh sách card bài báo (trái),
- *        sidebar phân tích với lưới nhà xuất bản, biểu đồ năm, và trạng thái truy cập (phải).
- *        Nút "Analysis" ẩn/hiện sidebar bên phải.
  */
 
 import { useState, useEffect, useMemo } from 'react';
 import { Container, Row, Col, Form, Button, Badge, Collapse, Modal, Dropdown } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Header from '../../landing/components/Header';
 import useArticleList from '../../article/hooks/useArticleList';
+import useArticleAnalytics from '../../article/hooks/useArticleAnalytics';
+import useArticleEntityLabels from '../../article/hooks/useArticleEntityLabels';
+import useArticleAnalysis from '../hooks/useArticleAnalysis';
 import ArticleTable from '../../article/components/ArticleTable';
 import AdminPagination from '../../../shared/components/Pagination';
 import PublisherGrid from '../components/PublisherGrid';
 import TrendingArticleCard from '../components/TrendingArticleCard';
+import AnalysisDashboard from '../components/analysis/AnalysisDashboard';
 import { toast } from '../../../shared/utils/toast';
+import { toScientificPlainText } from '../../../shared/utils/scientificMath';
 import { useAuthStore } from '../../../app/store/authStore';
 import { useTrendingFilters } from '../hooks/useTrendingFilters';
+import {
+  TRENDING_VIEW_MODES,
+  buildTrendingViewSearchParams,
+  getTrendingViewFromParams,
+  shouldCanonicalizeTrendingView,
+  buildExactReturnToPath,
+} from '../utils/trendingViewParams';
+import { computeYearChartLayout } from '../utils/paperVnAnalysis';
 import '../trendingVN.css';
 
 export default function TrendingVNPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
+  const viewMode = getTrendingViewFromParams(searchParams);
+  const isAnalysisView = viewMode === TRENDING_VIEW_MODES.ANALYSIS;
   const [activeLeftTab, setActiveLeftTab] = useState(null); // 'filters', 'profile', 'info', 'more'
   const [activeTooltip, setActiveTooltip] = useState(null); // { name, count, x, y }
 
-  // Hook quản lý danh sách bài báo, bộ lọc, phân trang (sync với URL)
   const {
     articles,
     total,
@@ -44,34 +55,51 @@ export default function TrendingVNPage() {
     updateFilters,
     clearFilters,
     handlePageChange,
-  } = useArticleList();
+  } = useArticleList({ enabled: !isAnalysisView });
+  const {
+    analytics,
+    isLoading: isAnalyticsLoading,
+    error: analyticsError,
+  } = useArticleAnalytics(filters, { enabled: !isAnalysisView });
+  const {
+    analysis,
+    isLoading: isAnalysisLoading,
+    error: analysisError,
+    refetch: refetchAnalysis,
+  } = useArticleAnalysis(filters, { enabled: isAnalysisView });
+  const entityLabels = useArticleEntityLabels(filters);
+
+  const buildResultsReturnPath = () => buildExactReturnToPath(location.pathname, location.search);
 
   const handleDetailClick = (id) => {
-    navigate(`/trending/articles/${id}`);
+    const returnTo = buildResultsReturnPath();
+    navigate(`/trending/articles/${id}?returnTo=${encodeURIComponent(returnTo)}`, {
+      state: {
+        fromTrendingResults: returnTo,
+        resultCount: activeResultTotal,
+        activeFilterCount: activeChips.length,
+        query: filters.search,
+      },
+    });
   };
 
-  // --- State giao diện ---
-  const [showSidebar, setShowSidebar] = useState(true); // Ẩn/hiện sidebar phân tích
-  const [viewMode, setViewMode] = useState('list');      // 'list' hoặc 'table'
-  const [expandedAbstracts, setExpandedAbstracts] = useState({}); // Toggle abstract từng bài
-  const [allExpanded, setAllExpanded] = useState(false);          // Toggle tất cả abstract
-  const [showCustomise, setShowCustomise] = useState(false);      // Ẩn/hiện panel Customise
+  const showSidebar = !isAnalysisView;
+  const [expandedAbstracts, setExpandedAbstracts] = useState({});
+  const [allExpanded, setAllExpanded] = useState(false);          // Toggle táº¥t cáº£ abstract
+  const [showCustomise, setShowCustomise] = useState(false);
 
-  // --- State của các tính năng nâng cao (Save Query, Share, Export, Grouping) ---
   const [showSaveQueryModal, setShowSaveQueryModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [groupingMode, setGroupingMode] = useState('none'); // 'none', 'simple-group', 'simple-expand', 'extended-group', 'extended-expand'
 
-  // State form lưu truy vấn
   const [queryTitle, setQueryTitle] = useState('');
   const [queryDesc, setQueryDesc] = useState('');
   const [queryNotify, setQueryNotify] = useState(false);
   const [queryEmailAlerts, setQueryEmailAlerts] = useState(false);
-  const [queryAccess, setQueryAccess] = useState('restricted'); // 'restricted' hoặc 'public'
+  const [queryAccess, setQueryAccess] = useState('restricted'); // 'restricted' hoáº·c 'public'
 
-  // State form xuất dữ liệu
-  const [exportDocCount, setExportDocCount] = useState(1000);
+  const [exportDocCount, setExportDocCount] = useState(10);
   const [exportFormat, setExportFormat] = useState('CSV');
   const [exportFileName, setExportFileName] = useState('articles-export');
   const [exportFields, setExportFields] = useState({
@@ -85,7 +113,6 @@ export default function TrendingVNPage() {
     year: true,
   });
 
-  // Cấu hình hiển thị cột — bỏ Keywords và ISSN khỏi card theo yêu cầu giao diện hiện tại
   const [visibleColumns, setVisibleColumns] = useState({
     doi: true,
     authors: true,
@@ -95,28 +122,28 @@ export default function TrendingVNPage() {
     issn: false,
   });
 
-  // Toggle ẩn/hiện từng cột trong Customise panel
   const toggleColumn = (key) => {
     setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // --- State bộ lọc (load từ API) ---
-  // Input tìm kiếm cục bộ (tránh gọi API liên tục khi gõ)
   const [localSearchInput, setLocalSearchInput] = useState(filters.search);
 
-  // Đồng bộ ô tìm kiếm khi URL thay đổi (back/forward trình duyệt)
+  useEffect(() => {
+    if (shouldCanonicalizeTrendingView(searchParams)) {
+      setSearchParams(buildTrendingViewSearchParams(searchParams, TRENDING_VIEW_MODES.LIST), { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
   useEffect(() => {
     setLocalSearchInput(filters.search);
   }, [filters.search]);
 
   const { journalOptions, topicOptions } = useTrendingFilters();
 
-  // Toggle abstract một bài báo
   const toggleAbstract = (id) => {
     setExpandedAbstracts(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Toggle tất cả abstract
   const handleToggleAllAbstracts = () => {
     const nextState = !allExpanded;
     setAllExpanded(nextState);
@@ -127,18 +154,16 @@ export default function TrendingVNPage() {
     setExpandedAbstracts(newExpanded);
   };
 
-  // Copy DOI vào clipboard
   const handleCopyDoi = (e, doi) => {
     e.stopPropagation();
     if (!doi) return;
     navigator.clipboard.writeText(doi);
   };
 
-  // Lưu truy vấn tìm kiếm hiện tại vào danh sách lưu trữ cục bộ
   const handleSaveQuery = (e) => {
     e.preventDefault();
     if (!queryTitle.trim()) {
-      toast.error('Vui lòng nhập tiêu đề truy vấn');
+      toast.error('Please enter a query title');
       return;
     }
 
@@ -158,26 +183,24 @@ export default function TrendingVNPage() {
       const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
       localStorage.setItem(storageKey, JSON.stringify([...existing, newQuery]));
       
-      toast.success('Lưu truy vấn thành công!');
+      toast.success('Query saved successfully');
       setShowSaveQueryModal(false);
       setQueryTitle('');
       setQueryDesc('');
       setQueryNotify(false);
       setQueryEmailAlerts(false);
     } catch (err) {
-      console.error('Lỗi khi lưu truy vấn:', err);
-      toast.error('Không thể lưu truy vấn');
+      console.error('Unable to save query:', err);
+      toast.error('Unable to save query');
     }
   };
 
-  // Thực hiện xuất danh sách bài báo khoa học dựa trên các cột được tích chọn
   const handleExportSubmit = (e) => {
     e.preventDefault();
     
-    // Giới hạn số bài báo xuất theo cấu hình của người dùng (mặc định lấy tối đa số bài hiện có)
-    const docsToExport = articles.slice(0, exportDocCount);
+    const docsToExport = articles.slice(0, Math.min(exportDocCount, articles.length));
     if (docsToExport.length === 0) {
-      toast.warning('Không có bài báo nào để xuất');
+      toast.warning('There are no articles to export');
       return;
     }
 
@@ -187,8 +210,8 @@ export default function TrendingVNPage() {
 
     if (exportFormat === 'CSV') {
       mimeType = 'text/csv;charset=utf-8;';
+      const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
       
-      // Xây dựng header dựa trên các trường được chọn
       const selectedHeaders = [];
       if (exportFields.title) selectedHeaders.push('Title');
       if (exportFields.authors) selectedHeaders.push('Authors');
@@ -201,43 +224,40 @@ export default function TrendingVNPage() {
 
       const csvRows = [selectedHeaders.join(',')];
 
-      // Đưa dữ liệu bài viết vào từng dòng
       docsToExport.forEach(art => {
         const row = [];
-        if (exportFields.title) row.push(`"${(art.title || '').replace(/'/g, '""')}"`);
+        if (exportFields.title) row.push(csvEscape(art.title_plain || toScientificPlainText(art.title)));
         if (exportFields.authors) {
           const authorNames = (art.authors || []).map(au => au.display_name || au.name).join('; ');
-          row.push(`"${authorNames.replace(/'/g, '""')}"`);
+          row.push(csvEscape(authorNames));
         }
-        if (exportFields.journal) row.push(`"${(art.journal_name || '').replace(/'/g, '""')}"`);
-        if (exportFields.doi) row.push(`"${(art.doi || '').replace(/'/g, '""')}"`);
-        if (exportFields.issn) row.push(`"${(art.journal_issn || '').replace(/'/g, '""')}"`);
-        if (exportFields.keywords) row.push(`"${(art.primary_topic || '').replace(/'/g, '""')}"`);
-        if (exportFields.citations) row.push(art.semantic_citation_count || 0);
+        if (exportFields.journal) row.push(csvEscape(art.journal_name));
+        if (exportFields.doi) row.push(csvEscape(art.doi));
+        if (exportFields.issn) row.push(csvEscape(art.journal_issn));
+        if (exportFields.keywords) row.push(csvEscape(art.primary_topic));
+        if (exportFields.citations) row.push(art.citation_count || 0);
         if (exportFields.year) row.push(art.publication_year || '');
         csvRows.push(row.join(','));
       });
 
       fileContent = csvRows.join('\n');
     } else {
-      // Định dạng JSON
       mimeType = 'application/json;charset=utf-8;';
       const jsonList = docsToExport.map(art => {
         const item = {};
-        if (exportFields.title) item.title = art.title;
+        if (exportFields.title) item.title = art.title_plain || toScientificPlainText(art.title);
         if (exportFields.authors) item.authors = (art.authors || []).map(au => au.display_name || au.name);
         if (exportFields.journal) item.journal = art.journal_name;
         if (exportFields.doi) item.doi = art.doi;
         if (exportFields.issn) item.issn = art.journal_issn;
         if (exportFields.keywords) item.topic = art.primary_topic;
-        if (exportFields.citations) item.citations = art.semantic_citation_count || 0;
+        if (exportFields.citations) item.citations = art.citation_count || 0;
         if (exportFields.year) item.publication_year = art.publication_year;
         return item;
       });
       fileContent = JSON.stringify(jsonList, null, 2);
     }
 
-    // Tiến hành tải xuống trình duyệt
     try {
       const blob = new Blob([fileContent], { type: mimeType });
       const url = URL.createObjectURL(blob);
@@ -249,152 +269,149 @@ export default function TrendingVNPage() {
       link.click();
       document.body.removeChild(link);
 
-      toast.success('Xuất dữ liệu thành công!');
+      toast.success('Data exported successfully');
       setShowExportModal(false);
     } catch (err) {
-      console.error('Lỗi khi tải file xuất:', err);
-      toast.error('Xuất dữ liệu thất bại');
+      console.error('Unable to export file:', err);
+      toast.error('Data export failed');
     }
   };
 
-  // Submit form tìm kiếm
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     updateFilters({ search: localSearchInput });
   };
 
-  // Xóa ô tìm kiếm
   const handleClearSearch = () => {
     setLocalSearchInput('');
     updateFilters({ search: '' });
   };
 
-  // Tính toán các filter chip đang active
-  const activeChips = useMemo(() => {
+  const handleViewChange = (nextView) => {
+    setSearchParams(buildTrendingViewSearchParams(searchParams, nextView));
+  };
+
+  // Mirrors buildPaperVnAnalysisParams precedence: an explicit from/to range suppresses
+  // publication_year in the actual Analysis request, so the chip must reflect that instead
+  // of showing both (FE-FIX-04 — no contradictory chips).
+  const hasExplicitYearRange = Boolean(filters.fromYear && filters.toYear);
+  const suppressYearChip = isAnalysisView && hasExplicitYearRange;
+
+  const activeChips = (() => {
     const chips = [];
     if (filters.search) {
       chips.push({ key: 'search', label: `${t('search')}: "${filters.search}"`, value: '' });
     }
-    if (filters.selectedYear && filters.selectedYear !== 'all') {
+    if (filters.selectedYear && filters.selectedYear !== 'all' && !suppressYearChip) {
       chips.push({ key: 'year', label: `${t('publicationYear')}: ${filters.selectedYear}`, value: 'all' });
+    }
+    if (hasExplicitYearRange) {
+      chips.push({
+        key: 'yearRange',
+        label: `${t('publicationYear')}: ${filters.fromYear}–${filters.toYear}`,
+        value: 'all',
+        onRemove: () => updateFilters({ fromYear: '', toYear: '' }),
+      });
     }
     if (filters.selectedJournal && filters.selectedJournal !== 'all') {
       const jName = journalOptions.find(j => String(j.journal_id) === String(filters.selectedJournal))?.display_name || `Journal #${filters.selectedJournal}`;
-      chips.push({ key: 'journal', label: `${t('journalLabel')}: ${jName}`, value: 'all' });
+      chips.push({ key: 'selectedJournal', label: `${t('journalLabel')}: ${jName}`, value: 'all' });
+    }
+    if (filters.selectedInstitution && filters.selectedInstitution !== 'all') {
+      chips.push({ key: 'selectedInstitution', label: `Institution #${filters.selectedInstitution}`, value: 'all' });
+    }
+    if (filters.selectedPublisher && filters.selectedPublisher !== 'all') {
+      const publisherName = entityLabels.publisher || 'Unknown publisher';
+      chips.push({ key: 'selectedPublisher', label: `Publisher: ${publisherName}`, value: 'all' });
+    }
+    if (filters.selectedAuthor && filters.selectedAuthor !== 'all') {
+      const authorName = entityLabels.author || 'Unknown author';
+      chips.push({ key: 'selectedAuthor', label: `${t('authorLabel')}: ${authorName}`, value: 'all' });
     }
     if (filters.selectedTopic && filters.selectedTopic !== 'all') {
-      const tName = topicOptions.find(tp => String(tp.topic_id || tp.id) === String(filters.selectedTopic))?.display_name || `Topic #${filters.selectedTopic}`;
-      chips.push({ key: 'topic', label: `${t('researchTopics')}: ${tName}`, value: 'all' });
+      const tName = topicOptions.find(tp => String(tp.topic_id || tp.id) === String(filters.selectedTopic))?.display_name
+        || entityLabels.topic
+        || 'Unknown topic';
+      chips.push({ key: 'selectedTopic', label: tName, value: 'all' });
+    }
+    if (filters.selectedKeyword && filters.selectedKeyword !== 'all') {
+      const keywordName = entityLabels.keyword || 'Unknown keyword';
+      chips.push({ key: 'selectedKeyword', label: `${t('keywordsLabel')}: ${keywordName}`, value: 'all' });
     }
     if (filters.selectedAccess && filters.selectedAccess !== 'all') {
-      chips.push({ key: 'access', label: `${t('accessStatus')}: Open Access`, value: 'all' });
+      const accessLabel = filters.selectedAccess === 'oa' ? t('openAccess') : t('closedAccess');
+      chips.push({ key: 'access', label: `${t('accessStatus')}: ${accessLabel}`, value: 'all' });
     }
     return chips;
-  }, [filters, journalOptions, topicOptions, t]);
+  })();
 
   const hasActiveFilters = activeChips.length > 0 || filters.sortBy !== 'created_at' || filters.sortOrder !== 'desc';
 
-  // Tính số bài theo từng năm (dùng cho biểu đồ Publication Date)
+  const handleEntityFilter = (paramName, idValue) => {
+    if (!idValue) return;
+    updateFilters({ [paramName]: idValue });
+  };
+
+  const analyticsTotals = analytics?.totals || {};
+  const analysisSummary = analysis?.summary || {};
+  const activeResultTotal = isAnalysisView ? Number(analysisSummary.scholarly_works || 0) : total;
+  // Analysis stats are sourced from the Analysis contract's own summary, never from the
+  // disabled list/light-analytics queries (FE-FIX-03): topics/publishers have no Analysis
+  // contract field, so they are hidden in Analysis instead of reading stale data.
+  const openAccessTotal = isAnalysisView ? Number(analysisSummary.open_access_works || 0) : Number(stats.openAccessCount || 0);
+  const authorTotal = isAnalysisView
+    ? Number(analysisSummary.authors || 0)
+    : Number(analyticsTotals.authors ?? analyticsTotals.author_count ?? analyticsTotals.authorsCount ?? stats.authorsCount ?? 0);
+  const institutionTotal = Number(analysisSummary.institutions || 0);
+  const topicTotal = Number(analyticsTotals.topics ?? analyticsTotals.topic_count ?? analyticsTotals.topicsCount ?? stats.topicsCount ?? 0);
+  const journalTotal = isAnalysisView
+    ? Number(analysisSummary.journals || 0)
+    : Number(analyticsTotals.journals ?? analyticsTotals.journal_count ?? analyticsTotals.journalsCount ?? 0);
+  const publisherTotal = Number(analyticsTotals.publishers ?? analyticsTotals.publisher_count ?? analyticsTotals.publishersCount ?? 0);
+  const citationsTotal = Number(analysisSummary.total_citations || 0);
+
   const yearCounts = useMemo(() => {
-    const counts = {};
-    articles.forEach(art => {
-      const y = art.publication_year;
-      if (y) counts[y] = (counts[y] || 0) + 1;
-    });
-    const targetYears = ['2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026'];
-    return targetYears.map(y => ({ year: y, count: counts[y] || 0 }));
-  }, [articles]);
+    return (analytics?.yearDistribution || [])
+      .map((item) => ({
+        year: String(item.year || item.name || item.key || ''),
+        count: Number(item.count || 0),
+      }))
+      .filter((item) => item.year)
+      .sort((a, b) => Number(a.year) - Number(b.year));
+  }, [analytics]);
 
   const maxYearCount = useMemo(() => {
     return Math.max(...yearCounts.map(item => item.count)) || 1;
   }, [yearCounts]);
 
-  // Tính Trạng thái pháp lý (Legal Status) động dựa trên danh sách bài báo hiện có
-  const legalStatusCounts = useMemo(() => {
-    const counts = {
-      expired: 0,
-      active: 0,
-      discontinued: 0,
-      pending: 0,
-      inactive: 0,
-      unknown: 0,
-      article: 0 // Thay đổi từ patented sang article theo yêu cầu
-    };
+  const yearChartLayout = useMemo(() => computeYearChartLayout(yearCounts), [yearCounts]);
 
-    articles.forEach(art => {
-      // Phân loại trạng thái động dựa trên các thuộc tính của bài viết (DOI, Open Access, Journal,...)
-      if (art.doi) {
-        counts.article++;
-      }
-      
-      if (art.is_open_access) {
-        if (Number(art.publication_year) >= 2024) {
-          counts.active++;
-        } else {
-          counts.expired++;
-        }
-      } else {
-        counts.inactive++;
-      }
-
-      if (!art.journal_name) {
-        counts.pending++;
-      }
-
-      if (art.journal_id && !art.journal_issn) {
-        counts.discontinued++;
-      }
-
-      if (!art.publication_year) {
-        counts.unknown++;
-      }
-    });
+  const accessStatusCounts = useMemo(() => {
+    const counts = Object.fromEntries(
+      (analytics?.accessDistribution || []).map((item) => [item.key || item.name, item.count || 0])
+    );
 
     return [
-      { key: 'expired', label: t('statusExpired'), count: counts.expired, color: '#4ea72a' },
-      { key: 'active', label: t('statusActive'), count: counts.active, color: '#ef3335' },
-      { key: 'discontinued', label: t('statusDiscontinued'), count: counts.discontinued, color: '#4ea72a' },
-      { key: 'pending', label: t('statusPending'), count: counts.pending, color: '#e68800' },
-      { key: 'inactive', label: t('statusInactive'), count: counts.inactive, color: '#0099ab' },
-      { key: 'unknown', label: t('statusUnknown'), count: counts.unknown, color: '#84939f' },
-      { key: 'article', label: t('statusArticle'), count: counts.article, color: '#ef3335' }
+      { key: 'oa', label: t('openAccess'), count: counts.oa || counts.open || 0, color: '#4ea72a' },
+      { key: 'closed', label: t('closedAccess'), count: counts.closed || counts.subscription || 0, color: '#0099ab' },
+      { key: 'unknown', label: t('statusUnknown'), count: counts.unknown || counts.unavailable || counts.null || 0, color: '#64748B' }
     ];
-  }, [articles, t]);
+  }, [analytics, t]);
 
-  const maxLegalCount = useMemo(() => {
-    return Math.max(...legalStatusCounts.map(item => item.count)) || 1;
-  }, [legalStatusCounts]);
+  const maxAccessCount = useMemo(() => {
+    return Math.max(...accessStatusCounts.map(item => item.count)) || 1;
+  }, [accessStatusCounts]);
 
-  // Tính Top tác giả hàng đầu (mô phỏng biểu đồ cột đứng Inventor Name Exact)
   const authorCounts = useMemo(() => {
-    const counts = {};
-    articles.forEach(art => {
-      if (art.authors && Array.isArray(art.authors)) {
-        art.authors.forEach(au => {
-          const name = au.display_name || au.name;
-          if (name) {
-            counts[name] = (counts[name] || 0) + 1;
-          }
-        });
-      }
-    });
-    const sorted = Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 8);
-    return sorted;
-  }, [articles]);
+    return (analytics?.topAuthors || []).slice(0, 8);
+  }, [analytics]);
 
-  // Tính Top chủ đề hàng đầu (mô phỏng biểu đồ tròn Document Types)
+  const institutionCounts = useMemo(() => {
+    return (analytics?.topInstitutions || []).slice(0, 8);
+  }, [analytics]);
+
   const topicCounts = useMemo(() => {
-    const counts = {};
-    articles.forEach(art => {
-      const topic = art.primary_topic || t('anyTopic');
-      counts[topic] = (counts[topic] || 0) + 1;
-    });
-    const sorted = Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
+    const sorted = analytics?.topTopics || [];
     
     if (sorted.length <= 5) {
       return sorted;
@@ -405,34 +422,12 @@ export default function TrendingVNPage() {
       top4.push({ name: t('others'), count: othersCount });
     }
     return top4;
-  }, [articles, t]);
+  }, [analytics, t]);
 
-  // Tính toán góc vẽ cho các sector của hình tròn donut
-  const donutSlices = useMemo(() => {
-    const totalCount = topicCounts.reduce((sum, item) => sum + item.count, 0);
-    if (totalCount === 0) return [];
-    
-    let currentAngle = 0;
-    const colors = ['#1976D2', '#00acc1', '#0ea5e9', '#0288d1', '#5c6bc0', '#90a4ae'];
-    
-    return topicCounts.map((item, idx) => {
-      const percentage = item.count / totalCount;
-      const angle = percentage * 360;
-      const startAngle = currentAngle;
-      const endAngle = currentAngle + angle;
-      currentAngle = endAngle;
-      
-      return {
-        ...item,
-        percentage,
-        startAngle,
-        endAngle,
-        color: colors[idx % colors.length]
-      };
-    });
+  const maxTopicCount = useMemo(() => {
+    return Math.max(...topicCounts.map((item) => item.count)) || 1;
   }, [topicCounts]);
 
-  // Gom nhóm danh sách bài viết theo chủ đề nếu ở chế độ gom nhóm Simple/Extended Family
   const groupedArticles = useMemo(() => {
     if (groupingMode !== 'simple-group' && groupingMode !== 'extended-group') {
       return null;
@@ -448,44 +443,6 @@ export default function TrendingVNPage() {
     return Object.entries(groups);
   }, [articles, groupingMode, t]);
 
-  // Helper vẽ đường dẫn của donut slice (SVG path)
-  const getDonutSlicePath = (startAngleDeg, endAngleDeg, cx, cy, rOut, rIn) => {
-    if (endAngleDeg - startAngleDeg >= 359.9) {
-      return `
-        M ${cx} ${cy - rOut}
-        A ${rOut} ${rOut} 0 1 1 ${cx - 0.01} ${cy - rOut}
-        M ${cx} ${cy - rIn}
-        A ${rIn} ${rIn} 0 1 0 ${cx - 0.01} ${cy - rIn}
-        Z
-      `.trim().replace(/\s+/g, ' ');
-    }
-
-    const startAngleRad = ((startAngleDeg - 90) * Math.PI) / 180;
-    const endAngleRad = ((endAngleDeg - 90) * Math.PI) / 180;
-
-    const x1_out = cx + rOut * Math.cos(startAngleRad);
-    const y1_out = cy + rOut * Math.sin(startAngleRad);
-    const x2_out = cx + rOut * Math.cos(endAngleRad);
-    const y2_out = cy + rOut * Math.sin(endAngleRad);
-
-    const x1_in = cx + rIn * Math.cos(startAngleRad);
-    const y1_in = cy + rIn * Math.sin(startAngleRad);
-    const x2_in = cx + rIn * Math.cos(endAngleRad);
-    const y2_in = cy + rIn * Math.sin(endAngleRad);
-
-    const largeArcFlag = endAngleDeg - startAngleDeg > 180 ? 1 : 0;
-
-    return `
-      M ${x1_in} ${y1_in}
-      L ${x1_out} ${y1_out}
-      A ${rOut} ${rOut} 0 ${largeArcFlag} 1 ${x2_out} ${y2_out}
-      L ${x2_in} ${y2_in}
-      A ${rIn} ${rIn} 0 ${largeArcFlag} 0 ${x1_in} ${y1_in}
-      Z
-    `.trim().replace(/\s+/g, ' ');
-  };
-
-  // Helper lấy từ viết tắt của tên tác giả (Initials)
   const getInitials = (name) => {
     if (!name) return '??';
     const parts = name.split(/\s+/).filter(Boolean);
@@ -493,7 +450,6 @@ export default function TrendingVNPage() {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
-  // Format số lớn (ví dụ: 1,234)
   const fmt = (n) => new Intl.NumberFormat().format(n || 0);
 
 
@@ -504,7 +460,6 @@ export default function TrendingVNPage() {
       <div className="lens-layout-wrapper">
 
         {/* ==================== LEFT ICON SIDEBAR (Lens-style) ==================== */}
-        {/* Thanh điều hướng dọc bên trái với các icon chức năng */}
         <aside className="lens-left-sidebar">
           {activeLeftTab ? (
             <button className="lens-sidebar-icon-btn active" title={t('close')} onClick={() => setActiveLeftTab(null)}>
@@ -540,7 +495,7 @@ export default function TrendingVNPage() {
               <div className="lens-drawer-content">
                 <div className="lens-drawer-header">
                   <span className="lens-drawer-title">{t('sbFilters')}</span>
-                  <Icon icon="lucide:info" className="info-icon" width="14" style={{ color: '#ef6c00', cursor: 'pointer' }} />
+                  <Icon icon="lucide:info" className="info-icon" width="14" style={{ color: 'var(--primary-hover)', cursor: 'pointer' }} />
                 </div>
                 <div className="lens-drawer-scrollable">
                   {[
@@ -549,20 +504,20 @@ export default function TrendingVNPage() {
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }},
                     { key: 'flags', label: t('sbFlags'), icon: 'lucide:flag', action: () => {
-                      updateFilters({ selectedAccess: filters.selectedAccess === 'all' ? 'open' : 'all' });
+                      updateFilters({ access: filters.selectedAccess === 'all' ? 'oa' : 'all' });
                     }},
                     { key: 'jurisdiction', label: t('sbJurisdiction'), icon: 'lucide:map-pin' },
-                    { key: 'applicants', label: t('sbApplicants'), icon: 'lucide:user-check', action: () => {
+                    { key: 'publishers', label: 'Publishers', icon: 'lucide:building-2', action: () => {
                       const el = document.querySelector('.publisher-grid-container');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }},
-                    { key: 'inventors', label: t('sbInventors'), icon: 'lucide:users', action: () => {
+                    { key: 'authors', label: 'Authors', icon: 'lucide:users', action: () => {
                       const el = document.querySelector('.author-lens-grid');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }},
-                    { key: 'owners', label: t('sbOwners'), icon: 'lucide:award' },
-                    { key: 'agents', label: t('sbAgents'), icon: 'lucide:briefcase' },
-                    { key: 'legalStatus', label: t('sbLegalStatus'), icon: 'lucide:scale', action: () => {
+                    { key: 'topics', label: 'Topics', icon: 'lucide:tags' },
+                    { key: 'journals', label: 'Journals', icon: 'lucide:book-open' },
+                    { key: 'accessStatus', label: t('accessStatus'), icon: 'lucide:lock-keyhole', action: () => {
                       const el = document.querySelector('.legal-status-chart');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }},
@@ -602,7 +557,7 @@ export default function TrendingVNPage() {
                     {user?.name ? getInitials(user.name) : 'TM'}
                   </div>
                   <div className="lens-profile-info">
-                    <div className="profile-name">{user?.name || user?.username || 'Trí Minh'}</div>
+                    <div className="profile-name">{user?.name || user?.username || 'Researcher'}</div>
                     <div className="profile-subtitle">
                       {t('personalAccount')}{' '}
                       <span className="text-danger" style={{ fontSize: '0.62rem', display: 'block' }}>
@@ -630,7 +585,7 @@ export default function TrendingVNPage() {
                     </Dropdown.Toggle>
                     <Dropdown.Menu className="text-xs">
                       <Dropdown.Item onClick={() => updateFilters({ sortBy: 'created_at', sortOrder: 'desc' })}>{t('sortDateNewest')}</Dropdown.Item>
-                      <Dropdown.Item onClick={() => updateFilters({ selectedAccess: 'open' })}>{t('openAccess')}</Dropdown.Item>
+                      <Dropdown.Item onClick={() => updateFilters({ access: 'oa' })}>{t('openAccess')}</Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
                 </div>
@@ -644,7 +599,6 @@ export default function TrendingVNPage() {
                     { key: 'dashboards', label: t('sbDashboards'), icon: 'lucide:bar-chart-2' },
                     { key: 'notes', label: t('sbNotes'), icon: 'lucide:file-text' },
                     { key: 'tags', label: t('sbTags'), icon: 'lucide:tag' },
-                    { key: 'inventorship', label: t('sbInventorship'), icon: 'lucide:award' },
                     { key: 'authorship', label: t('sbAuthorship'), icon: 'lucide:users' },
                     { key: 'notifications', label: t('sbNotifications'), icon: 'lucide:bell' },
                     { key: 'mediaLibrary', label: t('sbMediaLibrary'), icon: 'lucide:image' },
@@ -691,7 +645,7 @@ export default function TrendingVNPage() {
 
                 <div className="lens-drawer-header pt-1">
                   <span className="lens-drawer-title">{t('sbSuggestions')}</span>
-                  <Icon icon="lucide:info" className="info-icon" width="14" style={{ color: '#ef6c00', cursor: 'pointer' }} />
+                  <Icon icon="lucide:info" className="info-icon" width="14" style={{ color: 'var(--primary-hover)', cursor: 'pointer' }} />
                 </div>
 
                 <div className="lens-drawer-scrollable">
@@ -762,11 +716,10 @@ export default function TrendingVNPage() {
         <Container fluid className="p-0">
 
         {/* ==================== 1. TOP INFO BAR ==================== */}
-        {/* Thanh thông tin trên cùng: tổng số bài báo + link tìm kiếm */}
         <div className="lens-top-info-bar">
           <div className="total-count">
             <Icon icon="lucide:search" width="13" className="me-1" />
-            {t('databaseArticlesCount', { count: fmt(stats.totalArticles) })}
+            {t('databaseArticlesCount', { count: fmt(isAnalysisView ? activeResultTotal : stats.totalArticles) })}
           </div>
           <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: '0.75rem' }}>
             {t('exploreSectors')}
@@ -777,13 +730,14 @@ export default function TrendingVNPage() {
         <h1 className="lens-page-title">{t('articleSearchResults')}</h1>
 
         {/* ==================== 3. FILTER INDICATOR ==================== */}
-        {/* Hiển thị tổng số kết quả + trạng thái filter */}
         <div className="lens-filter-indicator">
           <span className="filter-count-link" onClick={clearFilters}>
-            {t('articles')} ({fmt(total)})
+            {t('articles')} ({fmt(activeResultTotal)})
           </span>
-          <span>•</span>
+          <span>-</span>
           <span>{t('allDocs')}</span>
+          <span>-</span>
+          <span>Scope: Vietnamese universities</span>
           <span style={{ marginLeft: '16px' }}>
             <Icon icon="lucide:filter" width="12" className="me-1" />
             {t('filtersLabel')}: {activeChips.length > 0
@@ -793,38 +747,60 @@ export default function TrendingVNPage() {
         </div>
 
         {/* ==================== 4. STATS COLOR BAR ==================== */}
-        {/* Thanh thống kê ngang — để trống giá trị để người dùng tự điền sau */}
+        {/* In Analysis, every segment reads analysis.summary (never the disabled list/light
+            analytics queries); Topics/Publishers have no Analysis contract field, so they are
+            hidden instead of showing stale data (FE-FIX-03). */}
         <div className="lens-stats-bar">
           <div className="stat-segment">
             <div className="stat-color-bar" style={{ background: '#00acc1' }} />
             <div className="stat-label">{t('statArticleRecords')}</div>
-            <div className="stat-value">—</div>
+            <div className="stat-value">{isAnalysisView && isAnalysisLoading ? '...' : fmt(isAnalysisView ? activeResultTotal : (stats.totalArticles || total))}</div>
           </div>
           <div className="stat-segment">
             <div className="stat-color-bar" style={{ background: '#0288d1' }} />
-            <div className="stat-label">{t('statSimpleFamilies')}</div>
-            <div className="stat-value">—</div>
+            <div className="stat-label">{t('openAccess')}</div>
+            <div className="stat-value">{(isAnalysisView ? isAnalysisLoading : isLoading) ? '...' : fmt(openAccessTotal)}</div>
           </div>
           <div className="stat-segment">
             <div className="stat-color-bar" style={{ background: '#7b1fa2' }} />
-            <div className="stat-label">{t('statExtendedFamilies')}</div>
-            <div className="stat-value">—</div>
+            <div className="stat-label">{t('statAuthors')}</div>
+            <div className="stat-value">{(isAnalysisView ? isAnalysisLoading : isAnalyticsLoading) ? '...' : fmt(authorTotal)}</div>
           </div>
-          <div className="stat-segment">
-            <div className="stat-color-bar" style={{ background: '#c62828' }} />
-            <div className="stat-label">{t('statCitedArticles')}</div>
-            <div className="stat-value">—</div>
-          </div>
-          <div className="stat-segment">
-            <div className="stat-color-bar" style={{ background: '#ef6c00' }} />
-            <div className="stat-label">{t('statCitedByArticles')}</div>
-            <div className="stat-value">—</div>
-          </div>
-          <div className="stat-segment">
-            <div className="stat-color-bar" style={{ background: '#2e7d32' }} />
-            <div className="stat-label">{t('statArticleCitations')}</div>
-            <div className="stat-value">—</div>
-          </div>
+          {isAnalysisView && (
+            <div className="stat-segment">
+              <div className="stat-color-bar" style={{ background: '#475569' }} />
+              <div className="stat-label">{t('statInstitutions')}</div>
+              <div className="stat-value">{isAnalysisLoading ? '...' : fmt(institutionTotal)}</div>
+            </div>
+          )}
+          {!isAnalysisView && (
+            <div className="stat-segment">
+              <div className="stat-color-bar" style={{ background: '#475569' }} />
+              <div className="stat-label">{t('statTopics')}</div>
+              <div className="stat-value">{isAnalyticsLoading ? '...' : fmt(topicTotal)}</div>
+            </div>
+          )}
+          {!isAnalysisView && publisherTotal > 0 && (
+            <div className="stat-segment">
+              <div className="stat-color-bar" style={{ background: '#334155' }} />
+              <div className="stat-label">{t('statPublishers')}</div>
+              <div className="stat-value">{isAnalyticsLoading ? '...' : fmt(publisherTotal)}</div>
+            </div>
+          )}
+          {journalTotal > 0 && (
+            <div className="stat-segment">
+              <div className="stat-color-bar" style={{ background: '#2e7d32' }} />
+              <div className="stat-label">{t('statJournals')}</div>
+              <div className="stat-value">{(isAnalysisView ? isAnalysisLoading : isAnalyticsLoading) ? '...' : fmt(journalTotal)}</div>
+            </div>
+          )}
+          {isAnalysisView && citationsTotal > 0 && (
+            <div className="stat-segment">
+              <div className="stat-color-bar" style={{ background: '#c62828' }} />
+              <div className="stat-label">{t('statCitations')}</div>
+              <div className="stat-value">{isAnalysisLoading ? '...' : fmt(citationsTotal)}</div>
+            </div>
+          )}
         </div>
 
         {/* ==================== 5. STICKY TOP TOOLBAR (FULL WIDTH) ==================== */}
@@ -844,21 +820,21 @@ export default function TrendingVNPage() {
             <div className="view-toggles ps-2">
               <button
                 className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
-                onClick={() => setViewMode('table')}
+                onClick={() => handleViewChange(TRENDING_VIEW_MODES.TABLE)}
               >
                 <Icon icon="lucide:table" width="13" />
                 {t('viewTable')}
               </button>
               <button
                 className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
-                onClick={() => setViewMode('list')}
+                onClick={() => handleViewChange(TRENDING_VIEW_MODES.LIST)}
               >
                 <Icon icon="lucide:list" width="13" />
                 {t('viewList')}
               </button>
               <button
-                className={`view-toggle-btn ${showSidebar ? 'active' : ''}`}
-                onClick={() => setShowSidebar(!showSidebar)}
+                className={`view-toggle-btn ${isAnalysisView ? 'active' : ''}`}
+                onClick={() => handleViewChange(TRENDING_VIEW_MODES.ANALYSIS)}
               >
                 <Icon icon="lucide:bar-chart-3" width="13" />
                 {t('analysis')}
@@ -869,16 +845,20 @@ export default function TrendingVNPage() {
           {/* --- Action toolbar: Expand, Customise, Save, Share, Export, Sort, Search --- */}
           <div className="lens-action-toolbar">
             <div className="action-group">
-              <button className="lens-action-btn" onClick={handleToggleAllAbstracts}>
-                <Icon icon={allExpanded ? "lucide:chevron-up" : "lucide:chevron-down"} width="12" />
-                {allExpanded ? t('collapseAbstract') : t('expand')}
-              </button>
-              <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-              <button className="lens-action-btn" onClick={() => setShowCustomise(!showCustomise)}>
-                <Icon icon="lucide:list-checks" width="12" />
-                {t('customiseList')}
-              </button>
-              <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+              {!isAnalysisView && (
+                <>
+                  <button className="lens-action-btn" onClick={handleToggleAllAbstracts}>
+                    <Icon icon={allExpanded ? "lucide:chevron-up" : "lucide:chevron-down"} width="12" />
+                    {allExpanded ? t('collapseAbstract') : t('expand')}
+                  </button>
+                  <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+                  <button className="lens-action-btn" onClick={() => setShowCustomise(!showCustomise)}>
+                    <Icon icon="lucide:list-checks" width="12" />
+                    {t('customiseList')}
+                  </button>
+                  <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+                </>
+              )}
               <button className="lens-action-btn" onClick={() => setShowSaveQueryModal(true)}>
                 <Icon icon="lucide:save" width="12" />
                 {t('saveAsQuery')}
@@ -888,40 +868,46 @@ export default function TrendingVNPage() {
                 <Icon icon="lucide:share-2" width="12" />
                 {t('share')}
               </button>
-              <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-              <button className="lens-action-btn" onClick={() => setShowExportModal(true)}>
-                <Icon icon="lucide:download" width="12" />
-                {t('export')}
-              </button>
-              <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-              <button className="lens-action-btn" disabled>
-                <Icon icon="lucide:sparkles" width="12" />
-                {t('analysisPreviewOptions')}
-                <Badge bg="warning" text="dark" style={{ fontSize: '0.58rem', padding: '1px 4px', marginLeft: '3px' }}>{t('badgeNew')}</Badge>
-              </button>
+              {!isAnalysisView && (
+                <>
+                  <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+                  <button className="lens-action-btn" onClick={() => setShowExportModal(true)}>
+                    <Icon icon="lucide:download" width="12" />
+                    {t('export')}
+                  </button>
+                  <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
+                  <button className="lens-action-btn" disabled>
+                    <Icon icon="lucide:sparkles" width="12" />
+                    {t('analysisPreviewOptions')}
+                    <Badge bg="secondary" style={{ fontSize: '0.58rem', padding: '1px 4px', marginLeft: '3px' }}>{t('badgeNew')}</Badge>
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Right side of Action toolbar: Sort + Search */}
             <div className="d-flex align-items-center gap-3">
               {/* Sort dropdown */}
-              <div className="d-flex align-items-center gap-2">
-                <Icon icon="lucide:arrow-up-down" width="12" className="text-muted" />
-                <select
-                  className="lens-sort-select"
-                  value={`${filters.sortBy}-${filters.sortOrder}`}
-                  onChange={(e) => {
-                    const [sortBy, sortOrder] = e.target.value.split('-');
-                    updateFilters({ sortBy, sortOrder });
-                  }}
-                >
-                  <option value="created_at-desc">{t('sortDateNewest')}</option>
-                  <option value="created_at-asc">{t('sortDateOldest')}</option>
-                  <option value="title-asc">{t('sortTitleAsc')}</option>
-                  <option value="title-desc">{t('sortTitleDesc')}</option>
-                  <option value="publication_year-desc">{t('sortYearDesc')}</option>
-                  <option value="publication_year-asc">{t('sortYearAsc')}</option>
-                </select>
-              </div>
+              {!isAnalysisView && (
+                <div className="d-flex align-items-center gap-2">
+                  <Icon icon="lucide:arrow-up-down" width="12" className="text-muted" />
+                  <select
+                    className="lens-sort-select"
+                    value={`${filters.sortBy}-${filters.sortOrder}`}
+                    onChange={(e) => {
+                      const [sortBy, sortOrder] = e.target.value.split('-');
+                      updateFilters({ sortBy, sortOrder });
+                    }}
+                  >
+                    <option value="created_at-desc">{t('sortDateNewest')}</option>
+                    <option value="created_at-asc">{t('sortDateOldest')}</option>
+                    <option value="title-asc">{t('sortTitleAsc')}</option>
+                    <option value="title-desc">{t('sortTitleDesc')}</option>
+                    <option value="publication_year-desc">{t('sortYearDesc')}</option>
+                    <option value="publication_year-asc">{t('sortYearAsc')}</option>
+                  </select>
+                </div>
+              )}
 
               {/* Search Bar */}
               <Form onSubmit={handleSearchSubmit} className="lens-search-form" style={{ width: '300px', margin: 0 }}>
@@ -950,7 +936,7 @@ export default function TrendingVNPage() {
           </div>
 
           {/* --- Panel Customise Your Results View --- */}
-          <Collapse in={showCustomise}>
+          <Collapse in={!isAnalysisView && showCustomise}>
             <div className="lens-customise-panel">
               <div className="customise-title">{t('customiseYourResultsView')}</div>
               <div className="customise-grid">
@@ -985,7 +971,7 @@ export default function TrendingVNPage() {
                     icon="lucide:x"
                     width="11"
                     className="lens-chip-close"
-                    onClick={() => updateFilters({ [chip.key]: chip.value })}
+                    onClick={() => (chip.onRemove ? chip.onRemove() : updateFilters({ [chip.key]: chip.value }))}
                   />
                 </span>
               ))}
@@ -1001,13 +987,20 @@ export default function TrendingVNPage() {
         {/* ==================== 6. MAIN CONTENT (LEFT + RIGHT) ==================== */}
         <Row className="g-0">
 
-          {/* ===== CỘT TRÁI: Kết quả ===== */}
           <Col lg={showSidebar ? 8 : 12} md={12} className="transition-col">
 
             {/* ==================== ARTICLE RESULTS ==================== */}
             <div className="lens-results-body">
-              {isLoading && articles.length === 0 ? (
-                /* --- Trạng thái Loading: skeleton cards --- */
+              {isAnalysisView ? (
+                <AnalysisDashboard
+                  analysis={analysis}
+                  isLoading={isAnalysisLoading}
+                  error={analysisError}
+                  onEntityClick={handleEntityFilter}
+                  onArticleClick={handleDetailClick}
+                  onRetry={refetchAnalysis}
+                />
+              ) : isLoading && articles.length === 0 ? (
                 <div className="d-flex flex-column gap-0">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="lens-article-card p-3">
@@ -1019,7 +1012,6 @@ export default function TrendingVNPage() {
                   ))}
                 </div>
               ) : error ? (
-                /* --- Trạng thái Lỗi --- */
                 <div className="text-center p-5 bg-white border">
                   <Icon icon="lucide:alert-circle" className="text-danger mb-2" width="36" />
                   <h6 style={{ fontWeight: 700 }}>{t('errorOccurred')}</h6>
@@ -1029,7 +1021,6 @@ export default function TrendingVNPage() {
                   </Button>
                 </div>
               ) : articles.length === 0 ? (
-                /* --- Trạng thái Trống --- */
                 <div className="text-center p-5 bg-white border">
                   <Icon icon="lucide:search-x" className="text-muted mb-2" width="36" />
                   <h6 style={{ fontWeight: 700 }}>{t('noArticlesFound')}</h6>
@@ -1039,10 +1030,8 @@ export default function TrendingVNPage() {
                   </Button>
                 </div>
               ) : viewMode === 'list' ? (
-                /* ===== CHẾ ĐỘ LIST: Card bài báo theo bố cục Lens ===== */
                 <div className="d-flex flex-column gap-0">
                   {groupedArticles ? (
-                    // Hiển thị danh sách được gom nhóm (Grouped View)
                     groupedArticles.map(([groupName, groupList]) => (
                       <div key={groupName} className="lens-group-section mb-3 border rounded shadow-sm overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
                         <div className="lens-group-header p-2 d-flex align-items-center justify-content-between bg-light border-bottom">
@@ -1074,7 +1063,6 @@ export default function TrendingVNPage() {
                       </div>
                     ))
                   ) : (
-                    // Hiển thị danh sách thường phẳng
                     articles.map((article, index) => (
                     <TrendingArticleCard
                       key={article.article_id}
@@ -1093,7 +1081,6 @@ export default function TrendingVNPage() {
                   )}
                 </div>
               ) : (
-                /* ===== CHẾ ĐỘ TABLE ===== */
                 <div className="bg-white border overflow-hidden">
                   <ArticleTable
                     articles={articles}
@@ -1104,8 +1091,7 @@ export default function TrendingVNPage() {
                 </div>
               )}
 
-              {/* Phân trang */}
-              {totalPages > 1 && !isLoading && (
+              {!isAnalysisView && totalPages > 1 && !isLoading && (
                 <div className="lens-pagination-row">
                   <AdminPagination
                     totalItems={total}
@@ -1119,16 +1105,50 @@ export default function TrendingVNPage() {
             </div>
           </Col>
 
-          {/* ===== CỘT PHẢI: Sidebar phân tích (ẩn/hiện bằng nút Analysis) ===== */}
           {showSidebar && (
             <Col lg={4} md={12} className="lens-sidebar-col">
 
-              {/* --- Panel 1: Applicant Name Exact (lưới nhà xuất bản) --- */}
               <div className="lens-sidebar-panel">
-                <PublisherGrid />
+                {institutionCounts.length > 0 ? (
+                  <>
+                    <div className="lens-sidebar-title">Top Vietnamese Institutions</div>
+                    <div className="d-flex flex-column gap-2">
+                      {institutionCounts.map((institution, index) => {
+                        const institutionName = institution.display_name || institution.name || 'Unknown institution';
+                        return (
+                          <div key={institution.id || institutionName || index} className="d-flex align-items-center gap-2">
+                            <span
+                              className="d-inline-flex align-items-center justify-content-center"
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                border: '1px solid var(--border)',
+                                background: 'var(--bg-section)',
+                                fontSize: '0.62rem',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {getInitials(institutionName)}
+                            </span>
+                            <span className="flex-grow-1 text-truncate text-xs" title={institutionName}>
+                              {institutionName}
+                            </span>
+                            <span className="text-muted-custom text-xs">{fmt(institution.count)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <PublisherGrid
+                    publishers={(analytics?.topPublishers || []).slice(0, 8)}
+                    isLoading={isAnalyticsLoading}
+                    error={analyticsError}
+                    onFilterEntity={handleEntityFilter}
+                  />
+                )}
               </div>
 
-              {/* --- Panel 2: Publication Date (biểu đồ cột theo năm) --- */}
               <div className="lens-sidebar-panel">
                 <div className="lens-sidebar-title">{t('publicationDate')}</div>
                 {articles.length === 0 ? (
@@ -1143,27 +1163,25 @@ export default function TrendingVNPage() {
                       <line x1="8" y1="38" x2="192" y2="38" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
                       <line x1="8" y1="58" x2="192" y2="58" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
 
-                      {yearCounts.map((item, idx) => {
-                        const colWidth = 16;
-                        const gap = 6;
-                        const x = 14 + idx * (colWidth + gap);
+                      {yearChartLayout.columns.map((item) => {
+                        const colWidth = item.width;
                         const colHeight = maxYearCount > 0 ? (item.count / maxYearCount) * 60 : 0;
                         const y = 78 - colHeight;
                         return (
                           <g key={item.year}>
                             <rect
-                              x={x} y={y}
+                              x={item.x} y={y}
                               width={colWidth} height={colHeight}
                               rx="2"
                               fill="#1976D2"
                               opacity="0.85"
                               className="lens-chart-bar"
                             />
-                            <text x={x + colWidth / 2} y="92" textAnchor="middle" fontSize="6.5" fill="var(--text-muted)">
+                            <text x={item.x + colWidth / 2} y="92" textAnchor="middle" fontSize="6.5" fill="var(--text-muted)">
                               {item.year}
                             </text>
                             {item.count > 0 && (
-                              <text x={x + colWidth / 2} y={y - 3} textAnchor="middle" fontSize="6.5" fontWeight="600" fill="var(--text-main)">
+                              <text x={item.x + colWidth / 2} y={y - 3} textAnchor="middle" fontSize="6.5" fontWeight="600" fill="var(--text-main)">
                                 {item.count}
                               </text>
                             )}
@@ -1180,9 +1198,9 @@ export default function TrendingVNPage() {
                 </div>
               </div>
 
-              {/* --- Panel 2.5: Legal Status (Biểu đồ ngang trạng thái pháp lý) --- */}
+              {/* --- Panel 2.5: Access Status chart --- */}
               <div className="lens-sidebar-panel">
-                <div className="lens-sidebar-title">{t('legalStatus')}</div>
+                <div className="lens-sidebar-title">{t('accessStatus')}</div>
                 {articles.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {t('anyTopic')}
@@ -1192,7 +1210,7 @@ export default function TrendingVNPage() {
                     <svg viewBox="0 0 330 220" width="100%" height="200px">
                       {/* Grid lines and Tick labels */}
                       {(() => {
-                        const scaleLegalMax = Math.max(5, Math.ceil(maxLegalCount / 5) * 5);
+                        const scaleLegalMax = Math.max(5, Math.ceil(maxAccessCount / 5) * 5);
                         const legalTicks = Array.from({ length: 6 }, (_, i) => i * (scaleLegalMax / 5));
                         return legalTicks.map((tickVal) => {
                           const x = 90 + (tickVal / scaleLegalMax) * 220;
@@ -1239,11 +1257,11 @@ export default function TrendingVNPage() {
 
                       {/* Horizontal Bars & Y-axis labels */}
                       {(() => {
-                        const scaleLegalMax = Math.max(5, Math.ceil(maxLegalCount / 5) * 5);
-                        const yStep = 175 / legalStatusCounts.length;
+                        const scaleLegalMax = Math.max(5, Math.ceil(maxAccessCount / 5) * 5);
+                        const yStep = 175 / accessStatusCounts.length;
                         const barHeight = 12;
 
-                        return legalStatusCounts.map((item, idx) => {
+                        return accessStatusCounts.map((item, idx) => {
                           const centerOfStep = 15 + (idx + 0.5) * yStep;
                           const y = centerOfStep - barHeight / 2;
                           const barWidth = scaleLegalMax > 0 ? (item.count / scaleLegalMax) * 220 : 0;
@@ -1283,7 +1301,6 @@ export default function TrendingVNPage() {
                 )}
               </div>
 
-              {/* --- Panel 3: Top Authors (biểu đồ ô - mô phỏng bento grid) --- */}
               <div className="lens-sidebar-panel">
                 <div className="lens-sidebar-title">{t('topAuthors')}</div>
                 {authorCounts.length === 0 ? (
@@ -1361,6 +1378,16 @@ export default function TrendingVNPage() {
                           const barHeight = scaleMax > 0 ? (item.count / scaleMax) * 160 : 0;
                           const y = 175 - barHeight;
                           const color = greenShades[Math.min(idx, greenShades.length - 1)];
+                          const canFilterAuthor = Boolean(item.id) && item.name && item.name !== 'Unknown';
+                          const activateAuthor = () => {
+                            if (canFilterAuthor) handleEntityFilter('author_id', item.id);
+                          };
+                          const handleAuthorKeyDown = (event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              activateAuthor();
+                            }
+                          };
 
                           return (
                             <g key={item.name}>
@@ -1373,7 +1400,12 @@ export default function TrendingVNPage() {
                                 fill={color}
                                 opacity="0.85"
                                 className="lens-chart-bar"
-                                style={{ transition: 'opacity 0.15s ease', cursor: 'pointer' }}
+                                style={{ transition: 'opacity 0.15s ease', cursor: canFilterAuthor ? 'pointer' : 'default' }}
+                                role={canFilterAuthor ? 'button' : undefined}
+                                tabIndex={canFilterAuthor ? 0 : undefined}
+                                aria-label={canFilterAuthor ? `Filter by author ${item.name}` : undefined}
+                                onClick={activateAuthor}
+                                onKeyDown={handleAuthorKeyDown}
                                 onMouseEnter={() => setActiveTooltip({
                                   name: item.name,
                                   count: item.count,
@@ -1390,6 +1422,8 @@ export default function TrendingVNPage() {
                                 fontSize="7"
                                 fill="var(--text-muted)"
                                 fontWeight="600"
+                                style={{ cursor: canFilterAuthor ? 'pointer' : 'default' }}
+                                onClick={activateAuthor}
                               >
                                 {item.name}
                               </text>
@@ -1433,7 +1467,6 @@ export default function TrendingVNPage() {
                 )}
               </div>
 
-              {/* --- Panel 5: Top Topics (biểu đồ hình tròn donut - mô phỏng Document Types) --- */}
               <div className="lens-sidebar-panel">
                 <div className="lens-sidebar-title">{t('topTopics')}</div>
                 {topicCounts.length === 0 ? (
@@ -1441,46 +1474,36 @@ export default function TrendingVNPage() {
                     {t('anyTopic')}
                   </div>
                 ) : (
-                  <div className="d-flex align-items-center gap-3 py-1">
-                    <div style={{ width: '84px', height: '84px', flexShrink: 0 }}>
-                      <svg viewBox="0 0 100 100" width="100%" height="100%">
-                        {donutSlices.map((slice, idx) => {
-                          const pathD = getDonutSlicePath(slice.startAngle, slice.endAngle, 50, 50, 46, 22);
-                          return (
-                            <path
-                              key={idx}
-                              d={pathD}
-                              fill={slice.color}
-                              className="lens-donut-slice"
-                              style={{ transition: 'opacity 0.2s ease', cursor: 'pointer' }}
-                            >
-                              <title>{slice.name}: {slice.count}</title>
-                            </path>
-                          );
-                        })}
-                      </svg>
-                    </div>
-                    <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.68rem', lineHeight: '1.4' }}>
-                      {donutSlices.map((slice, idx) => (
-                        <div key={idx} className="d-flex align-items-start gap-1.5 mb-1">
-                          <span 
-                            style={{ 
-                              width: '7px', 
-                              height: '7px', 
-                              borderRadius: '50%', 
-                              backgroundColor: slice.color, 
-                              display: 'inline-block',
-                              flexShrink: 0,
-                              marginTop: '4px'
-                            }} 
-                          />
-                          <span className="font-medium text-main" title={slice.name}>
-                            {slice.name}
-                          </span>
-                          <span className="text-muted ms-auto" style={{ paddingLeft: '8px', flexShrink: 0 }}>({slice.count})</span>
+                  <div className="d-flex flex-column gap-2">
+                    {topicCounts.map((topic, idx) => {
+                      const canFilterTopic = Boolean(topic.id) && topic.name && topic.name !== 'Unknown' && topic.name !== t('others');
+                      const width = `${Math.max(6, Math.round((topic.count / maxTopicCount) * 100))}%`;
+                      return (
+                        <div key={topic.id || topic.name || idx}>
+                          <div className="d-flex align-items-center gap-2 text-xs">
+                            {canFilterTopic ? (
+                              <button
+                                type="button"
+                                className="text-main p-0 text-truncate"
+                                title={`${topic.name}: ${topic.count}`}
+                                onClick={() => handleEntityFilter('topic_id', topic.id)}
+                                style={{ background: 'none', border: 0, textAlign: 'left', maxWidth: '78%' }}
+                              >
+                                {topic.name}
+                              </button>
+                            ) : (
+                              <span className="text-main text-truncate" title={topic.name} style={{ maxWidth: '78%' }}>
+                                {topic.name}
+                              </span>
+                            )}
+                            <span className="text-muted ms-auto">{topic.count}</span>
+                          </div>
+                          <div style={{ height: '5px', background: 'var(--bg-section)', border: '1px solid var(--border)' }}>
+                            <div style={{ width, height: '100%', background: 'var(--primary)' }} />
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1502,7 +1525,7 @@ export default function TrendingVNPage() {
       >
         <Modal.Header>
           <Modal.Title>{t('saveQueryTitle')}</Modal.Title>
-          <button className="lens-modal-close-btn" onClick={() => setShowSaveQueryModal(false)}>×</button>
+          <button className="lens-modal-close-btn" onClick={() => setShowSaveQueryModal(false)}>x</button>
         </Modal.Header>
         <Form onSubmit={handleSaveQuery}>
           <Modal.Body>
@@ -1599,7 +1622,7 @@ export default function TrendingVNPage() {
       >
         <Modal.Header>
           <Modal.Title>{t('shareTitle')}</Modal.Title>
-          <button className="lens-modal-close-btn" onClick={() => setShowShareModal(false)}>×</button>
+          <button className="lens-modal-close-btn" onClick={() => setShowShareModal(false)}>x</button>
         </Modal.Header>
         <Modal.Body>
           <div className="share-social-grid">
@@ -1668,7 +1691,7 @@ export default function TrendingVNPage() {
       >
         <Modal.Header>
           <Modal.Title>{t('export')}</Modal.Title>
-          <button className="lens-modal-close-btn" onClick={() => setShowExportModal(false)}>×</button>
+          <button className="lens-modal-close-btn" onClick={() => setShowExportModal(false)}>x</button>
         </Modal.Header>
         <Form onSubmit={handleExportSubmit}>
           <Modal.Body>
@@ -1676,7 +1699,7 @@ export default function TrendingVNPage() {
               {/* Left pane: export settings */}
               <div className="export-left-pane">
                 <Form.Group className="mb-2" controlId="exportDocCountInput">
-                  <Form.Label>{t('docsToInclude')}</Form.Label>
+                  <Form.Label>Export current page</Form.Label>
                   <Form.Select
                     value={exportDocCount}
                     onChange={(e) => setExportDocCount(Number(e.target.value))}
@@ -1685,15 +1708,9 @@ export default function TrendingVNPage() {
                     <option value={10}>10</option>
                     <option value={50}>50</option>
                     <option value={100}>100</option>
-                    <option value={500}>500</option>
-                    <option value={1000}>1,000</option>
-                    <option value={5000}>5,000</option>
                   </Form.Select>
                   <span className="text-muted d-block mt-1 mb-2" style={{ fontSize: '0.68rem' }}>
-                    {t('fileDownloadedInBrowser')}{' '}
-                    <a href="https://www.lens.org/about/attribution" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>
-                      {t('attributionPolicyLink')}
-                    </a>
+                    Export is limited to the {articles.length} article(s) loaded on this page.
                   </span>
                 </Form.Group>
 
@@ -1818,20 +1835,14 @@ export default function TrendingVNPage() {
                 </Form.Group>
               </div>
 
-              {/* Right pane: Lens Info & Attribution badge */}
+              {/* Right pane: export scope summary */}
               <div className="export-right-pane">
-                <h6>{t('usingDataText')}</h6>
-                <p>{t('usingDataDesc')}</p>
+                <h6>Paper VN discovery data</h6>
+                <p>Exports include only the currently loaded article rows and selected fields.</p>
                 <div className="btn-enabled-lens">
                   <Icon icon="lucide:check-circle" width="14" />
-                  {t('enabledByLens')}
+                  Scope: Vietnamese universities
                 </div>
-                <div className="attribution-code-box">
-                  {`<iframe src="https://lens.org/lens/embed/attribution" scrolling="no" height="30px" width="100%"></iframe>`}
-                </div>
-                <a href="https://www.lens.org/about/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none' }}>
-                  {t('moreInfoTerms')}
-                </a>
               </div>
             </div>
           </Modal.Body>

@@ -1,6 +1,5 @@
-import { Spinner, Alert } from 'react-bootstrap';
+import { Button, Spinner, Alert } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { useTrendingPublishers } from '../hooks/useTrendingPublishers';
 import '../trendingVN.css';
 
 /**
@@ -27,9 +26,13 @@ const LOGO_MAP = {
  * BE trả về: { success, data: [{ publisher_id, display_name, image_url, created_at }], pagination }
  * Không có trường article_count nên component chỉ hiển thị tên và logo.
  */
-export default function PublisherGrid() {
+export default function PublisherGrid({
+  publishers = [],
+  isLoading = false,
+  error = null,
+  onFilterEntity,
+}) {
   const { t } = useTranslation();
-  const { publishers, isLoading, error } = useTrendingPublishers(8);
 
   /**
    * Trả về URL logo cho nhà xuất bản.
@@ -83,26 +86,44 @@ export default function PublisherGrid() {
         {publishers.map((pub, index) => {
           const isLastColumn = (index + 1) % 4 === 0;
           const isLastRow = index >= 4;
+          const publisherName = pub.display_name || pub.publisher_name || pub.name || 'Unknown publisher';
+          const publisherId = pub.publisher_id || pub.id || null;
+          const canFilter = Boolean(publisherId) && publisherName !== 'Unknown publisher' && publisherName !== 'Unknown';
 
           return (
             <div
-              key={pub.publisher_id}
+              key={pub.publisher_id || publisherName || index}
               className={`publisher-cell ${isLastColumn ? 'last-col' : ''} ${isLastRow ? 'last-row' : ''}`}
             >
               <div className="logo-container">
                 <img
-                  src={getLogoUrl(pub)}
-                  alt={pub.display_name}
+                  src={getLogoUrl({ ...pub, display_name: publisherName })}
+                  alt={publisherName}
                   className="brand-logo-img"
                   onError={(e) => {
                     // Fallback khi logo không tải được
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(pub.display_name)}&background=F1F5F9&color=64748B&size=128&bold=true`;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(publisherName)}&background=F1F5F9&color=64748B&size=128&bold=true`;
                   }}
                 />
               </div>
               <div className="publisher-meta-info">
-                <div className="publisher-name-txt text-truncate" title={pub.display_name}>
-                  {pub.display_name}
+                {canFilter ? (
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="publisher-name-txt text-truncate p-0"
+                    title={`${publisherName}: ${pub.count || pub.article_count || 0} articles`}
+                    onClick={() => onFilterEntity?.('publisher_id', publisherId)}
+                  >
+                    {publisherName}
+                  </Button>
+                ) : (
+                  <div className="publisher-name-txt text-truncate" title={publisherName}>
+                    {publisherName}
+                  </div>
+                )}
+                <div className="text-muted" style={{ fontSize: '0.66rem' }}>
+                  {pub.count || pub.article_count || 0} articles
                 </div>
               </div>
             </div>

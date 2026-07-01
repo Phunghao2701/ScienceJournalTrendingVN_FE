@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { Container, Row, Col, Form, Button, Badge, Collapse, Modal, Dropdown } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Badge, Collapse, Modal, Dropdown, Spinner } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -24,8 +24,10 @@ import TrendingAnalysisTab from '../components/TrendingAnalysisTab';
 import { toast } from '../../../shared/utils/toast';
 import { useAuthStore } from '../../../app/store/authStore';
 import { useTrendingFilters } from '../hooks/useTrendingFilters';
-import { bookmarkArticleApi } from '../../article/api/articleApi';
+import { bookmarkArticleApi, getArticlesListApi } from '../../article/api/articleApi';
 import ROUTES from '../../../app/routes/routePaths';
+import { useSearchHistory } from '../hooks/useSearchHistory';
+import { useSavedQueries } from '../hooks/useSavedQueries';
 import '../trendingVN.css';
 
 export default function TrendingVNPage() {
@@ -35,6 +37,9 @@ export default function TrendingVNPage() {
   const user = useAuthStore((state) => state.user);
   const [activeLeftTab, setActiveLeftTab] = useState(null); // 'filters', 'profile', 'info', 'more'
   const [activeTooltip, setActiveTooltip] = useState(null); // { name, count, x, y }
+  const [isExporting, setIsExporting] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showSavedQueries, setShowSavedQueries] = useState(false);
 
   // Hook quản lý danh sách bài báo, bộ lọc, phân trang (sync với URL)
   const {
@@ -52,6 +57,8 @@ export default function TrendingVNPage() {
   } = useArticleList();
 
   // Derived stats computed from the current page's articles (10 items max)
+  const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory();
+  const { queries: savedQueries, saveQuery, deleteQuery, applyQuery } = useSavedQueries();
   const derivedStats = useMemo(() => {
     const openAccessCount = articles.filter(a => a.is_open_access).length;
     const citedCount = articles.filter(a => (a.semantic_citation_count || 0) > 0).length;
@@ -278,86 +285,59 @@ export default function TrendingVNPage() {
   };
 
   // Lưu truy vấn tìm kiếm hiện tại vào danh sách lưu trữ cục bộ
+  // Lưu truy vấn tìm kiếm hiện tại vào danh sách lưu trữ cục bộ
   const handleSaveQuery = (e) => {
     e.preventDefault();
-    if (!queryTitle.trim()) {
-      toast.error(t('queryTitleRequired'));
-      return;
-    }
-
-    const newQuery = {
-      id: Date.now(),
-      title: queryTitle.trim(),
-      description: queryDesc.trim(),
-      notify: queryNotify,
-      emailAlerts: queryEmailAlerts,
-      access: queryAccess,
-      filters: { ...filters },
-      savedAt: new Date().toISOString()
-    };
-
     try {
-      const storageKey = 'saved_search_queries';
-      const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      localStorage.setItem(storageKey, JSON.stringify([...existing, newQuery]));
-
-      toast.success(t('querySavedSuccess'));
+      saveQuery({ title: queryTitle, description: queryDesc, filters });
+      toast.success(t('saveQuerySuccess'));
       setShowSaveQueryModal(false);
-      setQueryTitle('');
-      setQueryDesc('');
-      setQueryNotify(false);
-      setQueryEmailAlerts(false);
+      setQueryTitle("");
+      setQueryDesc("");
     } catch (err) {
-      console.error(err);
-      toast.error(t('querySaveFailed'));
+      if (err.message === "title_required") {
+        toast.error(t('queryTitleRequired'));
+      } else {
+        toast.error(t('saveQueryError'));
+      }
     }
   };
 
-  // Thực hiện xuất danh sách bài báo khoa học dựa trên các cột được tích chọn
-  const handleExportSubmit = (e) => {
-    e.preventDefault();
-
-    // Giới hạn số bài báo xuất theo cấu hình của người dùng (mặc định lấy tối đa số bài hiện có)
-    const docsToExport = articles.slice(0, exportDocCount);
-    if (docsToExport.length === 0) {
-      toast.warning(t('noArticlesToExport'));
-      return;
-    }
-
+  const buildAndDownloadFile = (listToExport, format, fields) => {
     let fileContent;
     let mimeType;
-    const fileExtension = exportFormat.toLowerCase();
+    const fileExtension = format.toLowerCase();
 
-    if (exportFormat === 'CSV') {
+    if (format === 'CSV') {
       mimeType = 'text/csv;charset=utf-8;';
 
       // Xây dựng header dựa trên các trường được chọn
       const selectedHeaders = [];
-      if (exportFields.title) selectedHeaders.push('Title');
-      if (exportFields.authors) selectedHeaders.push('Authors');
-      if (exportFields.journal) selectedHeaders.push('Journal');
-      if (exportFields.doi) selectedHeaders.push('DOI');
-      if (exportFields.issn) selectedHeaders.push('ISSN');
-      if (exportFields.keywords) selectedHeaders.push('Keywords/Topic');
-      if (exportFields.citations) selectedHeaders.push('Citations');
-      if (exportFields.year) selectedHeaders.push('Publication Year');
+      if (fields.title) selectedHeaders.push('Title');
+      if (fields.authors) selectedHeaders.push('Authors');
+      if (fields.journal) selectedHeaders.push('Journal');
+      if (fields.doi) selectedHeaders.push('DOI');
+      if (fields.issn) selectedHeaders.push('ISSN');
+      if (fields.keywords) selectedHeaders.push('Keywords/Topic');
+      if (fields.citations) selectedHeaders.push('Citations');
+      if (fields.year) selectedHeaders.push('Publication Year');
 
       const csvRows = [selectedHeaders.join(',')];
 
       // Đưa dữ liệu bài viết vào từng dòng
-      docsToExport.forEach(art => {
+      listToExport.forEach(art => {
         const row = [];
-        if (exportFields.title) row.push(`"${(art.title || '').replace(/'/g, '""')}"`);
-        if (exportFields.authors) {
+        if (fields.title) row.push(`"${(art.title || '').replace(/"/g, '""')}"`);
+        if (fields.authors) {
           const authorNames = (art.authors || []).map(au => au.display_name || au.name).join('; ');
-          row.push(`"${authorNames.replace(/'/g, '""')}"`);
+          row.push(`"${authorNames.replace(/"/g, '""')}"`);
         }
-        if (exportFields.journal) row.push(`"${(art.journal_name || '').replace(/'/g, '""')}"`);
-        if (exportFields.doi) row.push(`"${(art.doi || '').replace(/'/g, '""')}"`);
-        if (exportFields.issn) row.push(`"${(art.journal_issn || '').replace(/'/g, '""')}"`);
-        if (exportFields.keywords) row.push(`"${(art.primary_topic || '').replace(/'/g, '""')}"`);
-        if (exportFields.citations) row.push(art.semantic_citation_count || 0);
-        if (exportFields.year) row.push(art.publication_year || '');
+        if (fields.journal) row.push(`"${(art.journal_name || '').replace(/"/g, '""')}"`);
+        if (fields.doi) row.push(`"${(art.doi || '').replace(/"/g, '""')}"`);
+        if (fields.issn) row.push(`"${(art.journal_issn || '').replace(/"/g, '""')}"`);
+        if (fields.keywords) row.push(`"${(art.topic_name || art.primary_topic || '').replace(/"/g, '""')}"`);
+        if (fields.citations) row.push(art.semantic_citation_count || 0);
+        if (fields.year) row.push(art.publication_year || '');
         csvRows.push(row.join(','));
       });
 
@@ -365,44 +345,83 @@ export default function TrendingVNPage() {
     } else {
       // Định dạng JSON
       mimeType = 'application/json;charset=utf-8;';
-      const jsonList = docsToExport.map(art => {
+      const jsonList = listToExport.map(art => {
         const item = {};
-        if (exportFields.title) item.title = art.title;
-        if (exportFields.authors) item.authors = (art.authors || []).map(au => au.display_name || au.name);
-        if (exportFields.journal) item.journal = art.journal_name;
-        if (exportFields.doi) item.doi = art.doi;
-        if (exportFields.issn) item.issn = art.journal_issn;
-        if (exportFields.keywords) item.topic = art.primary_topic;
-        if (exportFields.citations) item.citations = art.semantic_citation_count || 0;
-        if (exportFields.year) item.publication_year = art.publication_year;
+        if (fields.title) item.title = art.title;
+        if (fields.authors) item.authors = (art.authors || []).map(au => au.display_name || au.name);
+        if (fields.journal) item.journal = art.journal_name;
+        if (fields.doi) item.doi = art.doi;
+        if (fields.issn) item.issn = art.journal_issn;
+        if (fields.keywords) item.topic = art.topic_name || art.primary_topic || "";
+        if (fields.citations) item.citations = art.semantic_citation_count || 0;
+        if (fields.year) item.publication_year = art.publication_year;
         return item;
       });
       fileContent = JSON.stringify(jsonList, null, 2);
     }
 
     // Tiến hành tải xuống trình duyệt
-    try {
-      const blob = new Blob([fileContent], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `${exportFileName || 'export'}.${fileExtension}`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    const blob = new Blob([fileContent], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${exportFileName || 'export'}.${fileExtension}`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-      toast.success(t('exportSuccess'));
+  // Thực hiện xuất danh sách bài báo khoa học dựa trên các cột được tích chọn
+  const handleExportSubmit = async (e) => {
+    e.preventDefault();
+    setIsExporting(true);
+    try {
+      // Build export params from current filters
+      const exportParams = {
+        limit: Math.min(exportDocCount, 1000), // hard cap 1000
+        page: 1,
+        sortBy: filters.sortBy || "created_at",
+        sortOrder: filters.sortOrder || "desc",
+      };
+      if (filters.search && filters.search.trim())
+        exportParams.search = filters.search.trim();
+      if (filters.selectedYear !== "all")
+        exportParams.publication_year = filters.selectedYear;
+      if (filters.selectedJournal !== "all")
+        exportParams.journal_id = filters.selectedJournal;
+      if (filters.selectedTopic !== "all")
+        exportParams.topic_id = filters.selectedTopic;
+      if (filters.selectedAccess !== "all")
+        exportParams.access = filters.selectedAccess;
+
+      const response = await getArticlesListApi(exportParams);
+      const rawList = response?.data?.data?.articles
+        || response?.data?.data?.items || [];
+
+      if (rawList.length === 0) {
+        toast.error(t("exportNoData"));
+        return;
+      }
+
+      // Reuse existing buildAndDownloadFile logic
+      buildAndDownloadFile(rawList, exportFormat, exportFields);
+      toast.success(t("exportSuccess", { count: rawList.length }));
       setShowExportModal(false);
     } catch (err) {
-      console.error(err);
-      toast.error(t('exportFailed'));
+      console.error('Export failed:', err);
+      toast.error(t("exportError"));
+    } finally {
+      setIsExporting(false);
     }
   };
 
   // Submit form tìm kiếm
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    if (localSearchInput.trim()) {
+      addToHistory(localSearchInput.trim());
+    }
     updateFilters({ search: localSearchInput });
   };
 
@@ -1009,9 +1028,111 @@ export default function TrendingVNPage() {
 
                 <div className="lens-drawer-section-title">{t('sbWorkArea')}</div>
                 <div className="lens-drawer-scrollable">
+                  {/* Saved Queries accordion item */}
+                  <div
+                    className="lens-drawer-item lens-drawer-item--toggle"
+                    onClick={() => setShowSavedQueries(p => !p)}
+                  >
+                    <Icon icon="lucide:save" width="16" />
+                    <span>{t("sbSavedQueries")}</span>
+                    {savedQueries.length > 0 && (
+                      <span className="fg-badge">{savedQueries.length}</span>
+                    )}
+                    <Icon
+                      icon={showSavedQueries ? "lucide:chevron-up" : "lucide:chevron-down"}
+                      width="13"
+                      style={{ marginLeft: "auto" }}
+                    />
+                  </div>
+                  {showSavedQueries && savedQueries.length === 0 && (
+                    <div className="history-empty">{t("noSavedQueries")}</div>
+                  )}
+                  {showSavedQueries && savedQueries.length > 0 && (
+                    <div className="sq-section">
+                      {savedQueries.slice(0, 10).map(q => (
+                        <div key={q.id} className="sq-item">
+                          <div className="sq-main">
+                            <div
+                              className="sq-title"
+                              onClick={() => applyQuery(q, updateFilters)}
+                              title={t("applyQuery")}
+                            >
+                              <Icon icon="lucide:search" width="11" />
+                              {q.title}
+                            </div>
+                            {q.description && (
+                              <div className="sq-desc">{q.description}</div>
+                            )}
+                            <div className="sq-meta">
+                              {new Date(q.savedAt).toLocaleDateString("vi-VN")}
+                            </div>
+                          </div>
+                          <button
+                            className="sq-delete"
+                            onClick={() => deleteQuery(q.id)}
+                            title={t("deleteQuery")}
+                          >
+                            <Icon icon="lucide:trash-2" width="11" />
+                          </button>
+                        </div>
+                      ))}
+                      {savedQueries.length > 10 && (
+                        <div className="sq-more">
+                          +{savedQueries.length - 10} {t("moreSavedQueries")}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Search History accordion item */}
+                  <div
+                    className="lens-drawer-item lens-drawer-item--toggle"
+                    onClick={() => setShowHistory(p => !p)}
+                  >
+                    <Icon icon="lucide:clock" width="16" />
+                    <span>{t("sbSearchHistory")}</span>
+                    {history.length > 0 && (
+                      <span className="fg-badge">{history.length}</span>
+                    )}
+                    <Icon
+                      icon={showHistory ? "lucide:chevron-up" : "lucide:chevron-down"}
+                      width="13"
+                      style={{ marginLeft: "auto" }}
+                    />
+                  </div>
+                  {showHistory && history.length === 0 && (
+                    <div className="history-empty">{t("searchHistoryEmpty")}</div>
+                  )}
+                  {showHistory && history.length > 0 && (
+                    <div className="history-list">
+                      {history.map((q, i) => (
+                        <div key={i} className="history-item">
+                          <Icon icon="lucide:search" width="11" className="history-icon" />
+                          <span
+                            className="history-query"
+                            onClick={() => {
+                              updateFilters({ search: q });
+                              setLocalSearchInput(q);
+                            }}
+                          >
+                            {q}
+                          </span>
+                          <button
+                            className="history-remove"
+                            onClick={() => removeFromHistory(q)}
+                            title={t("removeFromHistory")}
+                          >
+                            <Icon icon="lucide:x" width="10" />
+                          </button>
+                        </div>
+                      ))}
+                      <button className="history-clear-all" onClick={clearHistory}>
+                        {t("clearHistory")}
+                      </button>
+                    </div>
+                  )}
+
                   {[
-                    { key: 'savedQueries', label: t('sbSavedQueries'), icon: 'lucide:save', action: () => navigate('/dashboard') },
-                    { key: 'searchHistory', label: t('sbSearchHistory'), icon: 'lucide:search' },
                     { key: 'collections', label: t('sbCollections'), icon: 'lucide:folder' },
                     { key: 'dashboards', label: t('sbDashboards'), icon: 'lucide:bar-chart-2' },
                     { key: 'notes', label: t('sbNotes'), icon: 'lucide:file-text' },
@@ -1799,7 +1920,6 @@ export default function TrendingVNPage() {
                     <option value={100}>100</option>
                     <option value={500}>500</option>
                     <option value={1000}>1,000</option>
-                    <option value={5000}>5,000</option>
                   </Form.Select>
                   <span className="text-muted d-block mt-1 mb-2" style={{ fontSize: '0.68rem' }}>
                     {t('fileDownloadedInBrowser')}{' '}
@@ -1946,6 +2066,12 @@ export default function TrendingVNPage() {
                 </a>
               </div>
             </div>
+            {exportDocCount > 100 && (
+              <div className="export-warning">
+                <Icon icon="lucide:info" width="13" />
+                {t("exportLargeWarning", { count: Math.min(exportDocCount, 1000) })}
+              </div>
+            )}
           </Modal.Body>
           <div className="modal-footer border-top-0 d-flex justify-content-end gap-2 p-3 pt-0">
             <button
@@ -1955,9 +2081,14 @@ export default function TrendingVNPage() {
             >
               {t('cancel')}
             </button>
-            <button type="submit" className="lens-modal-btn-save">
-              {t('export')}
-            </button>
+            <Button
+              type="submit"
+              disabled={isExporting}
+              className="btn-primary d-flex align-items-center gap-2"
+            >
+              {isExporting && <Spinner animation="border" size="sm" />}
+              {isExporting ? t("exporting") : t("export")}
+            </Button>
           </div>
         </Form>
       </Modal>

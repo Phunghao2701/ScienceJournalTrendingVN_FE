@@ -33,21 +33,6 @@ function getInitials(name) {
 
 // ─── Danh sach cac muc trong tab Filters ──────────────────────────────────────
 const FILTER_ITEMS = [
-  { key: 'dateRange',       icon: 'lucide:calendar'    },
-  { key: 'flags',           icon: 'lucide:flag'        },
-  { key: 'jurisdiction',    icon: 'lucide:map-pin'     },
-  { key: 'applicants',      icon: 'lucide:user-check'  },
-  { key: 'inventors',       icon: 'lucide:users'       },
-  { key: 'owners',          icon: 'lucide:award'       },
-  { key: 'agents',          icon: 'lucide:briefcase'   },
-  { key: 'legalStatus',     icon: 'lucide:scale'       },
-  { key: 'docType',         icon: 'lucide:file-text'   },
-  { key: 'citedWorks',      icon: 'lucide:book-open'   },
-  { key: 'biologicals',     icon: 'lucide:dna'         },
-  { key: 'classifications', icon: 'lucide:list'        },
-  { key: 'docFamily',       icon: 'lucide:folder-git-2'},
-  { key: 'queryTools',      icon: 'lucide:settings'    },
-  { key: 'newSearch',       icon: 'lucide:search'      },
 ];
 
 // ─── Danh sach muc trong tab Work Area ────────────────────────────────────────

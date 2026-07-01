@@ -17,14 +17,11 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   getArticlesApi,
   getTopicsApi,
-  getJournalsApi,
   getTopJournalsTrendingApi,
-  getTopUniversitiesTrendingApi,
   getUniversityRankingsApi,
   getAuthorRankingsApi,
   getTrendingArticlesApi,
   getTrendingKeywordsApi,
-  getAuthorsLeaderboardApi,
   getSubjectAreasApi,
   getSubjectCategoriesApi,
   getKeywordsApi,
@@ -110,8 +107,9 @@ export default function useTrending() {
 
       const res = await getArticlesApi(params);
       const resData = res?.data?.data || {};
+      const rawArticles = resData.articles || resData.items || [];
 
-      setArticles(resData.items || []);
+      setArticles(Array.isArray(rawArticles) ? rawArticles : []);
 
       const pagination = resData.pagination || {};
       setArticlesPagination({

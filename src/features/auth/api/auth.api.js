@@ -61,37 +61,6 @@ export const resetPasswordApi = (data) => {
   return api.post('/auth/reset-password', data);
 };
 
-/**
- * Get profile details of currently logged-in user
- * @returns {Promise} Axios promise
- */
-export const getProfileApi = async () => {
-  try {
-    return await api.get('/users/me');
-  } catch (error) {
-    if (error.response?.status === 404) {
-      return api.get('/users/profile');
-    }
-    throw error;
-  }
-};
-
-/**
- * Update current user profile details
- * @param {Object} data
- * @returns {Promise} Axios promise
- */
-export const updateProfileApi = (data) => {
-  return api.put('/users/me', data);
-};
-
-/**
- * Delete current user account
- * @returns {Promise} Axios promise
- */
-export const deleteAccountApi = () => {
-  return api.delete('/users/me');
-};
 
 const authApi = {
   verifyAccount: verifyEmailApi,

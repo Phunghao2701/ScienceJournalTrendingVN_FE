@@ -6,9 +6,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ResearchPulse</title>
     <meta name="description" content="Discover scientific research trends in real-time. Search papers, analyze trending keywords, and track research areas — all in one place with ResearchPulse." />
+    <!-- KaTeX CSS for beautiful math typography -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- KaTeX JS and Auto-render Extension -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        let timeout;
+        
+        function renderMath() {
+          if (window.renderMathInElement) {
+            observer.disconnect();
+            try {
+              window.renderMathInElement(document.body, {
+                delimiters: [
+                  { left: "$$", right: "$$", display: false },
+                  { left: "$", right: "$", display: false },
+                  { left: "\\(", right: "\\)", display: false },
+                  { left: "\\[", right: "\\]", display: true }
+                ],
+                throwOnError: false
+              });
+            } catch (e) {
+              console.error("KaTeX auto-render failed:", e);
+            }
+            observer.observe(document.body, { childList: true, subtree: true });
+          }
+        }
+
+        const observer = new MutationObserver((mutations) => {
+          let hasMath = false;
+          for (let i = 0; i < mutations.length; i++) {
+            const mutation = mutations[i];
+            if (mutation.addedNodes) {
+              for (let j = 0; j < mutation.addedNodes.length; j++) {
+                const node = mutation.addedNodes[j];
+                if (node.nodeType === 1) { // ELEMENT_NODE
+                  if (node.textContent && node.textContent.includes('$$')) {
+                    hasMath = true;
+                    break;
+                  }
+                } else if (node.nodeType === 3) { // TEXT_NODE
+                  if (node.nodeValue && node.nodeValue.includes('$$')) {
+                    hasMath = true;
+                    break;
+                  }
+                }
+              }
+            }
+            if (hasMath) break;
+          }
+
+          if (hasMath) {
+            clearTimeout(timeout);
+            timeout = setTimeout(renderMath, 40);
+          }
+        });
+
+        // Run initial scan
+        if (document.body.textContent.includes('$$')) {
+          renderMath();
+        }
+
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+    </script>
   </body>
 </html>
+

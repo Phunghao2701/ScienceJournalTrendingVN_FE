@@ -3,11 +3,10 @@
  *
  * File: features\landing\components\Header.jsx
  */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Container from "react-bootstrap/Container";
-import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import NavDropdown from "react-bootstrap/NavDropdown";
 import Button from "react-bootstrap/Button";
@@ -21,8 +20,6 @@ import ROUTES from "../../../app/routes/routePaths";
 export default function Header() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
-  const pathname = location.pathname;
   const auth = useAuth?.() ?? { logout: () => {} };
   const { logout } = auth;
   const email = useUserStore((state) => state.email);
@@ -30,20 +27,7 @@ export default function Header() {
   const accountManagementRoute = userRole === 'ADMINISTRATOR' ? ROUTES.ADMIN_USERS : ROUTES.PROFILE;
   const language = i18n.language || "vi";
 
-  const [isScrolled, setIsScrolled] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const changeLanguage = (lang) => {
     i18n.changeLanguage(lang);
@@ -61,21 +45,19 @@ export default function Header() {
     <>
       <Navbar
         expand="md"
-        fixed="top"
-        className={`transition-all duration-300 py-3 ${
-          isScrolled ? "sticky-scrolled" : "bg-transparent"
-        }`}
+        className="transition-all duration-300 py-0"
         style={{
-          borderBottom: isScrolled ? "none" : "1px solid var(--border)",
-          background: isScrolled ? "var(--bg-card)" : "transparent",
-          backdropFilter: isScrolled ? "blur(12px)" : "none",
+          minHeight: "56px",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          background: "#1F2F40",
+          backdropFilter: "blur(12px)",
         }}
       >
         <Container>
           {/* Logo Brand */}
           <Navbar.Brand
             onClick={() => navigate(ROUTES.HOME)}
-            className="d-flex align-items-center text-main font-weight-bold"
+            className="d-flex align-items-center text-white font-weight-bold"
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 800,
@@ -101,9 +83,9 @@ export default function Header() {
           <Navbar.Toggle
             aria-controls="basic-navbar-nav"
             onClick={() => setShowMobileMenu(true)}
-            className="border-0 bg-transparent text-main p-0"
+            className="border-0 bg-transparent text-white p-0"
           >
-            <Icon icon="lucide:menu" className="fs-3 text-main" />
+            <Icon icon="lucide:menu" className="fs-3 text-white" />
           </Navbar.Toggle>
 
           {/* Desktop Navigation Link Items */}
@@ -111,137 +93,15 @@ export default function Header() {
             id="basic-navbar-nav"
             className="d-none d-md-flex justify-content-between align-items-center w-full"
           >
-            <Nav className="mx-auto align-items-center" style={{ gap: "4px" }}>
-              {/* Tổng quan */}
-              <Nav.Link
-                onClick={() => navigate(ROUTES.DASHBOARD)}
-                className="px-3 py-1 text-sm font-semibold d-flex align-items-center gap-1"
-                style={{
-                  borderRadius: '6px',
-                  backgroundColor: (pathname === ROUTES.DASHBOARD || pathname === ROUTES.GEOGRAPHY) ? 'var(--primary-light)' : 'transparent',
-                  color: (pathname === ROUTES.DASHBOARD || pathname === ROUTES.GEOGRAPHY) ? 'var(--primary)' : 'var(--text-muted)',
-                  border: (pathname === ROUTES.DASHBOARD || pathname === ROUTES.GEOGRAPHY) ? '1px solid var(--border)' : '1px solid transparent',
-                  transition: 'all 0.2s',
-                  fontWeight: (pathname === ROUTES.DASHBOARD || pathname === ROUTES.GEOGRAPHY) ? 700 : 500,
-                }}
-              >
-                <Icon icon="lucide:layout-dashboard" width="14" />
-                Tổng quan
-              </Nav.Link>
-
-              {/* Dự án */}
-              <Nav.Link
-                onClick={() => navigate(ROUTES.PROJECTS)}
-                className="px-3 py-1 text-sm font-semibold d-flex align-items-center gap-1"
-                style={{
-                  borderRadius: "6px",
-                  backgroundColor:
-                    pathname.startsWith(ROUTES.PROJECTS)
-                      ? "var(--primary-light)"
-                      : "transparent",
-                  color:
-                    pathname.startsWith(ROUTES.PROJECTS)
-                      ? "var(--primary)"
-                      : "var(--text-muted)",
-                  border:
-                    pathname.startsWith(ROUTES.PROJECTS)
-                      ? "1px solid var(--border)"
-                      : "1px solid transparent",
-                  transition: "all 0.2s",
-                  fontWeight: pathname.startsWith(ROUTES.PROJECTS) ? 700 : 500,
-                }}
-              >
-                <Icon icon="lucide:folder" width="14" />
-                Dự án
-              </Nav.Link>
-              {/* Tìm kiếm */}
-              <Nav.Link
-                onClick={() => navigate(ROUTES.CATALOG)}
-                className="px-3 py-1 text-sm font-semibold d-flex align-items-center gap-1"
-                style={{
-                  borderRadius: "6px",
-                  backgroundColor:
-                    pathname.startsWith(ROUTES.CATALOG) ||
-                    pathname.startsWith(ROUTES.SEARCH)
-                      ? "var(--primary-light)"
-                      : "transparent",
-                  color:
-                    pathname.startsWith(ROUTES.CATALOG) ||
-                    pathname.startsWith(ROUTES.SEARCH)
-                      ? "var(--primary)"
-                      : "var(--text-muted)",
-                  border:
-                    pathname.startsWith(ROUTES.CATALOG) ||
-                    pathname.startsWith(ROUTES.SEARCH)
-                      ? "1px solid var(--border)"
-                      : "1px solid transparent",
-                  transition: "all 0.2s",
-                  fontWeight:
-                    pathname.startsWith(ROUTES.CATALOG) ||
-                    pathname.startsWith(ROUTES.SEARCH)
-                      ? 700
-                      : 500,
-                }}
-              >
-                <Icon icon="lucide:search" width="14" />
-                {t("search")}
-              </Nav.Link>
-
-              {/* Bài báo */}
-              <Nav.Link
-                onClick={() => navigate(ROUTES.ARTICLES)}
-                className="px-3 py-1 text-sm font-semibold d-flex align-items-center gap-1"
-                style={{
-                  borderRadius: "6px",
-                  backgroundColor: pathname.startsWith(ROUTES.ARTICLES)
-                    ? "var(--primary-light)"
-                    : "transparent",
-                  color: pathname.startsWith(ROUTES.ARTICLES)
-                    ? "var(--primary)"
-                    : "var(--text-muted)",
-                  border: pathname.startsWith(ROUTES.ARTICLES)
-                    ? "1px solid var(--border)"
-                    : "1px solid transparent",
-                  transition: "all 0.2s",
-                  fontWeight: pathname.startsWith(ROUTES.ARTICLES) ? 700 : 500,
-                }}
-              >
-                <Icon icon="lucide:file-text" width="14" />
-                Bài báo
-              </Nav.Link>
-
-              {/* Tác Giả */}
-              <Nav.Link
-                onClick={() => navigate(ROUTES.AUTHORS)}
-                className="px-3 py-1 text-sm font-semibold d-flex align-items-center gap-1"
-                style={{
-                  borderRadius: "6px",
-                  backgroundColor:
-                    pathname.startsWith(ROUTES.AUTHORS) ? "var(--primary-light)" : "transparent",
-                  color:
-                    pathname.startsWith(ROUTES.AUTHORS) ? "var(--primary)" : "var(--text-muted)",
-                  border: pathname.startsWith(ROUTES.AUTHORS)
-                    ? "1px solid var(--border)"
-                    : "1px solid transparent",
-                  transition: "all 0.2s",
-                  fontWeight: pathname.startsWith(ROUTES.AUTHORS) ? 700 : 500,
-                }}
-              >
-                <Icon icon="lucide:file-text" width="14" />
-                Tác Giả
-              </Nav.Link>
-
-            </Nav>
-
-            <div className="d-flex align-items-center gap-3">
+            <div className="d-flex align-items-center gap-3 ms-auto">
               {/* (Compact) Language selector moved to the far right below */}
 
               {/* Theme Toggle Sun/Moon Icon */}
               <div
-                className="text-muted-custom hover:text-main"
+                className="text-white hover:text-white-50"
                 style={{ cursor: "pointer" }}
                 onClick={() =>
-                  alert("Đang áp dụng giao diện sáng của ResearchPulse")
+                  alert(t("applyLightThemeAlert"))
                 }
               >
                 <Icon icon="lucide:sun" width="18" className="text-warning" />
@@ -250,7 +110,7 @@ export default function Header() {
               {/* Notification icon */}
               {email && (
                 <div
-                  className="text-muted-custom hover:text-main position-relative"
+                  className="text-white hover:text-white-50 position-relative"
                   style={{ cursor: "pointer" }}
                 >
                   <Icon icon="lucide:bell" width="18" />
@@ -270,8 +130,8 @@ export default function Header() {
                       width: "32px",
                       height: "32px",
                       borderRadius: "50%",
-                      background: "var(--primary)",
-                      boxShadow: "0 0 8px rgba(255, 122, 51, 0.2)",
+                      background: "var(--header-brand-primary)",
+                      boxShadow: "0 0 8px var(--header-brand-primary-shadow)",
                       cursor: "pointer",
                       transition: "transform 0.15s ease",
                     }}
@@ -296,7 +156,7 @@ export default function Header() {
                     }}
                   >
                     <div className="px-3 py-2 text-xs font-bold text-main border-bottom pb-2 mb-1">
-                      Người dùng
+                      {t("userLabel")}
                       <div
                         className="text-muted-custom font-normal mt-0.5 text-truncate"
                         style={{ fontSize: "10px", color: "var(--text-muted)" }}
@@ -313,7 +173,7 @@ export default function Header() {
                         width="14"
                         className="text-muted-custom"
                       />
-                      <span>Bảng điều khiển</span>
+                      <span>{t("userDashboard")}</span>
                     </Dropdown.Item>
                     <Dropdown.Item
                       onClick={() => navigate(accountManagementRoute)}
@@ -324,14 +184,14 @@ export default function Header() {
                         width="14"
                         className="text-muted-custom"
                       />
-                      <span>Quản trị tài khoản</span>
+                      <span>{t("userAccountManagement")}</span>
                     </Dropdown.Item>
                     <Dropdown.Item
                       onClick={logout}
                       className="d-flex align-items-center gap-2 text-xs py-2 text-danger"
                     >
                       <Icon icon="lucide:log-out" width="14" />
-                      <span>Đăng xuất</span>
+                      <span>{t("logoutLabel")}</span>
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
@@ -339,13 +199,18 @@ export default function Header() {
                 <>
                   <Button
                     variant="link"
-                    className="text-muted-custom hover:text-main text-xs font-semibold text-decoration-none"
+                    className="text-white-50 hover:text-white text-xs font-semibold text-decoration-none"
                     onClick={handleAuthLogin}
                   >
                     {t("signIn")}
                   </Button>
                   <Button
-                    className="btn-primary-glow rounded-pill px-4 py-2 text-xs font-bold"
+                    className="rounded-pill px-4 py-2 text-xs font-bold"
+                    style={{
+                      backgroundColor: "var(--header-brand-primary)",
+                      borderColor: "var(--header-brand-primary)",
+                      color: "var(--header-nav-active-color)",
+                    }}
                     onClick={handleAuthRegister}
                   >
                     {t("signUp")}
@@ -358,7 +223,7 @@ export default function Header() {
                   <Icon
                     icon="lucide:globe"
                     width="18"
-                    className="text-muted-custom"
+                    className="text-white"
                   />
                 }
                 id="language-nav-compact"
@@ -436,56 +301,6 @@ export default function Header() {
         </Offcanvas.Header>
 
         <Offcanvas.Body className="d-flex flex-column justify-content-between py-4">
-          <Nav className="flex-column gap-3 mb-4">
-            <Nav.Link
-              onClick={() => {
-                setShowMobileMenu(false);
-                navigate(ROUTES.DASHBOARD);
-              }}
-              className="text-muted-custom hover:text-main py-2 text-sm font-semibold border-bottom border-light"
-            >
-              Tổng quan
-            </Nav.Link>
-            <Nav.Link
-              onClick={() => {
-                setShowMobileMenu(false);
-                navigate(ROUTES.PROJECTS);
-              }}
-              className="text-muted-custom hover:text-main py-2 text-sm font-semibold border-bottom border-light"
-              style={{
-                color: pathname.startsWith(ROUTES.PROJECTS)
-                  ? "var(--primary)"
-                  : "var(--text-muted)",
-                fontWeight: pathname.startsWith(ROUTES.PROJECTS) ? 700 : 600,
-              }}
-            >
-              Dự án
-            </Nav.Link>
-            <Nav.Link
-              onClick={() => {
-                setShowMobileMenu(false);
-                navigate(ROUTES.CATALOG);
-              }}
-              className="text-muted-custom hover:text-main py-2 text-sm font-semibold border-bottom border-light"
-            >
-              {t("search")}
-            </Nav.Link>
-            <Nav.Link
-              onClick={() => {
-                setShowMobileMenu(false);
-                navigate(ROUTES.ARTICLES);
-              }}
-              className="text-muted-custom hover:text-main py-2 text-sm font-semibold border-bottom border-light"
-              style={{
-                color: pathname.startsWith(ROUTES.ARTICLES)
-                  ? "var(--primary)"
-                  : "var(--text-muted)",
-                fontWeight: pathname.startsWith(ROUTES.ARTICLES) ? 700 : 600,
-              }}
-            >
-              Bài báo
-            </Nav.Link>
-          </Nav>
 
           <div className="d-flex flex-column gap-3">
             {/* Mobile Language Switches */}
@@ -527,9 +342,7 @@ export default function Header() {
                   }}
                 >
                   <Icon icon="lucide:layout-dashboard" className="me-1" />
-                  {language.startsWith("vi")
-                    ? "Bảng điều khiển"
-                    : "Go to Dashboard"}
+                  {t("userDashboard")}
                 </Button>
                 <div
                   className="d-flex align-items-center justify-content-center gap-2 p-2.5 rounded-3 border"
@@ -552,7 +365,7 @@ export default function Header() {
                       className="text-xs text-main font-bold"
                       style={{ lineHeight: "1.2" }}
                     >
-                      Người dùng
+                      {t("userLabel")}
                     </div>
                     <div
                       className="text-xxs text-muted"
@@ -570,7 +383,7 @@ export default function Header() {
                     setShowMobileMenu(false);
                   }}
                 >
-                  {language.startsWith("vi") ? "Đăng xuất" : "Sign Out"}
+                  {t("logoutLabel")}
                 </Button>
               </div>
             ) : (

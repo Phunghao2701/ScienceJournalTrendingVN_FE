@@ -1,4 +1,4 @@
-﻿/**
+/**
  * File source thuộc hệ thống FE ResearchPulse.
  *
  * File: features\dashboard\components\QuickAccessGrid.jsx
@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
  * QUICK_ACCESS_ITEMS — constant config, dễ mở rộng sau này
  */
 const QUICK_ACCESS_ITEMS = [
-  { icon: 'lucide:search',        label: 'Tìm kiếm', path: '/catalog',    color: 'var(--primary)' },
+  { icon: 'lucide:search',        label: 'Tìm kiếm', path: '/articles',   color: 'var(--primary)' },
   { icon: 'lucide:book-open',     label: 'Tạp chí',  path: '/catalog',    color: '#6366f1' },
   { icon: 'lucide:globe',         label: 'Địa lý',   path: '/geography',  color: '#0ea5e9' },
   { icon: 'lucide:trophy',        label: 'Leaderboard', path: '/authors', color: '#f59e0b' },

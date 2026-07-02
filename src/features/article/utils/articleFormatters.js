@@ -44,6 +44,7 @@ export const normalizeAuthors = (authors) => {
       works_count: author.works_count ?? null,
       orcid: author.orcid || '',
       url_image: author.url_image || '',
+      institutions: Array.isArray(author.institutions) ? author.institutions : [],
     };
   }).filter((author) => author.display_name);
 };
@@ -93,6 +94,13 @@ export const normalizeArticleDetail = (apiData = {}, id = '') => {
   const topics = normalizeTopics(apiData);
   const doiUrl = apiData.source_url || getDoiUrl(apiData.doi);
 
+  const citationsRaw = apiData.citations ?? apiData.citations_count ?? apiData.citation_count ?? apiData.cited_by_count ?? apiData.semantic_citation_count ?? apiData.semantic_scholar_citation_count;
+  const citingPatentsRaw = apiData.citing_patents_count ?? apiData.citing_patents ?? apiData.patent_citation_count;
+  const citationsByYearRaw = apiData.citations_by_year ?? apiData.counts_by_year ?? {};
+  const referenceCountRaw = apiData.reference_count ?? (Array.isArray(apiData.references) ? apiData.references.length : 0);
+  const citingWorksCountRaw = apiData.citing_works_count ?? apiData.citingWorksCount;
+  const availableReferencesCountRaw = apiData.available_references_count ?? apiData.availableReferencesCount;
+
   return {
     ...apiData,
     article_id: apiData.article_id || apiData.id || id,
@@ -102,16 +110,25 @@ export const normalizeArticleDetail = (apiData = {}, id = '') => {
     doi: apiData.doi || '',
     doi_url: doiUrl,
     source_url: doiUrl,
+    openalex_id: apiData.openalex_id || apiData.openalex || apiData.work_id || apiData.openalex_work_id || apiData.openalex_url || '',
+    pdf_url: apiData.pdf_url || apiData.pdf_link || apiData.pdf || apiData.url_pdf || apiData.pdf_download_url || apiData.oa_pdf_url || apiData.best_oa_location_pdf_url || '',
     primary_topic: apiData.primary_topic || '',
     topic_name: apiData.topic_name || topics.find((topic) => topic.is_primary)?.display_name || '',
     keywords,
     topics,
     authors,
+    institutions: Array.isArray(apiData.institutions) ? apiData.institutions : [],
     is_open_access: Boolean(apiData.is_open_access),
-    citations: apiData.citations ?? apiData.citations_count ?? apiData.cited_by_count ?? apiData.semantic_citation_count ?? apiData.semantic_scholar_citation_count ?? null,
+    citations: citationsRaw !== undefined && citationsRaw !== null ? Number(citationsRaw) : null,
+    citation_count: citationsRaw !== undefined && citationsRaw !== null ? Number(citationsRaw) : 0,
+    citing_works_count: citingWorksCountRaw !== undefined && citingWorksCountRaw !== null ? Number(citingWorksCountRaw) : null,
+    citing_patents: citingPatentsRaw !== undefined && citingPatentsRaw !== null ? Number(citingPatentsRaw) : 0,
+    citing_patents_count: citingPatentsRaw !== undefined && citingPatentsRaw !== null ? Number(citingPatentsRaw) : 0,
+    citations_by_year: citationsByYearRaw || {},
     semantic_tldr: apiData.semantic_tldr || null,
     references: Array.isArray(apiData.references) ? apiData.references : [],
-    reference_count: apiData.reference_count ?? (Array.isArray(apiData.references) ? apiData.references.length : 0),
+    reference_count: referenceCountRaw !== undefined && referenceCountRaw !== null ? Number(referenceCountRaw) : 0,
+    available_references_count: availableReferencesCountRaw !== undefined && availableReferencesCountRaw !== null ? Number(availableReferencesCountRaw) : null,
     volume_id: apiData.volume_id || apiData.volume?.volume_id || '',  
     volume_number: apiData.volume_number || apiData.volume || '',
     issue_id: apiData.issue_id || apiData.issue?.issue_id || '',
@@ -120,5 +137,6 @@ export const normalizeArticleDetail = (apiData = {}, id = '') => {
     journal_name: apiData.journal_name || apiData.journal?.display_name || '',
     publisher_id: apiData.publisher_id || apiData.publisher?.publisher_id || '',
     publisher_name: apiData.publisher_name || apiData.publisher?.display_name || '',
+    issn: apiData.issn || apiData.journal_issn || apiData.journal?.issn || '',
   };
 };

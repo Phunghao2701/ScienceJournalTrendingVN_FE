@@ -1,10 +1,10 @@
-/**
- * File source thuộc hệ thống FE ResearchPulse.
+﻿/**
+ * File source for the ResearchPulse FE system.
  *
  * File: features\article\pages\ArticleDetailPage.jsx
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Container, Button, Modal } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 
@@ -15,7 +15,8 @@ import Header from '../../landing/components/Header';
 import useAuth from '../../auth/hooks/useAuth';
 
 // API
-import { getArticleDetailApi, bookmarkArticleApi, getArticlesListApi } from '../api/articleApi';
+import { getArticleDetailApi, bookmarkArticleApi } from '../api/articleApi';
+import useResolveRelatedArticle from '../hooks/useResolveRelatedArticle';
 
 // Subcomponents
 import ArticleDetailSkeleton from '../components/ArticleDetailSkeleton';
@@ -23,31 +24,15 @@ import ArticleDetailEmpty from '../components/ArticleDetailEmpty';
 import ArticleDetailError from '../components/ArticleDetailError';
 import ArticlesTabContent from '../../journal/components/ArticlesTabContent';
 import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
+import ScientificMathText from '../../../shared/components/ScientificMathText';
 import { toast } from '../../../shared/utils/toast';
+import { toScientificPlainText } from '../../../shared/utils/scientificMath';
 import { getDoiUrl, normalizeArticleDetail } from '../utils/articleFormatters';
+import {
+  buildArticleAuthorFilterPath,
+  buildAuthorDetailPath,
+} from '../../../app/routes/routePaths';
 import './ArticleDetailPage.css';
-
-const formatAuthorsLine = (authors = [], limit = 3) => {
-  if (!authors || authors.length === 0) return 'Đang cập nhật tác giả';
-
-  const names = authors
-    .slice(0, limit)
-    .map((author) => author.display_name || author.name || author.author_name || 'Tác giả')
-    .join(', ');
-  return authors.length > limit ? `${names}...` : names;
-};
-
-const normalizeRecommendedArticle = (item = {}) => ({
-  ...item,
-  article_id: item.article_id || item.id,
-  title: item.title || 'Untitled Article',
-  publication_year: item.publication_year || item.year || '—',
-  doi: item.doi || '',
-  abstract: item.abstract || item.description || 'No abstract is available for this article.',
-  authors: Array.isArray(item.authors)
-    ? formatAuthorsLine(item.authors, 3)
-    : item.authors || item.authors_text || '',
-});
 
 const topicKeywordChipStyle = {
   border: '1px solid var(--border)',
@@ -83,12 +68,13 @@ export default function ArticleDetailPage() {
   const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [activeTab, setActiveTab] = useState('preview');
-  const [recommendedArticles, setRecommendedArticles] = useState([]);
-  const [isRecommendedLoading, setIsRecommendedLoading] = useState(false);
   const [showAllAuthors, setShowAllAuthors] = useState(false);
   const [showCitationsModal, setShowCitationsModal] = useState(false);
-  const [referencePage, setReferencePage] = useState(1);
-  const referencesPerPage = 2;
+  const {
+    recommendedArticles,
+    isRecommendedLoading,
+    fetchRecommendedArticles,
+  } = useResolveRelatedArticle();
 
   const visibleAuthors = useMemo(() => {
     const authors = article?.authors || [];
@@ -97,15 +83,9 @@ export default function ArticleDetailPage() {
   }, [article?.authors, showAllAuthors]);
 
   const hiddenAuthorCount = Math.max((article?.authors?.length || 0) - 3, 0);
-  const references = article?.references || [];
-  const referenceTotalPages = Math.max(1, Math.ceil(references.length / referencesPerPage));
-  const paginatedReferences = references.slice(
-    (referencePage - 1) * referencesPerPage,
-    referencePage * referencesPerPage,
-  );
   const keywordsText = useMemo(() => {
     const keywords = article?.keywords || [];
-    if (!keywords.length) return 'Đang cập nhật từ khóa.';
+    if (!keywords.length) return 'Keywords are being updated.';
     return keywords
       .map((keyword) => keyword.display_name || keyword.name || keyword.keyword)
       .filter(Boolean)
@@ -113,34 +93,6 @@ export default function ArticleDetailPage() {
   }, [article?.keywords]);
 
 
-  const fetchRecommendedArticles = useCallback(async (parsedArticle) => {
-    try {
-      setIsRecommendedLoading(true);
-      const params = {
-        limit: 4,
-        page: 1,
-      };
-      const journalId = Number(parsedArticle.journal_id);
-      const topicId = Number(parsedArticle.primary_topic || parsedArticle.topic_id);
-      if (Number.isFinite(journalId)) params.journal_id = journalId;
-      if (Number.isFinite(topicId)) params.topic_id = topicId;
-
-      const response = await getArticlesListApi(params);
-      const payload = response.data?.data || response.data || {};
-      const rawItems = payload.items || payload.articles || payload.data || [];
-      const normalizedItems = rawItems
-        .map(normalizeRecommendedArticle)
-        .filter((item) => String(item.article_id) !== String(parsedArticle.article_id))
-        .slice(0, 3);
-
-      setRecommendedArticles(normalizedItems);
-    } catch (err) {
-      console.warn('Error fetching recommended articles:', err);
-      setRecommendedArticles([]);
-    } finally {
-      setIsRecommendedLoading(false);
-    }
-  }, []);
 
   const fetchArticleDetail = useCallback(async () => {
     setIsLoading(true);
@@ -158,11 +110,11 @@ export default function ArticleDetailPage() {
         const isLocallyBookmarked = localStorage.getItem(localBookmarkKey) === 'true';
         setIsBookmarked(apiData.is_bookmarked || isLocallyBookmarked);
       } else {
-        throw new Error('Không thể tải chi tiết bài báo khoa học.');
+        throw new Error('Unable to load article details.');
       }
     } catch (err) {
       console.error('Error fetching article detail:', err);
-      setError(err.response?.data?.message || err.message || 'Lỗi khi tải dữ liệu bài báo khoa học.');
+      setError(err.response?.data?.message || err.message || 'Unable to load article details.');
     } finally {
       setIsLoading(false);
     }
@@ -186,43 +138,38 @@ export default function ArticleDetailPage() {
       await bookmarkArticleApi(id);
       setIsBookmarked(nextState);
       localStorage.setItem(localBookmarkKey, String(nextState));
-      toast.success(nextState ? 'Đã thêm bài báo vào project.' : 'Đã xóa bài báo khỏi project.');
+      toast.success(nextState ? 'Article added to project.' : 'Article removed from project.');
     } catch (err) {
       console.warn('Bookmark API error, toggling state locally:', err);
       setIsBookmarked(nextState);
       localStorage.setItem(localBookmarkKey, String(nextState));
-      toast.warning('Không thể đồng bộ server, đã cập nhật tạm trên trình duyệt.');
+      toast.warning('Unable to sync with the server, so the browser state was updated locally.');
     } finally {
       setIsBookmarkLoading(false);
     }
-  };
-
-  const handleDoiClick = () => {
-    if (!articleDoiUrl) return;
-    window.open(articleDoiUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleShareArticle = async () => {
     const shareUrl = window.location.href;
     const shareData = {
       title: article?.title || 'Article detail',
-      text: `Khám phá bài báo: ${article?.title || ''}`,
+      text: `Explore article: ${article?.title || ''}`,
       url: shareUrl,
     };
 
     try {
       if (navigator.share) {
         await navigator.share(shareData);
-        toast.success('Đã mở chia sẻ bài báo.');
+        toast.success('Article sharing opened.');
         return;
       }
 
       await navigator.clipboard.writeText(shareUrl);
-      toast.success('Đã sao chép liên kết bài báo.');
+      toast.success('Article link copied.');
     } catch (err) {
       if (err?.name === 'AbortError') return;
       console.warn('Unable to share article:', err);
-      toast.error('Không thể chia sẻ bài báo lúc này.');
+      toast.error('Unable to share this article right now.');
     }
   };
 
@@ -231,7 +178,7 @@ export default function ArticleDetailPage() {
   const handleKeywordClick = (keyword) => {
     const keywordId = keyword.keyword_id || keyword.id;
     if (keywordId) {
-      navigate(`/keywords/${keywordId}/articles`);
+      navigate(`/articles?keyword_id=${encodeURIComponent(keywordId)}&page=1`);
       return;
     }
 
@@ -244,7 +191,7 @@ export default function ArticleDetailPage() {
   const handleTopicClick = (topic) => {
     const topicId = topic?.topic_id || topic?.id;
     if (topicId) {
-      navigate(`/topics/${topicId}`);
+      navigate(`/articles?topic_id=${encodeURIComponent(topicId)}&page=1`);
       return;
     }
 
@@ -253,14 +200,17 @@ export default function ArticleDetailPage() {
     navigate(`/articles?search=${encodeURIComponent(label)}`);
   };
 
-  const handleOrganizationAccess = () => {
-    if (article?.is_open_access && article?.doi) {
-      window.open(getDoiUrl(article.doi), '_blank', 'noopener,noreferrer');
-      return;
+  const navigateEntityFilter = (paramName, idValue, fallbackText) => {
+    const params = new URLSearchParams();
+    if (idValue) {
+      params.set(paramName, idValue);
+    } else if (fallbackText) {
+      params.set('search', fallbackText);
     }
-
-    toast.info('Hiện chưa có cổng truy cập tổ chức riêng cho bài báo này.');
+    params.set('page', '1');
+    navigate(`/articles?${params.toString()}`);
   };
+
 
   const articleDoiUrl = getDoiUrl(article?.doi);
 
@@ -280,15 +230,15 @@ export default function ArticleDetailPage() {
             <div className="article-detail-shell">
               <aside className="article-detail-sidebar d-none d-xl-block">
                 <h2
-                  className={`article-detail-journal-title mb-4 ${article.journal_id ? 'is-clickable' : ''}`}
-                  role={article.journal_id ? 'button' : undefined}
-                  onClick={() => article.journal_id && navigate(`/journals/${article.journal_id}`)}
+                  className={`article-detail-journal-title mb-4 ${article.journal_id || article.journal_name ? 'is-clickable' : ''}`}
+                  role={article.journal_id || article.journal_name ? 'button' : undefined}
+                  onClick={() => navigateEntityFilter('journal_id', article.journal_id, article.journal_name)}
                 >
                   {article.journal_name || 'Scientific Journal'}
                 </h2>
 
                 <div className="article-detail-meta-list">
-                  <span><strong>Date:</strong> {article.publication_year || 'Đang cập nhật'}</span>
+                  <span><strong>Date:</strong> {article.publication_year || 'Updating'}</span>
                   <span><strong>Article:</strong> {article.article_id}</span>
                   <span>
                     <strong>Volume:</strong>{' '}
@@ -299,7 +249,7 @@ export default function ArticleDetailPage() {
                       className="article-detail-meta-link"
                       
                     >
-                      {article.volume_number || '—'}
+                      {article.volume_number || '-'}
                     </Button>
                   </span>
                   <span>
@@ -311,7 +261,7 @@ export default function ArticleDetailPage() {
                       className="article-detail-meta-link"
                       
                     >
-                      {article.issue_number || '—'}
+                      {article.issue_number || '-'}
                     </Button>
                   </span>
                   <span><strong>Access:</strong> {article.is_open_access ? 'Open access' : 'Restricted'}</span>
@@ -321,43 +271,59 @@ export default function ArticleDetailPage() {
 
                 <div className="text-muted-custom text-xs fw-bold text-uppercase mb-2">Published by</div>
                 <div className="text-xs text-muted-custom fw-semibold text-uppercase d-flex flex-column gap-1">
-                  <span>{article.publisher_name || 'Đang cập nhật'}</span>
-                  <span>Coverage: {article.publication_year || '—'}</span>
+                  <Button
+                    variant="link"
+                    disabled={!article.publisher_id && !article.publisher_name}
+                    onClick={() => navigateEntityFilter('publisher_id', article.publisher_id, article.publisher_name)}
+                    className="article-detail-meta-link p-0 text-start"
+                  >
+                    {article.publisher_name || 'Updating'}
+                  </Button>
+                  <span>Coverage: {article.publication_year || '-'}</span>
                 </div>
               </aside>
 
               <section className="article-detail-main">
                 <div className="article-detail-breadcrumb">
-                  <span role="button" onClick={() => navigate('/articles')} className="article-detail-breadcrumb-link">Bài báo</span>
+                  <span role="button" onClick={() => navigate('/articles')} className="article-detail-breadcrumb-link">Articles</span>
                   <Icon icon="lucide:chevron-right" width="12" />
-                  <span style={{ color: 'var(--text-main)' }}>Chi tiết bài báo</span>
+                  <span style={{ color: 'var(--text-main)' }}>Article Details</span>
                 </div>
 
 
                 <h1 className="article-detail-title">
-                  {article.title}
+                  <ScientificMathText title={toScientificPlainText(article.title)}>
+                    {article.title}
+                  </ScientificMathText>
                 </h1>
 
                 <div className="article-detail-authors">
                   {visibleAuthors.length > 0 ? (
                     visibleAuthors.map((author, index) => {
-                      const authorLabel = author.display_name || author.name || author.author_name || 'Tác giả';
+                      const authorLabel = author.display_name || author.name || author.author_name || 'Author';
                       const authorId = author.author_id || author.id;
+                      const suffix = index < visibleAuthors.length - 1 ? ',' : '';
+                      if (!authorId) {
+                        return (
+                          <span key={`${authorLabel}-${index}`} className="article-detail-author-link">
+                            {authorLabel}{suffix}
+                          </span>
+                        );
+                      }
+
                       return (
-                        <Button
-                          key={authorId || `${authorLabel}-${index}`}
-                          variant="link"
-                          disabled={!authorId}
-                          onClick={() => authorId && navigate(`/authors/${authorId}`)}
+                        <Link
+                          key={authorId}
+                          to={buildAuthorDetailPath(authorId)}
                           className="article-detail-author-link"
-                          title={authorId ? `Xem chi tiết ${authorLabel}` : authorLabel}
+                          title={`View ${authorLabel} profile`}
                         >
-                          {authorLabel}{index < visibleAuthors.length - 1 ? ',' : ''}
-                        </Button>
+                          {authorLabel}{suffix}
+                        </Link>
                       );
                     })
                   ) : (
-                    <span>Đang cập nhật tác giả</span>
+                    <span>Authors are being updated</span>
                   )}
                   {hiddenAuthorCount > 0 && !showAllAuthors && (
                     <Button
@@ -380,6 +346,27 @@ export default function ArticleDetailPage() {
                     </Button>
                   )}
                 </div>
+
+                {visibleAuthors.some((author) => author.author_id || author.id) && (
+                  <div className="d-flex flex-wrap gap-2 mb-3">
+                    {visibleAuthors.map((author, index) => {
+                      const authorId = author.author_id || author.id;
+                      if (!authorId) return null;
+                      const authorLabel = author.display_name || author.name || author.author_name || 'Author';
+                      return (
+                        <Link
+                          key={`author-filter-${authorId}-${index}`}
+                          to={buildArticleAuthorFilterPath(authorId)}
+                          className="article-detail-action-btn"
+                          title={`Filter articles by ${authorLabel}`}
+                        >
+                          <Icon icon="lucide:filter" width="14" />
+                          View articles by {authorLabel}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
 
 
                 <div className="article-detail-action-bar">
@@ -511,9 +498,9 @@ export default function ArticleDetailPage() {
                       <section id="section-snippets" className="article-section">
                         <h2 className="article-section-title">Section snippets</h2>
                         <p className="article-section-text" style={{ fontSize: '0.98rem' }}>
-                          Tóm tắt nhanh: bài báo thuộc chủ đề <strong>{article.topic_name || 'Research'}</strong>,
-                          công bố trong <strong>{article.journal_name || 'Scientific Journal'}</strong>
-                          {article.publication_year ? ` năm ${article.publication_year}` : ''}.
+                          Quick summary: this article belongs to <strong>{article.topic_name || 'Research'}</strong>,
+                          published in <strong>{article.journal_name || 'Scientific Journal'}</strong>
+                          {article.publication_year ? ` in ${article.publication_year}` : ''}.
                         </p>
                       </section>
                     </article>
@@ -555,7 +542,7 @@ export default function ArticleDetailPage() {
                                     className="keyword-card-action d-inline-flex align-items-center gap-2 mt-3"
                                     style={{ width: 'fit-content' }}
                                   >
-                                    <span>Xem bài báo liên quan</span>
+                                    <span>View related articles</span>
                                     <Icon icon="lucide:arrow-up-right" width="16" />
                                   </Button>
                                 </div>
@@ -594,8 +581,8 @@ export default function ArticleDetailPage() {
                   <div className="references-tab-panel">
                     <h2 className="article-section-title mb-4">References</h2>
                     <p className="article-section-text mb-4" style={{ fontSize: '0.98rem' }}>
-                      Bài báo hiện có <strong>{(article.references || []).length}</strong> tài liệu tham khảo được đồng bộ trong hệ thống.
-                      Số lượt trích dẫn của bài báo này là <strong>{article.semantic_citation_count ?? article.citations ?? 0}</strong>.
+                      This article currently has <strong>{(article.references || []).length}</strong> synced references.
+                      Its citation count is <strong>{article.semantic_citation_count ?? article.citations ?? 0}</strong>.
                     </p>
 
                     {(article.references || []).length > 0 ? (
@@ -623,7 +610,7 @@ export default function ArticleDetailPage() {
                                 </div>
                                 <span className="article-reference-action">
                                   <Icon icon="lucide:external-link" width="16" />
-                                  Mở nguồn
+                                  Open source
                                 </span>
                               </div>
                             </a>
@@ -632,7 +619,7 @@ export default function ArticleDetailPage() {
                       </div>
                     ) : (
                       <div className="article-reference-card-empty text-center py-5">
-                        Chưa có danh sách reference chi tiết cho bài báo này.
+                        Detailed references are not available for this article yet.
                       </div>
                     )}
                   </div>
@@ -657,25 +644,25 @@ export default function ArticleDetailPage() {
         </Modal.Header>
         <Modal.Body>
           <div className="article-modal-stat-box">
-            <div className="text-muted-custom text-xs fw-bold text-uppercase mb-1">Tổng lượt trích dẫn</div>
+            <div className="text-muted-custom text-xs fw-bold text-uppercase mb-1">Total citations</div>
             <div className="font-display fw-bold" style={{ fontSize: '2rem', color: 'var(--text-main)' }}>
               {(article?.citations ?? 0).toLocaleString('en-US')}
             </div>
           </div>
 
           <p className="text-muted-custom mb-3" style={{ lineHeight: 1.7 }}>
-            <strong style={{ color: 'var(--text-main)' }}>Citations</strong> là số lượng bài báo hoặc công trình khác đã nhắc tới / trích dẫn lại bài báo này.
+            <strong style={{ color: 'var(--text-main)' }}>Citations</strong> are articles or other works that cite this article.
           </p>
 
           <div className="d-grid gap-2" style={{ fontSize: '0.94rem' }}>
-            <div><strong>DOI:</strong> mã định danh cố định của bài báo.</div>
-            <div><strong>References:</strong> danh sách tài liệu mà bài báo này trích dẫn.</div>
-            <div><strong>Citations / Cited by:</strong> số công trình khác trích dẫn lại bài báo này.</div>
+            <div><strong>DOI:</strong> the stable identifier for this article.</div>
+            <div><strong>References:</strong> works cited by this article.</div>
+            <div><strong>Citations / Cited by:</strong> works that cite this article.</div>
           </div>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="outline-secondary" onClick={() => setShowCitationsModal(false)}>
-            Đóng
+            Close
           </Button>
         </Modal.Footer>
       </Modal>

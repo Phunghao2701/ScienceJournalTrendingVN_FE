@@ -1,11 +1,13 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * ResearchPulse FE source file.
  *
  * File: features\article\components\ArticleTableRow.jsx
  */
 import { Button } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
+import ScientificMathText from '../../../shared/components/ScientificMathText';
+import { toScientificPlainText } from '../../../shared/utils/scientificMath';
 
 export default function ArticleTableRow({ article, index, onDetailClick }) {
   const navigate = useNavigate();
@@ -36,7 +38,7 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
     e.stopPropagation();
     if (!doi) return;
     navigator.clipboard.writeText(doi);
-    alert('Đã sao chép mã DOI vào bộ nhớ tạm: ' + doi);
+    alert('Copied DOI to clipboard: ' + doi);
   };
 
   const handleJournalClick = (e, journalId) => {
@@ -74,7 +76,9 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
             WebkitBoxOrient: 'vertical'
           }}
         >
-          {article.title}
+          <ScientificMathText title={article.title_plain || toScientificPlainText(article.title)}>
+            {article.title}
+          </ScientificMathText>
         </div>
         {article.abstract && (
           <div 
@@ -101,10 +105,10 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
             style={{ textDecoration: 'none', cursor: 'pointer', fontWeight: 500 }}
             title={article.journal_name || article.journal?.display_name}
           >
-            {article.journal_name || article.journal?.display_name || 'Chưa có thông tin journal'}
+            {article.journal_name || article.journal?.display_name || 'Journal information unavailable'}
           </div>
         ) : (
-          <span className="text-muted text-xs">Chưa có thông tin journal</span>
+          <span className="text-muted text-xs">Journal information unavailable</span>
         )}
       </td>
 
@@ -130,14 +134,14 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
             </Button>
           </div>
         ) : (
-          <span className="text-muted text-xs">—</span>
+          <span className="text-muted text-xs">-</span>
         )}
       </td>
 
       {/* Topic Badge */}
       <td style={{ width: '130px' }}>
         <span className={`article-topic-badge ${topicClassName}`}>
-          {article.primary_topic || 'Chưa phân loại'}
+          {article.primary_topic || 'Unclassified'}
         </span>
       </td>
 
@@ -148,7 +152,7 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
             OA
           </span>
         ) : (
-          <span className="text-muted-custom text-xs">—</span>
+          <span className="text-muted-custom text-xs">-</span>
         )}
       </td>
 
@@ -157,7 +161,7 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
         <span
           className="article-action-link d-flex align-items-center justify-content-end gap-0.5"
         >
-          Chi tiết
+          Details
           <Icon icon="lucide:arrow-right" width="12" />
         </span>
       </td>

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * File source thuộc hệ thống FE ResearchPulse.
  *
  * File: features\auth\contexts\AuthContext.jsx
@@ -7,11 +7,13 @@ import { createContext, useState, useEffect, useCallback } from 'react';
 import {
   loginApi,
   registerApi,
-  getProfileApi,
   loginGoogleApi,
-  updateProfileApi,
-  deleteAccountApi,
 } from '../api/auth.api';
+import {
+  deleteProfileApi,
+  getProfileApi,
+  updateProfileApi,
+} from '../../profile/api/profile.api';
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from '../../../shared/utils/toast';
 import { useAuthStore } from '../../../app/store/authStore';
@@ -189,7 +191,7 @@ export function AuthProvider({ children }) {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await deleteAccountApi();
+      const response = await deleteProfileApi();
       if (response.data && response.data.success !== false) {
         logout();
         return response.data;

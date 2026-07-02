@@ -14,6 +14,29 @@ export const getArticlesListApi = (params) => {
   return api.get('/articles', { params });
 };
 
+export const getArticleAnalyticsApi = (params = {}) => {
+  return api.get('/articles/analytics', { params });
+};
+
+export const getArticleAnalysisApi = (params = {}) => {
+  return api.get('/articles/analysis', { params });
+};
+
+export const getArticleEntityLabelApi = (entityType, id) => {
+  const endpointMap = {
+    journal: 'journals',
+    publisher: 'publishers',
+    author: 'authors',
+    topic: 'topics',
+    keyword: 'keywords',
+  };
+  const endpoint = endpointMap[entityType];
+  if (!endpoint || !id) {
+    return Promise.reject(new Error('Invalid entity label request'));
+  }
+  return api.get(`/${endpoint}/${id}`);
+};
+
 /**
  * Tạo mới bài báo khoa học
  * @param {Object} data - Dữ liệu bài báo
@@ -32,13 +55,32 @@ export const getArticleDetailApi = (id) => {
   return api.get(`/articles/${id}`);
 };
 
+export const getArticleCitingWorksApi = (id, params = {}) => {
+  return api.get(`/articles/${id}/citing-works`, { params });
+};
+
+export const getArticleCitingWorksAnalyticsApi = (id) => {
+  return api.get(`/articles/${id}/citing-works/analytics`);
+};
+
+export const getArticleReferencesApi = (id, params = {}) => {
+  return api.get(`/articles/${id}/references`, { params });
+};
+
 /**
  * Bookmark an article
  * @param {number|string} id - ID bài báo
  * @returns {Promise} Axios promise
  */
 export const bookmarkArticleApi = (id) => {
-  return api.post(`/articles/${id}/bookmark`);
+  return Promise.resolve({
+    data: {
+      success: true,
+      localOnly: true,
+      message: 'Bookmark is stored locally only for this frontend session.',
+      data: { article_id: id },
+    },
+  });
 };
 
 /**

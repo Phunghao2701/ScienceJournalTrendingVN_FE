@@ -1,0 +1,38 @@
+{
+  "accessTokens": {},
+  "refreshTokens": {},
+  "clients": {
+    "654476fb-f068-41f4-aa44-e87151d80470": {
+      "redirect_uris": [
+        "https://chatgpt.com/connector/oauth/ki63v18l3rzL"
+      ],
+      "token_endpoint_auth_method": "none",
+      "grant_types": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "response_types": [
+        "code"
+      ],
+      "client_name": "ChatGPT",
+      "client_id": "654476fb-f068-41f4-aa44-e87151d80470",
+      "client_id_issued_at": 1782670758
+    },
+    "1e87bcc2-a5a1-4879-b032-c0aabfeed45d": {
+      "redirect_uris": [
+        "https://chatgpt.com/connector/oauth/ki63v18l3rzL"
+      ],
+      "token_endpoint_auth_method": "none",
+      "grant_types": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "response_types": [
+        "code"
+      ],
+      "client_name": "ChatGPT",
+      "client_id": "1e87bcc2-a5a1-4879-b032-c0aabfeed45d",
+      "client_id_issued_at": 1782671351
+    }
+  }
+}

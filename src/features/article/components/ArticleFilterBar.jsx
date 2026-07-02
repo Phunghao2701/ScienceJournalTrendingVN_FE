@@ -1,8 +1,3 @@
-/**
- * File source thuộc hệ thống FE ResearchPulse.
- *
- * File: features\article\components\ArticleFilterBar.jsx
- */
 import { useState, useEffect } from 'react';
 import { Row, Col, Form, Button } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
@@ -11,35 +6,35 @@ import { searchJournalsApi } from '../../journal/api/journalApi';
 import { getTopicsApi } from '../../topic/api/topic.api';
 
 const YEAR_OPTIONS = [
-  { value: 'all', label: 'Tất cả năm' },
+  { value: 'all', label: 'All years' },
   { value: '2026', label: '2026' },
   { value: '2025', label: '2025' },
   { value: '2024', label: '2024' },
   { value: '2023', label: '2023' },
-  { value: '2022', label: '2022' }
+  { value: '2022', label: '2022' },
 ];
 
-
 const ACCESS_OPTIONS = [
-  { value: 'all', label: 'Tất cả trạng thái' },
-  { value: 'oa', label: 'Open Access (OA)' }
+  { value: 'all', label: 'All access' },
+  { value: 'oa', label: 'Open Access (OA)' },
+  { value: 'closed', label: 'Closed Access' },
 ];
 
 const SORT_OPTIONS = [
-  { value: 'created_at-desc', label: 'Mới nhất' },
-  { value: 'created_at-asc', label: 'Cũ nhất' },
-  { value: 'title-asc', label: 'Tiêu đề A-Z' },
-  { value: 'title-desc', label: 'Tiêu đề Z-A' },
-  { value: 'publication_year-desc', label: 'Năm xuất bản (Giảm)' },
-  { value: 'publication_year-asc', label: 'Năm xuất bản (Tăng)' },
+  { value: 'created_at-desc', label: 'Newest' },
+  { value: 'created_at-asc', label: 'Oldest' },
+  { value: 'title-asc', label: 'Title A-Z' },
+  { value: 'title-desc', label: 'Title Z-A' },
+  { value: 'publication_year-desc', label: 'Publication year (desc)' },
+  { value: 'publication_year-asc', label: 'Publication year (asc)' },
 ];
 
 export default function ArticleFilterBar({ filters, updateFilters, clearFilters }) {
   const [journalOptions, setJournalOptions] = useState([
-    { value: 'all', label: 'Tất cả tạp chí' }
+    { value: 'all', label: 'All journals' },
   ]);
   const [topicOptions, setTopicOptions] = useState([
-    { value: 'all', label: 'Tất cả chủ đề' }
+    { value: 'all', label: 'All topics' },
   ]);
   const [loadingFilters, setLoadingFilters] = useState(false);
 
@@ -49,18 +44,18 @@ export default function ArticleFilterBar({ filters, updateFilters, clearFilters 
       try {
         const [journalResponse, topicResponse] = await Promise.allSettled([
           searchJournalsApi({ limit: 100 }),
-          getTopicsApi({ limit: 100, sort_by: 'display_name', sort_order: 'asc' })
+          getTopicsApi({ limit: 100, sort_by: 'display_name', sort_order: 'asc' }),
         ]);
 
         if (journalResponse.status === 'fulfilled' && journalResponse.value?.data?.success && journalResponse.value?.data?.data?.items) {
-          const fetchedOptions = journalResponse.value.data.data.items.map(item => ({
+          const fetchedOptions = journalResponse.value.data.data.items.map((item) => ({
             value: String(item.journal_id),
-            label: item.display_name
+            label: item.display_name,
           }));
           fetchedOptions.sort((a, b) => a.label.localeCompare(b.label));
           setJournalOptions([
-            { value: 'all', label: 'Tất cả tạp chí' },
-            ...fetchedOptions
+            { value: 'all', label: 'All journals' },
+            ...fetchedOptions,
           ]);
         }
 
@@ -69,11 +64,11 @@ export default function ArticleFilterBar({ filters, updateFilters, clearFilters 
           const topicItems = topicData?.data?.topics || topicData?.data?.items || topicData?.data || [];
           const fetchedTopics = topicItems.map((item) => ({
             value: String(item.topic_id || item.id),
-            label: item.display_name || item.name || `Topic #${item.topic_id || item.id}`
+            label: item.display_name || item.name || `Topic #${item.topic_id || item.id}`,
           })).filter((item) => item.value && item.label);
           setTopicOptions([
-            { value: 'all', label: 'Tất cả chủ đề' },
-            ...fetchedTopics
+            { value: 'all', label: 'All topics' },
+            ...fetchedTopics,
           ]);
         }
       } catch (error) {
@@ -98,33 +93,36 @@ export default function ArticleFilterBar({ filters, updateFilters, clearFilters 
     updateFilters({ sortBy, sortOrder });
   };
 
-  const hasActiveFilters = 
-    filters.search !== '' ||
-    filters.selectedYear !== 'all' ||
-    filters.selectedJournal !== 'all' ||
-    filters.selectedTopic !== 'all' ||
-    filters.selectedAccess !== 'all' ||
-    filters.sortBy !== 'created_at' ||
-    filters.sortOrder !== 'desc';
+  const hasActiveFilters =
+    filters.search !== ''
+    || filters.selectedYear !== 'all'
+    || filters.selectedJournal !== 'all'
+    || filters.selectedPublisher !== 'all'
+    || filters.selectedAuthor !== 'all'
+    || filters.selectedTopic !== 'all'
+    || filters.selectedKeyword !== 'all'
+    || filters.selectedAccess !== 'all'
+    || filters.sortBy !== 'created_at'
+    || filters.sortOrder !== 'desc';
 
   const currentSortValue = `${filters.sortBy}-${filters.sortOrder}`;
 
   return (
     <div className="article-filter-panel">
+      <div className="d-flex align-items-center gap-2 mb-3 text-xs text-muted-custom">
+        <Icon icon="lucide:map-pin" width="14" />
+        <span>Scope: Vietnamese universities</span>
+      </div>
       <Row className="g-3 align-items-center">
-        {/* Search Bar */}
         <Col xs={12} lg={4}>
-          <ArticleSearchBar 
-            initialValue={filters.search} 
-            onSearchChange={handleSearchChange} 
+          <ArticleSearchBar
+            initialValue={filters.search}
+            onSearchChange={handleSearchChange}
           />
         </Col>
 
-        {/* Filters and Sorts */}
         <Col xs={12} lg={8}>
           <div className="d-flex flex-wrap gap-2 justify-content-lg-end">
-            
-            {/* Lọc theo Năm */}
             <Form.Select
               value={filters.selectedYear}
               onChange={handleSelectChange('year')}
@@ -133,50 +131,47 @@ export default function ArticleFilterBar({ filters, updateFilters, clearFilters 
                 width: '130px',
                 borderColor: 'var(--border)',
                 fontSize: '0.8rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
-              {YEAR_OPTIONS.map(opt => (
+              {YEAR_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </Form.Select>
 
-            {/* Lọc theo Tạp chí */}
             <Form.Select
               value={filters.selectedJournal}
-              onChange={handleSelectChange('journal')}
+              onChange={handleSelectChange('selectedJournal')}
               className="article-form-control py-2 text-xs"
               style={{
                 width: '200px',
                 borderColor: 'var(--border)',
                 fontSize: '0.8rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
-              {journalOptions.map(opt => (
+              {journalOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </Form.Select>
 
-            {/* Lọc theo Chủ đề */}
             <Form.Select
               value={filters.selectedTopic}
-              onChange={handleSelectChange('topic')}
+              onChange={handleSelectChange('selectedTopic')}
               disabled={loadingFilters}
               className="article-form-control py-2 text-xs"
               style={{
                 width: '160px',
                 borderColor: 'var(--border)',
                 fontSize: '0.8rem',
-                cursor: loadingFilters ? 'wait' : 'pointer'
+                cursor: loadingFilters ? 'wait' : 'pointer',
               }}
             >
-              {topicOptions.map(opt => (
+              {topicOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </Form.Select>
 
-            {/* Lọc theo Open Access */}
             <Form.Select
               value={filters.selectedAccess}
               onChange={handleSelectChange('access')}
@@ -185,18 +180,17 @@ export default function ArticleFilterBar({ filters, updateFilters, clearFilters 
                 width: '140px',
                 borderColor: 'var(--border)',
                 fontSize: '0.8rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
-              {ACCESS_OPTIONS.map(opt => (
+              {ACCESS_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </Form.Select>
 
-            {/* Sắp xếp */}
             <div className="d-flex align-items-center gap-2">
               <span className="text-muted-custom text-xs d-none d-sm-inline" style={{ whiteSpace: 'nowrap', fontSize: '0.75rem' }}>
-                Sắp xếp:
+                Sort:
               </span>
               <Form.Select
                 value={currentSortValue}
@@ -206,16 +200,15 @@ export default function ArticleFilterBar({ filters, updateFilters, clearFilters 
                   width: '160px',
                   borderColor: 'var(--border)',
                   fontSize: '0.8rem',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
                 }}
               >
-                {SORT_OPTIONS.map(opt => (
+                {SORT_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </Form.Select>
             </div>
 
-            {/* Nút Clear Filters */}
             {hasActiveFilters && (
               <Button
                 variant="outline-primary"
@@ -226,14 +219,13 @@ export default function ArticleFilterBar({ filters, updateFilters, clearFilters 
                   color: 'var(--primary)',
                   fontSize: '0.8rem',
                   fontWeight: 600,
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
                 }}
               >
                 <Icon icon="lucide:rotate-ccw" width="14" />
-                <span>Xóa lọc</span>
+                <span>Clear filters</span>
               </Button>
             )}
-
           </div>
         </Col>
       </Row>

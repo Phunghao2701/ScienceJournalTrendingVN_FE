@@ -1,10 +1,16 @@
-﻿// Header cột tương ứng với các field hiển thị trên table
+﻿/**
+ * Client-side CSV export utility for the Admin Dashboard Volume & Issue Overview table.
+ *
+ * File: src/features/admin/utils/exportCsv.js
+ */
+
+// Column headers matching the fields displayed in the Volume & Issue table.
 const CSV_HEADERS = ['Volume', 'Total Issues', 'Publication Date', 'Status', 'Progress'];
 
 /**
- * Chuyển 1 giá trị thành chuỗi an toàn cho CSV:
- * - Bọc trong dấu ngoặc kép nếu chứa dấu phẩy, ngoặc kép hoặc xuống dòng.
- * - Escape dấu ngoặc kép bên trong giá trị (" -> "").
+ * Serialise a single value to a safe CSV string:
+ * - Wraps in double-quotes if the value contains a comma, double-quote, or newline.
+ * - Escapes embedded double-quotes by doubling them (" -> "").
  */
 function escapeCsvValue(value) {
   const stringValue = String(value ?? '');
@@ -15,13 +21,13 @@ function escapeCsvValue(value) {
 }
 
 /**
- * Xuất danh sách Volume & Issue Overview thành file CSV và trigger download
- * ngay trên browser (không cần gọi API).
+ * Export the Volume & Issue Overview list as a CSV file and trigger a browser download
+ * entirely on the client side (no API call required).
  *
- * @param {Array} volumeStatusList - mảng item giống mockVolumeStatus
+ * @param {Array} volumeStatusList - array of volume status items (same shape as the table rows)
  */
 export function exportVolumeStatusToCsv(volumeStatusList) {
-  // Build từng dòng dữ liệu theo đúng thứ tự CSV_HEADERS
+  // Build one row per item in the same column order as CSV_HEADERS.
   const rows = volumeStatusList.map((item) => [
     item.volume,
     item.totalIssues,
@@ -30,13 +36,13 @@ export function exportVolumeStatusToCsv(volumeStatusList) {
     `${item.progress}%`,
   ]);
 
-  // Ghép header + rows thành nội dung CSV (mỗi dòng cách nhau \n)
+  // Concatenate header + data rows into CSV content (newline-separated).
   const csvContent = [CSV_HEADERS, ...rows]
     .map((row) => row.map(escapeCsvValue).join(','))
     .join('\n');
 
-  // Tạo Blob và trigger download qua <a> ẩn - cách chuẩn để export file
-  // từ phía client mà không cần backend.
+  // Create a Blob and trigger download via a hidden <a> element --
+  // the standard client-side export pattern without requiring a backend.
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
 
@@ -47,6 +53,6 @@ export function exportVolumeStatusToCsv(volumeStatusList) {
   link.click();
   document.body.removeChild(link);
 
-  // Giải phóng URL object sau khi dùng để tránh leak memory
+  // Release the object URL after use to avoid a memory leak.
   URL.revokeObjectURL(url);
 }

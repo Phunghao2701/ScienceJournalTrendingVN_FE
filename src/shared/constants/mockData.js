@@ -1,9 +1,12 @@
 /**
  * File: shared/constants/mockData.js
- * Centralized mock data repository for frontend-only state simulation.
+ * Centralized fallback/placeholder data used when real API endpoints are unavailable.
+ * These are NOT used in production API flows — they stand in during development or
+ * when a BE endpoint is missing. Each export documents which API it replaces.
  */
 
-// Initial mock users matching Page 3 User Directory
+// Placeholder users for the Admin User Directory (admin/pages/account/UserDirectoryPage.jsx).
+// Replaces GET /api/v1/admin/users when the endpoint is unavailable.
 export const MOCK_USERS = [
   {
     id: '1',
@@ -72,7 +75,8 @@ export const MOCK_USERS = [
   }
 ];
 
-// Initial mock pending requests matching Page 3 right column sidebar
+// Placeholder pending role-upgrade requests shown in the admin sidebar.
+// Consumed by admin/components/account/PendingRequestCard.jsx as a UI placeholder.
 export const MOCK_REQUESTS = [
   {
     id: 'r1',
@@ -92,7 +96,8 @@ export const MOCK_REQUESTS = [
   }
 ];
 
-// Fallback subject categories if API is unavailable
+// Fallback subject area categories when GET /api/v1/topics (or equivalent) is unavailable.
+// Used by filter dropdowns in article submission and filter bar components.
 export const MOCK_CATEGORIES = [
   { id: 1, name: 'Computer Science' },
   { id: 2, name: 'Medicine & Health' },
@@ -100,7 +105,8 @@ export const MOCK_CATEGORIES = [
   { id: 4, name: 'Biotechnology' }
 ];
 
-// Fallback journal titles if API is unavailable
+// Fallback journal list when GET /api/v1/journals is unavailable.
+// Used by journal selection dropdowns in article filter and submission forms.
 export const MOCK_JOURNALS = [
   { id: 1, title: 'Bio-Science Monthly', name: 'Bio-Science Monthly' },
   { id: 2, title: 'Physics Archives', name: 'Physics Archives' },

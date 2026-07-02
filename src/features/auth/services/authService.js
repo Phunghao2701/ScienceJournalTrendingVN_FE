@@ -1,7 +1,12 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * Auth service layer: wraps auth.api.js calls with response normalization and token extraction.
  *
- * File: features\auth\services\authService.js
+ * File: features/auth/services/authService.js
+ *
+ * Sits between auth.api.js (raw Axios) and useAuth.js (React hook + Zustand).
+ * Responsibilities: JWT decoding for email extraction, multi-shape BE response
+ * normalization in fetchCurrentProfile, and token cleanup via removeToken().
+ * Consumed exclusively by: useAuth.js.
  */
 import { jwtDecode } from 'jwt-decode';
 import {
@@ -39,18 +44,20 @@ const getEmailFromToken = (token) => {
  * @returns {Promise<{response: Object, token: string|null, email: string}>}
  */
 export const loginWithPassword = async (email, password, remember = true) => {
-  // ưu tiên dev: gửi remember lên BE
+  // Forward the remember flag to BE so it can set a long-lived refresh-token cookie.
   const response = await loginApi({ email, password, remember });
 
-  // giữ chức năng HEAD: hỗ trợ nhiều format token từ response
+  // Support two token response shapes: { data: { token } } (standard) and { token } (legacy).
   let token = response.data?.data?.token;
   if (!token) {
     token = response.data?.token;
   }
 
   if (token) {
-    // persistToken không nằm trong file hiện tại => fallback sang persist qua removeToken/shared flow
-    // Nếu hàm persistToken tồn tại ở scope khác thì vẫn dùng được.
+    // WARNING: persistToken is not defined or imported in this file.
+    // This branch is dead code -- the typeof guard prevents a ReferenceError but
+    // persistToken will never be a function here. Token persistence is handled
+    // by authStore.loginSuccess() in useAuth.js after this function returns.
     if (typeof persistToken === 'function') {
       persistToken(token, remember);
     }
@@ -99,27 +106,27 @@ export const registerUser = async (payload) => {
  * @returns {Promise<Object>} User profile object.
  */
 export const fetchCurrentProfile = async () => {
-  // Bổ sung cache-control để tránh trường hợp browser/cache trả dữ liệu rỗng
   const response = await getProfileApi();
+  // Debug log -- can be removed once profile endpoint is stable.
   console.log('[fetchCurrentProfile] Response:', response?.data);
 
-  // Backend có thể trả nhiều dạng payload:
-  // - { data: { ...user } }
-  // - { success: true, data: { ...user } }
-  // - hoặc trực tiếp { ...user }
+  // BE returns the user object in one of three shapes depending on endpoint version:
+  //   Shape A (standard): { data: { ...user } }
+  //   Shape B (success):  { success: true, data: { ...user } }
+  //   Shape C (flat):     { ...user }  (direct user object, no wrapper)
   const payload = response?.data;
 
-  // Chuẩn form: response.data.data là user
+  // Shape A: response.data.data holds the user object.
   if (response?.status === 200 && payload?.data) {
     return payload.data;
   }
 
-  // success form: response.data.success === true và có data
+  // Shape B: explicit success flag with nested data.
   if (payload?.success === true && payload?.data) {
     return payload.data;
   }
 
-  // Fallback: nếu BE trả thẳng object user
+  // Shape C: 200 with a plain object that has no data/success wrapper.
   if (response?.status === 200 && payload && typeof payload === 'object' && !payload?.data && !payload?.success) {
     return payload;
   }

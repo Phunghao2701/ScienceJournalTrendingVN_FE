@@ -1,7 +1,7 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * Journal API: search, detail, volume/issue management, follow, and related catalog endpoints.
  *
- * File: features\journal\api\journalApi.js
+ * File: src/features/journal/api/journalApi.js
  */
 import api from '../../../shared/services/api';
 
@@ -96,34 +96,75 @@ export const searchJournalsApi = (params) => {
   return api.get('/journal/', { params });
 };
 
+/**
+ * Create a new journal.
+ * @param {Object} data - Journal payload
+ * @returns {Promise} Axios promise
+ */
 export const createJournalApi = (data) => {
   return api.post('/journal', data);
 };
 
+/**
+ * Update journal metadata by ID.
+ * @param {number|string} id - Journal ID
+ * @param {Object} data - Fields to update
+ * @returns {Promise} Axios promise
+ */
 export const updateJournalApi = (id, data) => {
   return api.put(`/journal/${id}`, data);
 };
 
+/**
+ * Delete a journal by ID.
+ * @param {number|string} id - Journal ID
+ * @returns {Promise} Axios promise
+ */
 export const deleteJournalApi = (id) => {
   return api.delete(`/journal/${id}`);
 };
 
+/**
+ * Create a new volume under a journal.
+ * @param {Object} data - Volume payload (journal_id, volume_number, publication_year)
+ * @returns {Promise} Axios promise
+ */
 export const createVolumeApi = (data) => {
   return api.post('/volumes', data);
 };
 
+/**
+ * Create a new issue under a volume.
+ * @param {Object} data - Issue payload (volume_id, issue_number, publication_year)
+ * @returns {Promise} Axios promise
+ */
 export const createIssueApi = (data) => {
   return api.post('/issues', data);
 };
 
+/**
+ * Fetch publishers list.
+ * @param {Object} params - Optional filter params
+ * @returns {Promise} Axios promise
+ */
 export const getPublishersApi = (params) => {
   return api.get('/publishers', { params });
 };
 
+/**
+ * Fetch academic subject areas.
+ * @param {Object} params - Optional filter params
+ * @returns {Promise} Axios promise
+ */
 export const getSubjectAreasApi = (params = {}) => {
   return api.get('/subject-areas', { params });
 };
 
+/**
+ * Fetch subject categories (sub-groups of subject areas).
+ * @param {Object} params - Optional filter params
+ * @returns {Promise} Axios promise
+ */
 export const getSubjectCategoriesApi = (params = {}) => {
   return api.get('/subject-categories', { params });
 };

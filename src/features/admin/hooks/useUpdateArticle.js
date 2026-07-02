@@ -1,3 +1,8 @@
+/**
+ * useUpdateArticle: manages Update Article page state -- loads article detail, handles save, cancel, and soft-delete.
+ *
+ * File: src/features/admin/hooks/useUpdateArticle.js
+ */
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from '../../../shared/utils/toast';

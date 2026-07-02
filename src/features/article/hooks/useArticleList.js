@@ -1,22 +1,18 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * useArticleList: manages ArticleListPage state, syncs filters with URL query params for shareable links and browser history.
  *
- * File: features\article\hooks\useArticleList.js
+ * File: src/features/article/hooks/useArticleList.js
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getArticlesListApi } from '../api/articleApi';
 import { searchJournalsApi } from '../../journal/api/journalApi';
 
-/**
- * Hook quản lý trạng thái trang Article List.
- * Sync filter với URL query params để hỗ trợ back/forward và copy link.
- */
 export default function useArticleList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // === Đọc state từ URL params ===
+  // Read initial filter state from URL query params
   const search = searchParams.get('search') || '';
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || '10', 10);
@@ -35,7 +31,7 @@ export default function useArticleList() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Stats hiển thị thẻ thống kê
+  // Stats shown in the four summary cards
   const [stats, setStats] = useState({
     totalArticles: 0,
     openAccessCount: 0,
@@ -43,11 +39,11 @@ export default function useArticleList() {
     topicsCount: 0,
   });
 
-  // Auth modal không còn dùng để block xem, nhưng giữ cho backward compat
+  // Auth modal kept for backward compatibility; no longer blocks article viewing
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   /**
-   * Gọi API lấy danh sách bài báo theo filter/pagination hiện tại.
+   * Fetch articles matching the current filters and pagination state.
    */
   const fetchArticles = useCallback(async () => {
     setIsLoading(true);
@@ -57,17 +53,17 @@ export default function useArticleList() {
       let journalIdToFilter = selectedJournal;
       let textSearch = search.trim();
 
-      // Kiểm tra nếu search có định dạng ISSN (VD: "1859-3526", hoặc source.issn:"1859-3526")
+      // Detect ISSN pattern in search input and resolve to journal_id (e.g. "1859-3526" or source.issn:"1859-3526")
       const issnMatch = textSearch.match(/(?:source\.issn:\s*")?(\d{4}-\d{3}[\dX]|\d{4}\s*-\s*\d{3}[\dX]|\d{8})(?:"\s*)?/i);
       if (issnMatch) {
-        const issnVal = issnMatch[1].replace(/\s+/g, ''); // Loại bỏ khoảng trắng
+        const issnVal = issnMatch[1].replace(/\s+/g, ''); // Strip whitespace from ISSN
         try {
           const journalRes = await searchJournalsApi({ search: issnVal });
           const journalList = journalRes?.data?.data?.items || [];
           if (journalList.length > 0) {
             const matchedJournal = journalList[0];
             journalIdToFilter = matchedJournal.journal_id || matchedJournal.id;
-            textSearch = ''; // Xóa textSearch để không lọc theo text LIKE trong DB
+            textSearch = ''; // Clear text search so DB does not also run a LIKE filter
           }
         } catch (err) {
           console.warn("Failed to lookup journal by ISSN in fetchArticles:", err);
@@ -81,7 +77,7 @@ export default function useArticleList() {
         sortOrder,
       };
 
-      // Chỉ gửi params khi có giá trị hợp lệ
+      // Only include params with non-empty valid values
       if (textSearch) apiParams.search = textSearch;
       if (selectedYear && selectedYear !== 'all') apiParams.publication_year = selectedYear;
       if (journalIdToFilter && journalIdToFilter !== 'all') apiParams.journal_id = journalIdToFilter;
@@ -95,12 +91,12 @@ export default function useArticleList() {
       if (response?.data?.success) {
         const resData = response.data.data || {};
 
-        // Backend giờ trả `articles` (hoặc `items` tùy path cũ), hỗ trợ cả hai
+        // Support both 'articles' and 'items' field names from the backend
         const rawList = resData.articles || resData.items || [];
         const paginationData = resData.pagination || {};
         const totalCount = paginationData.total || rawList.length;
 
-        // Map sang shape chuẩn cho FE: không hardcode gì thêm
+        // Normalize to a consistent FE shape; no extra hardcoding
         const mappedArticles = rawList.map((item) => ({
           article_id: item.article_id,
           version: item.version || null,
@@ -109,15 +105,15 @@ export default function useArticleList() {
           abstract: item.abstract || null,
           publication_year: item.publication_year || null,
           doi: item.doi || null,
-          // Topic: ưu tiên topic_name (từ JOIN), fallback hiển thị `Topic #ID`
+          // Topic: prefer topic_name from JOIN result, fallback to 'Topic #ID'
           primary_topic: item.topic_name
             || (item.primary_topic ? `Topic #${item.primary_topic}` : null),
           topic_id: item.primary_topic || null,
-          // Journal: map từ flat fields trả về bởi enriched service
+          // Journal: map from flat fields returned by enriched-service endpoint
           journal_id: item.journal_id || null,
           journal_name: item.journal_name || null,
           journal_issn: item.journal_issn || null,
-          // Tương thích với component cũ đang dùng article.journal.display_name
+          // Backward compat: old components access article.journal.display_name
           journal: item.journal_id
             ? { journal_id: item.journal_id, display_name: item.journal_name }
             : null,
@@ -153,7 +149,7 @@ export default function useArticleList() {
     }
   }, [page, limit, search, sortBy, sortOrder, selectedYear, selectedJournal, selectedTopic, selectedAccess, selectedVolume, selectedIssue]);
 
-  // Fetch khi dependency thay đổi
+  // Re-fetch whenever any filter or pagination dependency changes
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchArticles();
@@ -163,8 +159,7 @@ export default function useArticleList() {
   }, [fetchArticles]);
 
   /**
-   * Cập nhật URL query params khi filter thay đổi.
-   * Các filter thay đổi sẽ reset page về 1.
+   * Update URL query params when filters change; filter changes reset page to 1.
    */
   const updateFilters = useCallback((newFilters) => {
     const params = new URLSearchParams(searchParams);
@@ -186,12 +181,12 @@ export default function useArticleList() {
     setSearchParams(params);
   }, [searchParams, setSearchParams]);
 
-  /** Xóa toàn bộ filter, quay về trang 1 */
+  /** Clear all active filters and reset to page 1. */
   const clearFilters = useCallback(() => {
     setSearchParams(new URLSearchParams());
   }, [setSearchParams]);
 
-  /** Chuyển trang giữ filter */
+  /** Change page while keeping current filters. */
   const handlePageChange = useCallback((newPage) => {
     const params = new URLSearchParams(searchParams);
     params.set('page', String(newPage));
@@ -199,14 +194,14 @@ export default function useArticleList() {
   }, [searchParams, setSearchParams]);
 
   /**
-   * Click Chi tiết → navigate thẳng, không cần kiểm tra token
-   * (Article List là public, guest được xem detail)
+   * Navigate directly to the article visual detail page.
+   * No auth check needed -- article detail is publicly accessible.
    */
   const handleDetailClick = useCallback((id) => {
     navigate(`/articles/${id}/visual`);
   }, [navigate]);
 
-  /** Legacy: giữ để không break modal nếu dùng nơi khác */
+  /** Legacy: kept to avoid breaking any remaining auth-modal reference. */
   const handleAuthRedirect = useCallback(() => {
     setShowAuthModal(false);
     navigate('/login');

@@ -1,7 +1,14 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * Raw API call layer for all authentication and user-profile endpoints.
  *
  * File: features/auth/api/auth.api.js
+ *
+ * All functions use the authenticated `api` client (shared/services/api.js).
+ * Login/register/verify are public endpoints but still use `api` -- the request
+ * interceptor only adds the Authorization header when a token exists, so
+ * unauthenticated requests pass through cleanly without an auth header.
+ *
+ * Consumed by: authService.js (business logic) and useVerifyAccount.js (directly).
  */
 import api from '../../../shared/services/api';
 
@@ -62,7 +69,9 @@ export const resetPasswordApi = (data) => {
 };
 
 /**
- * Get profile details of currently logged-in user
+ * Get profile details of currently logged-in user.
+ * Tries GET /users/me first; falls back to GET /users/profile on 404
+ * to handle API path differences between environments.
  * @returns {Promise} Axios promise
  */
 export const getProfileApi = async () => {
@@ -93,6 +102,8 @@ export const deleteAccountApi = () => {
   return api.delete('/users/me');
 };
 
+// authApi.verifyAccount is an alias for verifyEmailApi, kept for backward compatibility.
+// Prefer importing verifyEmailApi directly by name.
 const authApi = {
   verifyAccount: verifyEmailApi,
 };

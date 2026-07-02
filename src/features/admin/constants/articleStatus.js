@@ -1,4 +1,10 @@
-// Các giá trị status hợp lệ - khớp với enum status của Article (API thật)
+/**
+ * Article review status enum, style map, and dropdown options.
+ *
+ * File: src/features/admin/constants/articleStatus.js
+ */
+
+// Valid status values -- must match the Article status enum in the backend API.
 const ARTICLE_REVIEW_STATUS = {
   DRAFT: 'DRAFT',
   SUBMITTED: 'SUBMITTED',
@@ -9,40 +15,40 @@ const ARTICLE_REVIEW_STATUS = {
   PUBLISHED: 'PUBLISHED',
 };
 
-// Map status -> { label hiển thị, className để style badge }
+// Maps each status to its display label and badge CSS class.
 const ARTICLE_REVIEW_STATUS_STYLE = {
   [ARTICLE_REVIEW_STATUS.DRAFT]: {
     label: 'Draft',
-    className: 'status-badge--archived', // xám - chưa submit
+    className: 'status-badge--archived', // grey -- not yet submitted
   },
   [ARTICLE_REVIEW_STATUS.SUBMITTED]: {
     label: 'Submitted',
-    className: 'status-badge--in-prep', // cam nhạt - chờ xử lý
+    className: 'status-badge--in-prep', // light orange -- awaiting processing
   },
   [ARTICLE_REVIEW_STATUS.IN_REVIEW]: {
     label: 'Peer Review',
-    className: 'status-badge--in-prep', // cam nhạt - đang xử lý (giống ảnh Figma "PEER REVIEW")
+    className: 'status-badge--in-prep', // light orange -- in progress (matches Figma "PEER REVIEW")
   },
   [ARTICLE_REVIEW_STATUS.REVISION_REQUIRED]: {
     label: 'Revision Required',
-    className: 'status-badge--revision', // đỏ nhạt - cần chỉnh sửa
+    className: 'status-badge--revision', // light red -- needs edits
   },
   [ARTICLE_REVIEW_STATUS.ACCEPTED]: {
     label: 'Accepted',
-    className: 'status-badge--published', // xanh - tích cực
+    className: 'status-badge--published', // green -- positive outcome
   },
   [ARTICLE_REVIEW_STATUS.REJECTED]: {
     label: 'Rejected',
-    className: 'status-badge--revision', // đỏ nhạt - tiêu cực
+    className: 'status-badge--revision', // light red -- negative outcome
   },
   [ARTICLE_REVIEW_STATUS.PUBLISHED]: {
     label: 'Published',
-    className: 'status-badge--published', // xanh - hoàn tất
+    className: 'status-badge--published', // green -- fully complete
   },
 };
 
-// Danh sách option cho dropdown "Update Status" trong Review Status Panel.
-// Lấy trực tiếp từ ARTICLE_REVIEW_STATUS_STYLE để label luôn đồng bộ với badge.
+// Options for the "Update Status" dropdown in the Review Status Panel.
+// Derived from ARTICLE_REVIEW_STATUS_STYLE so labels always stay in sync with badges.
 const ARTICLE_STATUS_OPTIONS = Object.entries(ARTICLE_REVIEW_STATUS_STYLE).map(
   ([value, { label }]) => ({ value, label })
 );

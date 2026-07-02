@@ -1,3 +1,8 @@
+/**
+ * useAdminArticleRepository: manages Article Repository page state -- article list, filters, pagination, and editor insights.
+ *
+ * File: src/features/admin/hooks/useAdminArticleRepository.js
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { JOURNAL_FILTER_OPTIONS, STATUS_FILTER_OPTIONS } from '../constants/articleListFilters';
 import { getArticlesListApi } from '../../article/api/articleApi';

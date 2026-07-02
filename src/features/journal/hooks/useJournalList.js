@@ -1,7 +1,7 @@
 ﻿/**
- * File source thuộc hệ thống FE ResearchPulse.
+ * useJournalList: manages JournalListPage state -- journal list, stats cards, search, filters, and pagination.
  *
- * File: features\journal\hooks\useJournalList.js
+ * File: src/features/journal/hooks/useJournalList.js
  */
 import { useState, useEffect, useCallback } from 'react';
 import { searchJournalsApi } from '../api/journalApi';

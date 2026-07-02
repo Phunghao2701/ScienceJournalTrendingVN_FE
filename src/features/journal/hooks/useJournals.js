@@ -1,7 +1,7 @@
 ﻿/**
- * File source thuộc hệ thống FE ResearchPulse.
+ * useJournals: thin hook wrapping journal CRUD API calls (create, read, update, delete, restore).
  *
- * File: features\journal\hooks\useJournals.js
+ * File: src/features/journal/hooks/useJournals.js
  */
 import { useState, useCallback } from 'react';
 import {

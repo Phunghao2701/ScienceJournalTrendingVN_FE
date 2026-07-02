@@ -1,7 +1,7 @@
 ﻿/**
- * File source thuộc hệ thống FE ResearchPulse.
+ * useJournalDetail: manages JournalDetailPage state -- journal info, rankings, volumes, issues, and recent articles.
  *
- * File: features\journal\hooks\useJournalDetail.js
+ * File: src/features/journal/hooks/useJournalDetail.js
  */
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -190,12 +190,12 @@ export function useJournalDetail(journalId, currentUser) {
     }
   }, [activeTab, fetchVolumes, fetchRecentArticles]);
 
-  /** Chuyển trang volume trong tab Volumes & Issues */
+  /** Change the active page within the Volumes & Issues tab. */
   const handleVolumePageChange = useCallback((nextPage) => {
     fetchVolumes(nextPage);
   }, [fetchVolumes]);
 
-  /** Chuyển trang issue bên trong một volume accordion */
+  /** Change the active issue page inside a specific volume accordion. */
   const handleIssuePageChange = useCallback((volumeId, nextPage) => {
     fetchIssuesForVolume(volumeId, nextPage);
   }, [fetchIssuesForVolume]);

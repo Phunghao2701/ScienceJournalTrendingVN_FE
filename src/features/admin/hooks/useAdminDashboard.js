@@ -1,3 +1,8 @@
+/**
+ * useAdminDashboard: manages Admin Dashboard state -- summary cards, publication trends, recent activities, and volume/issue status.
+ *
+ * File: src/features/admin/hooks/useAdminDashboard.js
+ */
 import { useEffect, useMemo, useState } from 'react';
 import {
   getAdminDashboardSummary,

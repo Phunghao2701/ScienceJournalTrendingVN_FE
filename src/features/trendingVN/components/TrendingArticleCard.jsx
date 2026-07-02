@@ -1,3 +1,32 @@
+﻿/**
+ * TrendingArticleCard: single article card in the TrendingVN list view (Lens.org style).
+ *
+ * File: features/trendingVN/components/TrendingArticleCard.jsx
+ *
+ * Renders a card with: item index, title, meta line (type, OA, journal, year),
+ * authors (with popover), ISSN, DOI/OpenAlex identifiers, citation counts,
+ * and pill badges (OA, Published, Abstract, Affiliation, Field of Study).
+ * Clicking "Abstract" expands a two-column detail panel.
+ *
+ * AuthorPopover: floating menu attached to each author name click.
+ *   - "View Author Profile" -> navigate(/authors/:authorId)
+ *   - "Filter by this author" -> updateFilters({ search: name })
+ *   - "New search" -> navigate(/trending-vn?search=name)
+ * The popover closes on outside click (50 ms delay to avoid catching the opening click).
+ *
+ * Props:
+ * - article: object             -- Article data from API
+ * - index: number               -- 0-based index within current page
+ * - currentPage: number         -- Page number used for global item numbering
+ * - expandedAbstracts: object   -- Map of article_id -> boolean (expanded state)
+ * - groupingMode: string        -- 'none' | 'simple-expand' | 'extended-expand' | ...
+ * - visibleColumns: object      -- Toggles for doi, authors, article, journal, keywords, issn
+ * - handleDetailClick: function -- Navigate to article detail
+ * - updateFilters: function     -- Update active filters (key-value map)
+ * - handleCopyDoi: function     -- Copy DOI to clipboard
+ * - toggleAbstract: function    -- Toggle expanded abstract for this article_id
+ * - filters: object             -- Current filter state (used to show active-filter state on pills)
+ */
 import React, { useState, useRef, useEffect } from 'react';
 import { Row, Col, Form, Collapse } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
@@ -5,7 +34,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from '../../../shared/utils/toast';
 
-// ── Author popover: shown when clicking an author name ──
+// -- Author popover: shown when clicking an author name --
 function AuthorPopover({ name, authorId, onClose, onFilterByAuthor, onNewSearch, onViewProfile }) {
   const { t } = useTranslation();
   const ref = useRef(null);
@@ -44,7 +73,7 @@ function AuthorPopover({ name, authorId, onClose, onFilterByAuthor, onNewSearch,
   );
 }
 
-// ── Main card component ──
+// -- Main card component --
 export default function TrendingArticleCard({
   article, index, currentPage, expandedAbstracts, groupingMode, visibleColumns,
   handleDetailClick, updateFilters, handleCopyDoi, toggleAbstract, filters
@@ -62,13 +91,13 @@ export default function TrendingArticleCard({
   // First author with known institution (used for Affiliation pill)
   const firstAffiliation = article.authors?.find(a => a.last_known_institution)?.last_known_institution;
 
-  // 1.2.1 — Navigate to author profile page
+  // 1.2.1 -- Navigate to author profile page
   const handleAuthorClick = (e, authorId) => {
     e.stopPropagation();
     if (authorId) navigate(`/authors/${authorId}`);
   };
 
-  // 1.2.2 — Filter by topic_id if available, else fall back to search by name
+  // 1.2.2 -- Filter by topic_id if available, else fall back to search by name
   const handleTopicClick = (e) => {
     e.stopPropagation();
     if (article.topic_id) {
@@ -78,14 +107,14 @@ export default function TrendingArticleCard({
     }
   };
 
-  // 1.2.3 — Toggle Open Access filter
+  // 1.2.3 -- Toggle Open Access filter
   const handleOAFilter = (e) => {
     e.stopPropagation();
     const isAlreadyFiltered = filters?.selectedAccess === 'open';
     updateFilters({ access: isAlreadyFiltered ? 'all' : 'open' });
   };
 
-  // 1.2.4 — Cited-by count with conditional styling
+  // 1.2.4 -- Cited-by count with conditional styling
   const citedByCount = article.semantic_citation_count || article.citations || 0;
   const citedByStyle = citedByCount > 0
     ? { color: 'var(--primary)', fontWeight: 700 }
@@ -95,7 +124,7 @@ export default function TrendingArticleCard({
     <div className="lens-article-card">
       <div className="d-flex align-items-start gap-1">
 
-        {/* ── Checkbox + item index ── */}
+        {/* Checkbox + item index */}
         <div className="d-flex flex-column align-items-center gap-1" style={{ minWidth: '22px' }}>
           <Form.Check type="checkbox" className="lens-checkbox-sm" />
           <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
@@ -103,7 +132,7 @@ export default function TrendingArticleCard({
           </span>
         </div>
 
-        {/* ── Main content ── */}
+        {/* Main content */}
         <div className="flex-grow-1 min-w-0">
 
           {/* Article title */}
@@ -113,7 +142,7 @@ export default function TrendingArticleCard({
             </div>
           )}
 
-          {/* ── Meta line: type | Open Access | journal, year ── */}
+          {/* Meta line: type | Open Access | journal, year */}
           <div className="lens-meta-line">
             <span>{t('journalArticleType')}</span>
 
@@ -150,7 +179,7 @@ export default function TrendingArticleCard({
             )}
           </div>
 
-          {/* ── Authors line (with popover) ── */}
+          {/* Authors line (with popover) */}
           {visibleColumns.authors && (
             <div className="lens-detail-line">
               <strong>{t('authorsLabel')}: </strong>
@@ -200,7 +229,7 @@ export default function TrendingArticleCard({
             </div>
           )}
 
-          {/* ── ISSN line (toggled by checkbox) ── */}
+          {/* ISSN line (toggled by checkbox) */}
           {visibleColumns.issn && article.journal_issn && (
             <div className="lens-detail-line">
               <strong>{t('issnLabel')}: </strong>
@@ -208,7 +237,7 @@ export default function TrendingArticleCard({
             </div>
           )}
 
-          {/* ── Identifiers line: DOI + OpenAlex ID ── */}
+          {/* Identifiers line: DOI + OpenAlex ID */}
           {(article.doi || article.article_id) && (
             <div className="lens-identifiers-line">
               {visibleColumns.doi && article.doi && (
@@ -233,7 +262,7 @@ export default function TrendingArticleCard({
             </div>
           )}
 
-          {/* ── Citation counts line ── */}
+          {/* Citation counts line */}
           <div className="lens-detail-line">
             <strong>{t('referenceCount')}:</strong>{' '}
             <span>{article.reference_count ?? 0}</span>
@@ -258,7 +287,7 @@ export default function TrendingArticleCard({
             )}
           </div>
 
-          {/* ── Pill badges ── */}
+          {/* Pill badges */}
           <div className="lens-pill-row">
             {article.is_open_access && (
               <span
@@ -285,7 +314,7 @@ export default function TrendingArticleCard({
               {t('abstract')}
             </span>
 
-            {/* Affiliation — no institution filter API yet, show coming-soon toast */}
+            {/* Affiliation -- no institution filter API yet, show coming-soon toast */}
             {firstAffiliation && (
               <span
                 className="lens-pill lens-pill-affiliation"
@@ -298,7 +327,7 @@ export default function TrendingArticleCard({
               </span>
             )}
 
-            {/* Field of Study — filter by topic_id if available, else search by name */}
+            {/* Field of Study -- filter by topic_id if available, else search by name */}
             {article.primary_topic && (
               <span
                 className="lens-pill lens-pill-field lens-pill--clickable"
@@ -311,7 +340,7 @@ export default function TrendingArticleCard({
             )}
           </div>
 
-          {/* ── Expanded block (click Abstract) ── */}
+          {/* Expanded block (click Abstract) */}
           <Collapse in={isExpanded}>
             <div className="lens-expanded-box mt-3 p-3 border rounded bg-white" style={{ borderColor: 'var(--border)' }}>
               <Row className="g-3">
@@ -360,7 +389,7 @@ export default function TrendingArticleCard({
                     </Col>
                   </Row>
 
-                  {/* Authors với institution */}
+                  {/* Authors with institution detail */}
                   <div className="expanded-section">
                     <div className="expanded-section-title">{t('authorsLabel')}</div>
                     <div className="d-flex flex-wrap gap-2">

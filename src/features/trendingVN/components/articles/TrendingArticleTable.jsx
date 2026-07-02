@@ -1,21 +1,23 @@
 /**
+ * TrendingArticleTable: sortable, paginated table of trending articles.
+ *
  * File: src/features/trendingVN/components/articles/TrendingArticleTable.jsx
  *
- * Bảng danh sách bài báo xu hướng với các tính năng:
- * - Hiển thị metadata: tiêu đề, tác giả, năm xuất bản, tạp chí, DOI
- * - Sort theo cột (title, publication_year)
- * - Phân trang với ellipsis
- * - Skeleton loading và empty state
+ * Features:
+ * - Displays article metadata: title, authors, publication year, journal, DOI
+ * - Column sort on title and publication_year (toggles asc/desc via onSortChange)
+ * - Pagination with ellipsis (buildPageNumbers)
+ * - Skeleton loading and empty/error states
  *
- * Dữ liệu từ: GET /api/v1/articles
- * Fields dùng: article_id, title, authors, publication_year, journal_name, doi
+ * Data source: GET /api/v1/articles (managed by useArticleList in TrendingVNPage)
+ * Fields used per article: article_id, title, authors, publication_year, journal_name, doi
  */
 
 import { Pagination } from 'react-bootstrap';
 import Icon from '../../../../shared/components/Icon';
 import './TrendingArticleTable.css';
 
-// ─── Hàm format danh sách tác giả ────────────────────────────────────────────
+// Format authors array into "A, B, C +N" string (max 3 names shown)
 function formatAuthors(authors) {
   if (!authors) return '';
   if (!Array.isArray(authors)) return String(authors);
@@ -26,7 +28,7 @@ function formatAuthors(authors) {
   return base;
 }
 
-// ─── Icon sort trên header cột ────────────────────────────────────────────────
+// Column header sort icon: neutral chevrons / active up / active down
 function SortIcon({ field, sortBy, sortOrder }) {
   if (sortBy !== field) {
     return (
@@ -52,7 +54,7 @@ function SortIcon({ field, sortBy, sortOrder }) {
   );
 }
 
-// ─── Component một dòng bài báo ───────────────────────────────────────────────
+// Single article row (sequential number, title + authors, year badge, journal badge, DOI link)
 function ArticleRow({ article, index, currentPage, limit }) {
   const stt = (currentPage - 1) * limit + index + 1;
   const authorsText = formatAuthors(article.authors);
@@ -117,7 +119,7 @@ function ArticleRow({ article, index, currentPage, limit }) {
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// -- Main component --
 export default function TrendingArticleTable({
   articles = [],
   loading = false,
@@ -151,7 +153,7 @@ export default function TrendingArticleTable({
     return pages;
   };
 
-  // ── Skeleton ──────────────────────────────────────────────────────────────
+  // -- Skeleton --
   if (loading) {
     return (
       <div className="tat-skeleton-list">
@@ -162,7 +164,7 @@ export default function TrendingArticleTable({
     );
   }
 
-  // ── Lỗi ──────────────────────────────────────────────────────────────────
+  // -- Error state --
   if (error) {
     return (
       <div
@@ -181,7 +183,7 @@ export default function TrendingArticleTable({
     );
   }
 
-  // ── Empty state ───────────────────────────────────────────────────────────
+  // -- Empty state --
   if (!articles.length) {
     return (
       <div className="tat-empty">
@@ -203,7 +205,7 @@ export default function TrendingArticleTable({
   return (
     <div>
 
-      {/* ── Bảng dữ liệu ──────────────────────────────────────────── */}
+      {/* Article data table */}
       <div style={{ overflowX: 'auto' }}>
         <table className="tat-table">
           <thead>
@@ -235,7 +237,7 @@ export default function TrendingArticleTable({
         </table>
       </div>
 
-      {/* ── Pagination ────────────────────────────────────────────── */}
+      {/* Pagination bar */}
       {pagination.total_pages > 1 && (
         <div className="tat-pagination-bar">
           <span className="tat-pagination-info">

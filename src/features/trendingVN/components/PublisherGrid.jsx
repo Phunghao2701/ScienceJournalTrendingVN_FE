@@ -5,9 +5,9 @@ import api from '../../../shared/services/api';
 import '../trendingVN.css';
 
 /**
- * Ánh xạ tên nhà xuất bản → URL logo SVG.
- * Nếu tên publisher trong DB khớp một key ở đây, logo tương ứng sẽ được dùng.
- * Nếu không khớp, component sẽ dùng fallback từ ui-avatars.com.
+ * Publisher name to SVG logo URL mapping.
+ * If a publisher's display_name matches a key here its logo is used directly.
+ * Otherwise the component falls back to ui-avatars.com.
  */
 const LOGO_MAP = {
   'Nature Research': 'https://upload.wikimedia.org/wikipedia/commons/b/b7/Nature_logo_2017.svg',
@@ -23,10 +23,11 @@ const LOGO_MAP = {
 };
 
 /**
- * PublisherGrid – Hiển thị lưới nhà xuất bản lấy từ API GET /publishers.
+ * PublisherGrid: grid of publishers fetched from GET /publishers (authenticated, uses `api` client).
  *
- * BE trả về: { success, data: [{ publisher_id, display_name, image_url, created_at }], pagination }
- * Không có trường article_count nên component chỉ hiển thị tên và logo.
+ * BE response shape: { success, data: [{ publisher_id, display_name, image_url, created_at }], pagination }
+ * No article_count field -- only name and logo are displayed.
+ * Logo resolution order: DB image_url -> LOGO_MAP -> ui-avatars.com fallback.
  */
 export default function PublisherGrid() {
   const { t, i18n } = useTranslation();
@@ -36,13 +37,13 @@ export default function PublisherGrid() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Gọi endpoint GET /publishers có sẵn trong BE, giới hạn 8 bản ghi
+  // Fetch up to 8 publishers from GET /publishers on mount
   useEffect(() => {
     const fetchPublishers = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        // Sử dụng đúng endpoint GET /publishers (có sẵn trong publisher.route.js)
+        // publisher.route.js exposes GET /publishers
         const response = await api.get('/publishers', { params: { limit: 8 } });
 
         if (response?.data?.success && response?.data?.data) {
@@ -68,20 +69,17 @@ export default function PublisherGrid() {
     fetchPublishers();
   }, [language]);
 
-  /**
-   * Trả về URL logo cho nhà xuất bản.
-   * Ưu tiên dùng image_url từ DB, rồi LOGO_MAP, cuối cùng fallback ui-avatars.
-   */
+  // Resolve logo URL: DB image_url -> LOGO_MAP -> ui-avatars fallback
   const getLogoUrl = (pub) => {
-    // Ưu tiên 1: image_url lưu sẵn trong DB
+    // Priority 1: image_url stored in DB
     if (pub.image_url) return pub.image_url;
-    // Ưu tiên 2: logo từ bản đồ LOGO_MAP
+    // Priority 2: hardcoded logo from LOGO_MAP
     if (LOGO_MAP[pub.display_name]) return LOGO_MAP[pub.display_name];
-    // Fallback: avatar tự sinh từ tên
+    // Priority 3: auto-generated avatar from display_name
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(pub.display_name)}&background=EAF4FF&color=1976D2&size=128&bold=true`;
   };
 
-  // --- Trạng thái Loading ---
+  // -- Loading state --
   if (isLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center py-5 my-5">
@@ -91,7 +89,7 @@ export default function PublisherGrid() {
     );
   }
 
-  // --- Trạng thái Lỗi ---
+  // -- Error state --
   if (error) {
     return (
       <Alert variant="danger" className="my-4">
@@ -100,7 +98,7 @@ export default function PublisherGrid() {
     );
   }
 
-  // --- Trạng thái Trống ---
+  // -- Empty state --
   if (publishers.length === 0) {
     return (
       <div className="text-center p-5 border rounded bg-white shadow-sm my-4">
@@ -109,7 +107,7 @@ export default function PublisherGrid() {
     );
   }
 
-  // --- Render lưới nhà xuất bản ---
+  // -- Render publisher grid --
   return (
     <div className="publisher-section mb-5">
       <h4 className="publisher-section-title font-display text-main mb-4">
@@ -132,7 +130,7 @@ export default function PublisherGrid() {
                   alt={pub.display_name}
                   className="brand-logo-img"
                   onError={(e) => {
-                    // Fallback khi logo không tải được
+                    // Fallback if the logo image fails to load
                     e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(pub.display_name)}&background=F1F5F9&color=64748B&size=128&bold=true`;
                   }}
                 />

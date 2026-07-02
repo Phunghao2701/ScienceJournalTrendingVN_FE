@@ -1,16 +1,17 @@
 /**
+ * TopTopicsList: ranked list of the top research topics by score.
+ *
  * File: src/features/trendingVN/components/topics/TopTopicsList.jsx
  *
- * Component hiển thị danh sách Top Chủ đề Nghiên cứu nổi bật (ranked list).
- * Mỗi dòng gồm: số thứ tự, tên topic, thanh progress và điểm score.
- * Hiển thị tối đa 10 topics, xếp hạng theo score từ cao xuống thấp.
+ * Each row shows: rank number | topic name | progress bar | score value.
+ * Maximum 10 topics rendered; topics array should be pre-sorted score DESC.
  *
- * Dữ liệu từ: GET /api/v1/topics?sort_by=score&sort_order=desc
- * Fields dùng: topic_id, display_name, score
+ * Data source: GET /api/v1/topics?sort_by=score&sort_order=desc
+ * Fields used: topic_id, display_name, score
  *
  * Props:
- * - topics: array    -- Danh sách topic từ API
- * - loading: boolean -- Đang tải dữ liệu
+ * - topics: array    -- Topic list from API (pre-sorted score descending)
+ * - loading: boolean -- Show skeleton while loading
  */
 
 import Icon from '../../../../shared/components/Icon';
@@ -18,7 +19,7 @@ import './TopTopicsList.css';
 
 export default function TopTopicsList({ topics = [], loading = false }) {
 
-  // ── Skeleton khi đang tải ─────────────────────────────────────────────────
+  // -- Skeleton --
   if (loading) {
     return (
       <div className="ttl-skeleton-list">
@@ -29,7 +30,7 @@ export default function TopTopicsList({ topics = [], loading = false }) {
     );
   }
 
-  // ── Empty state ───────────────────────────────────────────────────────────
+  // -- Empty state --
   if (!topics.length) {
     return (
       <div className="ttl-empty">
@@ -39,7 +40,7 @@ export default function TopTopicsList({ topics = [], loading = false }) {
     );
   }
 
-  // ── Chuẩn bị dữ liệu ─────────────────────────────────────────────────────
+  // -- Prepare list data --
   const listData = topics.slice(0, 10);
   const maxScore = Math.max(...listData.map((t) => t.score || 1));
 
@@ -53,15 +54,15 @@ export default function TopTopicsList({ topics = [], loading = false }) {
         return (
           <div key={topic.topic_id ? String(topic.topic_id) : String(i)} className="ttl-row">
 
-            {/* ── Số thứ tự ───────────────────────────────────────── */}
+            {/* Rank number */}
             <span className={rankClass}>{i + 1}</span>
 
-            {/* ── Tên topic ───────────────────────────────────────── */}
+            {/* Topic name */}
             <span className="ttl-name" title={topic.display_name}>
               {topic.display_name || 'Topic ' + String(topic.topic_id)}
             </span>
 
-            {/* ── Thanh progress ──────────────────────────────────── */}
+            {/* Progress bar (width proportional to score relative to max) */}
             <div className="ttl-bar-wrapper">
               <div
                 className="ttl-bar-fill"
@@ -69,7 +70,7 @@ export default function TopTopicsList({ topics = [], loading = false }) {
               />
             </div>
 
-            {/* ── Điểm score ──────────────────────────────────────── */}
+            {/* Score value */}
             <span className="ttl-score">
               {score ? Number(score).toFixed(1) : '—'}
             </span>

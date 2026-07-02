@@ -1,12 +1,13 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * Author API: endpoints for author profiles, articles, subject-area breakdowns, and global leaderboard.
  *
- * File: features\author\api\author.api.js
+ * File: src/features/author/api/author.api.js
  */
 import api from '../../../shared/services/api';
 
 /**
- * Gọi API lấy danh sách các subject area học thuật.
+ * Fetch the list of academic subject areas.
+ * @param {Object} params - Optional query params (default limit: 100)
  * @returns {Promise} Axios promise
  */
 export const getSubjectAreasApi = (params = {}) => {
@@ -14,8 +15,8 @@ export const getSubjectAreasApi = (params = {}) => {
 };
 
 /**
- * Gọi API lấy phân tích phần trăm đóng góp theo lĩnh vực nghiên cứu của tác giả
- * @param {number|string} id - ID của tác giả
+ * Fetch subject-area contribution breakdown for an author (percentages per field).
+ * @param {number|string} id - Author ID
  * @returns {Promise} Axios promise
  */
 export const getAuthorAreasBreakdownApi = (id) => {
@@ -23,8 +24,9 @@ export const getAuthorAreasBreakdownApi = (id) => {
 };
 
 /**
- * Gọi API lấy danh sách các bài báo khoa học đã xuất bản của tác giả
- * @param {number|string} id - ID của tác giả
+ * Fetch the list of published articles for an author.
+ * @param {number|string} id - Author ID
+ * @param {Object} params - Optional pagination/filter params
  * @returns {Promise} Axios promise
  */
 export const getAuthorArticlesApi = (id, params = {}) => {
@@ -32,7 +34,8 @@ export const getAuthorArticlesApi = (id, params = {}) => {
 };
 
 /**
- * Gọi API lấy danh sách xếp hạng tác giả toàn cầu (Leaderboard)
+ * Fetch the global author leaderboard.
+ * @param {Object} params - Optional filter params (limit, subject_area, etc.)
  * @returns {Promise} Axios promise
  */
 export const getAuthorLeaderboardApi = (params = {}) => {
@@ -40,8 +43,8 @@ export const getAuthorLeaderboardApi = (params = {}) => {
 };
 
 /**
- * Gọi API lấy danh sách tác giả đăng ký trong hệ thống (Hỗ trợ phân trang, lọc và tìm kiếm)
- * @param {Object} params - Các tham số tìm kiếm lọc (page, limit, search, sort, subject_area, country)
+ * Fetch the list of registered authors with pagination, filtering, and search.
+ * @param {Object} params - Query params (page, limit, search, sort, subject_area, country)
  * @returns {Promise} Axios promise
  */
 export const getAuthorsApi = (params) => {
@@ -49,8 +52,8 @@ export const getAuthorsApi = (params) => {
 };
 
 /**
- * Gọi API lấy thông tin hồ sơ học thuật chi tiết của một tác giả
- * @param {number|string} id - ID của tác giả
+ * Fetch full academic profile for a single author.
+ * @param {number|string} id - Author ID
  * @returns {Promise} Axios promise
  */
 export const getAuthorDetailApi = (id) => {
@@ -58,8 +61,8 @@ export const getAuthorDetailApi = (id) => {
 };
 
 /**
- * Tạo mới một tác giả
- * @param {Object} data - Dữ liệu tác giả (display_name)
+ * Create a new author record.
+ * @param {Object} data - Author data (display_name, etc.)
  * @returns {Promise} Axios promise
  */
 export const createAuthorApi = (data) => {

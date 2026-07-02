@@ -1,3 +1,26 @@
+/**
+ * FilterDrawer: left-drawer filter panel for TrendingVNPage (inside the expanded sidebar).
+ *
+ * File: features/trendingVN/components/filter-drawer/FilterDrawer.jsx
+ *
+ * Contains 6 collapsible FilterGroup sections:
+ *   1. Date Range    -- year_from input (to_year is tracked locally; BE only supports single year)
+ *   2. Open Access   -- checkbox toggle for is_open_access
+ *   3. Subject Area  -- dropdown from getSubjectAreasApi (fetched here, not in hook)
+ *   4. Journal       -- typeahead via JournalSearchFilter
+ *   5. Topic         -- click-list from topicOptions prop (loaded by useTrendingFilters)
+ *   6. Sort          -- radio group for sortBy-sortOrder combination
+ *
+ * NOTE: Subject Area filter maps to the `topic` param (not `subject_area_id`) because
+ * the /articles endpoint does not expose a subject_area_id filter yet (Phase 3 TODO).
+ *
+ * Props:
+ * - filters: object           -- Current filter state from useArticleList
+ * - updateFilters: function   -- Callback(partialUpdate) to apply new filter values
+ * - clearFilters: function    -- Callback to reset all filters
+ * - journalOptions: array     -- Journal list from useTrendingFilters
+ * - topicOptions: array       -- Topic list from useTrendingFilters
+ */
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@iconify/react';

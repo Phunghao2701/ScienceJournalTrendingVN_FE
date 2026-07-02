@@ -1,15 +1,21 @@
 /**
+ * KeywordMomentumCloud: horizontal bar chart showing top 7 keywords by citation momentum.
+ *
  * File: src/features/trendingVN/components/keywords/KeywordMomentumCloud.jsx
  *
- * Horizontal bar chart kieu bieu do thong ke - Top 7 Keywords.
- * Co truc X voi scale, so hien thi o dau bar, bar day.
- * Hien tai dung index fallback khi article_count = 0.
- * Khi BE co total_citations -> tu dong dung gia tri thuc.
+ * Despite the name this renders a statistical bar chart, not a word cloud.
+ * Each bar has an X-axis with "nice" tick values (1/2/5 x 10^n scale) and
+ * a numeric label at the bar tip when real data is available.
  *
- * Data shape: { keyword_id, display_name, article_count, total_citations? }
+ * Value priority (see getValues):
+ *   1. total_citations  -- used when any item has a non-zero value
+ *   2. article_count    -- fallback when no citation data
+ *   3. index weight     -- last resort when all counts are zero (preserves BE sort order)
+ *
+ * Data shape per item: { keyword_id, display_name, article_count, total_citations? }
  *
  * Props:
- * - keywords: array -- Danh sach keyword tu API
+ * - keywords: array -- Keyword list from useTrending hook
  */
 
 import { useTranslation } from 'react-i18next';
@@ -17,9 +23,9 @@ import './KeywordMomentumCloud.css';
 
 const MAX_KEYWORDS = 7;
 
-// ── Lay gia tri de scale bar ──────────────────────────────────────────────────
+// Return an array of numeric values used to scale bars (one per keyword entry)
 function getValues(keywords) {
-  // Uu tien total_citations (endpoint moi trending/keywords)
+  // Prefer total_citations (new trending/keywords endpoint)
   const hasCitations = keywords.some((kw) => (kw.total_citations || 0) > 0);
   if (hasCitations) return keywords.map((kw) => kw.total_citations || 0);
 
@@ -27,11 +33,11 @@ function getValues(keywords) {
   const hasCount = keywords.some((kw) => (kw.article_count || 0) > 0);
   if (hasCount) return keywords.map((kw) => kw.article_count || 0);
 
-  // Fallback cuoi: index weight (thu tu BE sap xep)
+  // Last resort: use index weight so bars are non-zero (preserves BE sort order)
   return keywords.map((_, i) => MAX_KEYWORDS - i);
 }
 
-// ── Format so tren dau bar ────────────────────────────────────────────────────
+// Format number for bar tip labels (e.g. 1500000 -> "1.5M", 2300 -> "2.3K")
 function fmtVal(n) {
   if (!n || n === 0) return '';
   if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
@@ -39,7 +45,7 @@ function fmtVal(n) {
   return String(n);
 }
 
-// ── Tinh "nice" step (1/2/5 x 10^n) de tick la so tron nhu 200K, 500K ────────
+// Round a rough step to a "nice" value (1/2/5 x 10^n) so X-axis ticks are round numbers
 function getNiceStep(roughStep) {
   const magnitude   = Math.pow(10, Math.floor(Math.log10(roughStep)));
   const residual     = roughStep / magnitude;
@@ -51,7 +57,7 @@ function getNiceStep(roughStep) {
   return niceResidual * magnitude;
 }
 
-// ── Tinh tick labels cho truc X (so tron, axisMax luon > maxVal) ─────────────
+// Compute X-axis tick values; axisMax is always >= maxVal so bars never exceed the axis
 function getXTicks(maxVal) {
   if (maxVal <= 0) return [0];
   const step = getNiceStep(maxVal / 4) || 1;
@@ -64,7 +70,7 @@ function getXTicks(maxVal) {
 export default function KeywordMomentumCloud({ keywords = [] }) {
   const { t } = useTranslation();
 
-  // ── Empty state ───────────────────────────────────────────────────────────
+  // -- Empty state --
   if (!keywords.length) {
     return (
       <div className="kmc-empty">
@@ -73,7 +79,7 @@ export default function KeywordMomentumCloud({ keywords = [] }) {
     );
   }
 
-  // ── Sap xep + lay top 7 ──────────────────────────────────────────────────
+  // Sort by best available value and take top 7
   const sorted = [...keywords]
     .sort((a, b) => {
       const bv = b.total_citations || b.article_count || 0;
@@ -91,10 +97,10 @@ export default function KeywordMomentumCloud({ keywords = [] }) {
   return (
     <div className="kmc-wrapper">
 
-      {/* ── Chart area ───────────────────────────────────────────── */}
+      {/* Chart area */}
       <div className="kmc-chart">
 
-        {/* ── Cac dong bar ─────────────────────────────────────── */}
+        {/* Bar rows */}
         <div className="kmc-bars">
           {sorted.map((kw, i) => {
             const val    = values[i];
@@ -104,12 +110,12 @@ export default function KeywordMomentumCloud({ keywords = [] }) {
             return (
               <div key={kw.keyword_id || i} className="kmc-bar-row">
 
-                {/* Ten keyword */}
+                {/* Keyword label */}
                 <div className="kmc-bar-label" title={kw.display_name}>
                   {kw.display_name}
                 </div>
 
-                {/* Bar + so o dau */}
+                {/* Bar fill + value label at tip */}
                 <div className="kmc-bar-track">
                   <div
                     className="kmc-bar-fill"
@@ -126,7 +132,7 @@ export default function KeywordMomentumCloud({ keywords = [] }) {
           })}
         </div>
 
-        {/* ── Truc X ───────────────────────────────────────────── */}
+        {/* X-axis tick marks */}
         <div className="kmc-x-axis">
           {xTicks.map((tick) => (
             <span
@@ -141,7 +147,7 @@ export default function KeywordMomentumCloud({ keywords = [] }) {
 
       </div>
 
-      {/* ── Footer ───────────────────────────────────────────────── */}
+      {/* Footer: total keyword count */}
       <div className="kmc-footer">
         <span className="kmc-footer-label">{t('totalKeywordsLabel')}</span>
         <span className="kmc-footer-value">{keywords.length.toLocaleString('en-US')}</span>

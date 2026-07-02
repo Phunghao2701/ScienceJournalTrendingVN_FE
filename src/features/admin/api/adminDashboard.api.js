@@ -1,3 +1,8 @@
+/**
+ * Admin Dashboard API: endpoints for summary stats, publication trends, recent activities, and volume/issue status.
+ *
+ * File: src/features/admin/api/adminDashboard.api.js
+ */
 import api from '../../../shared/services/api';
 
 export const getAdminDashboardSummary = () => {

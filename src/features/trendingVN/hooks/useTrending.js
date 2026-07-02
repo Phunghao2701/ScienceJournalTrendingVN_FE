@@ -1,16 +1,23 @@
 /**
+ * Aggregator hook managing all data-fetch state for the TrendingVN page.
+ *
  * File: src/features/trendingVN/hooks/useTrending.js
  *
- * Custom hook quản lý toàn bộ state và logic fetch dữ liệu
- * cho trang Theo dõi Xu hướng Nghiên cứu (TrendingVN).
+ * Covers: trending articles (paginated, searchable), topics, journals (for chart),
+ * author/university rankings, filter dropdown options, keywords, and stat card totals.
+ * All API calls go through trending.api.js which uses httpClient (not api.js).
  *
- * Bao gồm:
- * - Danh sách bài báo xu hướng (có phân trang, tìm kiếm, sắp xếp)
- * - Danh sách chủ đề nổi bật (Topics)
- * - Danh sách tạp chí (Journals) cho chart và dropdown
- * - Bảng xếp hạng tác giả (Authors Leaderboard)
- * - Dữ liệu dropdown bộ lọc (Subject Areas, Subject Categories)
- * - Stat cards tổng quan
+ * Filter model: two-tier -- `draftFilters` (in-progress edits) vs `appliedFilters`
+ * (values actually sent to the API). Apply is explicit via handleApplyFilters().
+ *
+ * NOTE: On initial mount, fetchArticles is called TWICE -- once in the
+ * first useEffect (explicitly with DEFAULT_FILTERS) and once in the second useEffect
+ * (which also runs on mount because appliedFilters and currentPage are at defaults).
+ * This is a known double-fetch on startup.
+ *
+ * Consumed by: TrendingPage.jsx, TrendingVNPage.jsx.
+ * Note: useTrendingFilters.js is a separate hook for FilterDrawer -- it uses
+ * different API files (journal/api, topic/api) and React Query.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -30,7 +37,7 @@ import {
   getKeywordsApi,
 } from '../api/trending.api';
 
-// ─── Giá trị mặc định cho bộ lọc ──────────────────────────────────────────
+// --- Default filter values (also used by handleResetFilters) ---
 const DEFAULT_FILTERS = {
   search: '',
   subject_area_id: '',
@@ -47,55 +54,55 @@ const DEFAULT_PAGINATION = {
 };
 
 export default function useTrending() {
-  // ─── State: Bài báo xu hướng ─────────────────────────────────────────────
+  // --- State: Trending articles ---
   const [articles, setArticles] = useState([]);
   const [articlesLoading, setArticlesLoading] = useState(false);
   const [articlesError, setArticlesError] = useState(null);
   const [articlesPagination, setArticlesPagination] = useState(DEFAULT_PAGINATION);
 
-  // ─── State: Chủ đề nghiên cứu nổi bật ───────────────────────────────────
+  // --- State: Featured research topics ---
   const [topics, setTopics] = useState([]);
   const [topicsLoading, setTopicsLoading] = useState(false);
   const [topicsError, setTopicsError] = useState(null);
 
-  // ─── State: Tạp chí (dùng cho bar chart Top Journals) ───────────────────
+  // --- State: Journals (used for Top Journals bar chart) ---
   const [journals, setJournals] = useState([]);
   const [journalsLoading, setJournalsLoading] = useState(false);
   const [journalsError, setJournalsError] = useState(null);
 
-  // ─── State: Bảng xếp hạng tác giả ───────────────────────────────────────
+  // --- State: Author leaderboard ---
   const [authors, setAuthors] = useState([]);
   const [authorsLoading, setAuthorsLoading] = useState(false);
   const [authorsError, setAuthorsError] = useState(null);
 
-  // ─── State: Stat Cards ───────────────────────────────────────────────────
+  // --- State: Stat card totals ---
   const [stats, setStats] = useState({
     total_articles: 0,
     total_topics: 0,
     total_journals: 0,
-    total_citations: null,   // can API rieng — hien thi null neu chua co
-    highest_growth: null,    // can API rieng — hien thi null neu chua co
+    total_citations: null,   // needs a dedicated endpoint -- displayed as null until available
+    highest_growth: null,    // needs a dedicated endpoint -- displayed as null until available
   });
 
-  // ─── State: Dropdown bộ lọc ──────────────────────────────────────────────
+  // --- State: Filter dropdown options ---
   const [subjectAreas, setSubjectAreas] = useState([]);
   const [subjectCategories, setSubjectCategories] = useState([]);
   const [filtersLoading, setFiltersLoading] = useState(false);
 
-  // ─── State: Keywords & Universities ──────────────────────────────────────
+  // --- State: Keywords and universities ---
   const [keywords, setKeywords] = useState([]);
   const [universities, setUniversities] = useState([]);
 
-  // ─── State: Trending Articles (dung cho treemap) ─────────────────────────
+  // --- State: Trending articles list (used for topics treemap) ---
   const [trendingArticles, setTrendingArticles] = useState([]);
   const [trendingArticlesLoading, setTrendingArticlesLoading] = useState(false);
 
-  // ─── State: Bộ lọc draft vs applied ─────────────────────────────────────
+  // --- State: Two-tier filters (draft = editing, applied = sent to API) ---
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ─── Fetch: Danh sách bài báo ─────────────────────────────────────────────
+  // --- Fetch: Paginated article list ---
   const fetchArticles = useCallback(async (filters = {}, page = 1) => {
     setArticlesLoading(true);
     setArticlesError(null);
@@ -133,7 +140,7 @@ export default function useTrending() {
     }
   }, []);
 
-  // ─── Fetch: Danh sách chủ đề nổi bật ────────────────────────────────────
+  // --- Fetch: Featured research topics ---
   const fetchTopics = useCallback(async (filters = {}) => {
     setTopicsLoading(true);
     setTopicsError(null);
@@ -150,7 +157,7 @@ export default function useTrending() {
       const res = await getTopicsApi(params);
       const resData = res?.data?.data || {};
 
-      // Topics API trả về data.items và data.total (không có pagination object)
+      // Topics API returns data.items + data.total directly (no pagination wrapper object).
       setTopics(resData.items || []);
       setStats((prev) => ({
         ...prev,
@@ -164,14 +171,13 @@ export default function useTrending() {
     }
   }, []);
 
-  // ─── Fetch: Danh sách tạp chí ────────────────────────────────────────────
-  // ─── Fetch: Top Journals theo trich dan (trending-vn endpoint) ──────────
+  // --- Fetch: Top journals by citation count (trending-vn endpoint) ---
   const fetchJournals = useCallback(async () => {
     setJournalsLoading(true);
     setJournalsError(null);
     try {
       const res = await getTopJournalsTrendingApi({ years: 2, limit: 7 });
-      // BE tra ve: { success, data: { window: {...}, items: [...] } }
+      // BE returns: { success, data: { window: {...}, items: [...] } }
       const resData = res?.data?.data || res?.data || {};
       setJournals(resData.items || []);
     } catch (err) {
@@ -182,9 +188,8 @@ export default function useTrending() {
     }
   }, []);
 
-  // ─── Fetch: Bảng xếp hạng tác giả ───────────────────────────────────────
+  // --- Fetch: All-time author ranking (h_index + cited_by_count) ---
   // Endpoint: GET /api/v1/trending-vn/ranking/authors
-  // Xep hang theo h_index + cited_by_count toan bo lich su
   // Fields: author_id, display_name, last_known_institution,
   //         h_index, cited_by_count, works_count, local_articles_count
   const fetchAuthors = useCallback(async () => {
@@ -203,9 +208,9 @@ export default function useTrending() {
     }
   }, []);
 
-  // ─── Fetch: Top Universities theo ranking toan bo lich su ────────────────
+  // --- Fetch: All-time university ranking (no year restriction) ---
   // Endpoint: GET /api/v1/trending-vn/ranking/universities
-  // Khong gioi han nam, join truc tiep Article → Author → institution
+  // Joined directly: Article -> Author -> institution
   // Fields: institution_name, institution_id, total_citations, total_articles_count
   const fetchUniversities = useCallback(async () => {
     try {
@@ -236,10 +241,10 @@ export default function useTrending() {
     }
   }, []);
 
-  // ─── Fetch: Keywords theo trending (topic hot + article_count + citations) ─
-  // Endpoint: GET /api/v1/trending-vn/trending/keywords
+  // --- Fetch: Trending keywords (hot topics + article_count + citations) ---
+  // Primary endpoint: GET /api/v1/trending-vn/trending/keywords
   // Fields: keyword_id, display_name, article_count, total_citations
-  // Fallback: GET /api/v1/keywords neu endpoint moi chua co
+  // Fallback: GET /api/v1/keywords if the trending endpoint returns empty items
   const fetchKeywords = useCallback(async () => {
     try {
       const res = await getTrendingKeywordsApi({ limit: 7, hot_limit: 10 });
@@ -249,7 +254,7 @@ export default function useTrending() {
         setKeywords(items);
         return;
       }
-      // Fallback neu items rong
+      // Force fallback if trending endpoint returns no items.
       throw new Error('empty');
     } catch {
       try {
@@ -262,10 +267,10 @@ export default function useTrending() {
     }
   }, []);
 
-  // ─── Fetch: Trending Articles cho treemap ────────────────────────────────
+  // --- Fetch: Trending articles for the topics treemap ---
   // Endpoint: GET /api/v1/trending-vn/trending/articles
-  // Xep hang theo trending_score = citation*3 + keyword_match*2 + topic_match*2
-  //                               + citing_works*2 + references*0.5
+  // trending_score formula: citation*3 + keyword_match*2 + topic_match*2
+  //                         + citing_works*2 + references*0.5
   // Fields: article_id, title, citation_count, trending_score, journal_name
   const fetchTrendingArticles = useCallback(async () => {
     setTrendingArticlesLoading(true);
@@ -280,7 +285,7 @@ export default function useTrending() {
     }
   }, []);
 
-  // ─── Fetch: Dropdown bộ lọc ──────────────────────────────────────────────
+  // --- Fetch: Filter dropdown options (subject areas + categories) ---
   const fetchFilterOptions = useCallback(async () => {
     setFiltersLoading(true);
     try {
@@ -289,7 +294,7 @@ export default function useTrending() {
         getSubjectCategoriesApi({ limit: 100 }),
       ]);
 
-      // Subject Areas API trả về data là array trực tiếp
+      // Subject Areas API returns data as a direct array (not wrapped in items).
       const areasData = areasRes?.data?.data || [];
       const categoriesData = categoriesRes?.data?.data || {};
 
@@ -302,7 +307,9 @@ export default function useTrending() {
     }
   }, []);
 
-  // ─── Effect: Load dữ liệu lần đầu khi mount ──────────────────────────────
+  // --- Effect: Initial data load on mount ---
+  // NOTE: fetchArticles is also called by the second effect below (appliedFilters/currentPage deps),
+  // so articles are fetched twice on the first render. See file header for details.
   useEffect(() => {
     fetchFilterOptions();
     fetchTopics();
@@ -314,36 +321,36 @@ export default function useTrending() {
     fetchArticles(DEFAULT_FILTERS, 1);
   }, [fetchFilterOptions, fetchTopics, fetchJournals, fetchAuthors, fetchUniversities, fetchKeywords, fetchTrendingArticles, fetchArticles]);
 
-  // ─── Effect: Refetch articles khi appliedFilters hoặc currentPage thay đổi
+  // --- Effect: Refetch articles when appliedFilters or currentPage changes ---
   useEffect(() => {
     fetchArticles(appliedFilters, currentPage);
   }, [appliedFilters, currentPage, fetchArticles]);
 
-  // ─── Handler: Cập nhật draft filter ──────────────────────────────────────
+  // --- Handler: Update a single draft filter key ---
   const handleDraftFilterChange = useCallback((key, value) => {
     setDraftFilters((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  // ─── Handler: Áp dụng bộ lọc ─────────────────────────────────────────────
+  // --- Handler: Promote draft filters to applied and reset to page 1 ---
   const handleApplyFilters = useCallback(() => {
     setCurrentPage(1);
     setAppliedFilters({ ...draftFilters });
   }, [draftFilters]);
 
-  // ─── Handler: Reset bộ lọc ───────────────────────────────────────────────
+  // --- Handler: Reset both draft and applied filters to defaults ---
   const handleResetFilters = useCallback(() => {
     setDraftFilters(DEFAULT_FILTERS);
     setAppliedFilters(DEFAULT_FILTERS);
     setCurrentPage(1);
   }, []);
 
-  // ─── Handler: Chuyển trang bài báo ───────────────────────────────────────
+  // --- Handler: Navigate to a different article page and scroll to top ---
   const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // ─── Handler: Thay đổi sắp xếp ───────────────────────────────────────────
+  // --- Handler: Change sort field/order and apply immediately (bypasses draft) ---
   const handleSortChange = useCallback((sortBy, sortOrder = 'desc') => {
     setAppliedFilters((prev) => ({ ...prev, sortBy, sortOrder }));
     setDraftFilters((prev) => ({ ...prev, sortBy, sortOrder }));
@@ -351,7 +358,7 @@ export default function useTrending() {
   }, []);
 
   return {
-    // Bài báo
+    // Articles
     articles,
     articlesLoading,
     articlesError,
@@ -367,7 +374,7 @@ export default function useTrending() {
     journalsLoading,
     journalsError,
 
-    // Authors & Universities
+    // Authors and universities
     authors,
     authorsLoading,
     authorsError,
@@ -376,19 +383,19 @@ export default function useTrending() {
     // Keywords
     keywords,
 
-    // Trending Articles (cho treemap)
+    // Trending articles for treemap
     trendingArticles,
     trendingArticlesLoading,
 
     // Stat cards
     stats,
 
-    // Dropdown options
+    // Filter dropdown options
     subjectAreas,
     subjectCategories,
     filtersLoading,
 
-    // Bộ lọc
+    // Active filters and pagination
     draftFilters,
     appliedFilters,
     currentPage,

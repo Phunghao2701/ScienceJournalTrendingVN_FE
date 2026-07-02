@@ -1,3 +1,8 @@
+/**
+ * Admin Users API: endpoints for listing, fetching, creating, and updating admin-managed user accounts.
+ *
+ * File: src/features/admin/api/adminUsers.api.js
+ */
 import api from '../../../shared/services/api';
 
 export const getAdminUsers = (params = {}) => {

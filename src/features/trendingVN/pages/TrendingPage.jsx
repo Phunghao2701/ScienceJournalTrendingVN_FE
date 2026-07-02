@@ -1,24 +1,26 @@
-/**
+﻿/**
+ * TrendingPage: standalone research trend analysis page (original implementation).
+ *
  * File: src/features/trendingVN/pages/TrendingPage.jsx
  *
- * Trang chính Theo dõi Xu hướng Nghiên cứu (TrendingVN).
- * Dành cho Researcher, Lecturer/Student phân tích xu hướng
- * công bố học thuật: top journals, top topics, top authors,
- * treemap phân bố chủ đề, trend momentum và danh sách bài báo.
+ * NOTE: This page now also lives as the "Analysis" tab inside TrendingVNPage
+ * (via TrendingAnalysisTab.jsx). TrendingPage itself is the /trending route.
+ *
+ * Audience: Researchers and Lecturers/Students analyzing academic publication trends:
+ *   top journals, top topics, top authors, topic treemap, trend momentum, article list.
  *
  * Layout:
- * 1. Header navbar chung
- * 2. Sidebar filter bên trái
- * 3. Main content:
- *    - Page Header
- *    - Stat Cards (4 số tổng quan)
- *    - Filter Bar
- *    - Row 1: Top Journals + Top Topics
- *    - Row 2: Topics Treemap + Top Authors
- *    - Row 3: Research Trend Momentum (4 cards)
- *    - Articles Table
+ *   1. Header navbar
+ *   2. LensFilterSidebar (left, icon rail + expandable drawer)
+ *   3. Main content:
+ *      - Page Header with breadcrumb
+ *      - 4 Stat Cards
+ *      - Filter Bar + View Switcher
+ *      - Analysis view: Row 1 (Journals + Universities), Row 2 (Treemap + Authors),
+ *                       Row 3 (Keyword Cloud + Trend Momentum)
+ *      - Table/List view: Article Table
  *
- * Màu sắc: CSS tokens --t-* theo Design System lens.org (blue #1976D2)
+ * CSS: uses --t-* tokens (defined in TrendingPage.css, Lens.org blue #1976D2)
  */
 
 import { useState } from 'react';
@@ -51,10 +53,10 @@ export default function TrendingPage() {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
 
-  // ── State: sidebar tab dang mo ('filters' | 'profile' | 'info' | null) ──
+  // Active sidebar tab: 'filters' | 'profile' | 'info' | null (null = drawer closed)
   const [activeTab, setActiveTab] = useState(null);
 
-  // ── State: view dang hien thi ('table' | 'list' | 'analysis') ───────────
+  // Active content view: 'analysis' (charts) | 'table' | 'list'
   const [activeView, setActiveView] = useState('analysis');
 
   const {
@@ -90,13 +92,13 @@ export default function TrendingPage() {
     <div className="trending-root">
       <div className="trending-page-wrapper">
 
-        {/* ── Header navbar chung ────────────────────────────────── */}
+        {/* Shared header navbar */}
         <Header />
 
-        {/* ── Layout: sidebar trai + main content ───────────────── */}
+        {/* Page layout: left sidebar + main content */}
         <div className="trending-layout">
 
-          {/* ── Sidebar trai kieu Lens.org ─────────────────────── */}
+          {/* Lens.org-style left sidebar */}
           <LensFilterSidebar
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -109,10 +111,10 @@ export default function TrendingPage() {
             onToggleCustomise={() => {}}
           />
 
-          {/* ── Main content ────────────────────────────────────── */}
+          {/* Main content area */}
           <div className="trending-main-content">
 
-          {/* ── Page Header ───────────────────────────────────── */}
+          {/* Page header: breadcrumb + title + subtitle */}
           <div className="trending-page-header">
             <Container fluid="xl">
 
@@ -124,7 +126,7 @@ export default function TrendingPage() {
                 onHomeClick={() => navigate('/')}
               />
 
-              {/* Tieu de + mo ta */}
+              {/* Title and subtitle */}
               <h1 className="trending-page-title mb-1">{t('trendingPageTitle')}</h1>
               <p className="trending-page-subtitle">{t('trendingPageSubtitle')}</p>
 
@@ -133,7 +135,7 @@ export default function TrendingPage() {
 
           <Container fluid="xl">
 
-            {/* ── Stat Cards (4 card ngang) ────────────────────── */}
+            {/* 4 summary stat cards */}
             <Row className="g-3 mb-4">
               <Col xs={12} sm={6} lg={3}>
                 <TrendingStatCard
@@ -176,7 +178,7 @@ export default function TrendingPage() {
               </Col>
             </Row>
 
-            {/* ── Filter Bar + View Switcher ────────────────────── */}
+            {/* Filter Bar + View Switcher */}
             <TrendingFilterBar
               draftFilters={draftFilters}
               subjectAreas={subjectAreas}
@@ -192,10 +194,10 @@ export default function TrendingPage() {
               onViewChange={setActiveView}
             />
 
-            {/* ══ ANALYSIS VIEW: charts, treemap, keywords, momentum ═══ */}
+            {/* === ANALYSIS VIEW: charts, treemap, keywords, momentum === */}
             {activeView === 'analysis' && (
               <>
-                {/* ── Row 1: Top Journals + Top Universities ──────── */}
+                {/* Row 1: Top Journals + Top Universities */}
                 <Row className="g-3 mb-4">
                   <Col xs={12} lg={6}>
                     <div className="trending-section-card">
@@ -225,7 +227,7 @@ export default function TrendingPage() {
                   </Col>
                 </Row>
 
-                {/* ── Row 2: Topics Treemap + Top Authors ─────────── */}
+                {/* Row 2: Topics Treemap + Top Authors */}
                 <Row className="g-3 mb-4">
                   <Col xs={12} lg={6}>
                     <div className="trending-section-card">
@@ -248,7 +250,7 @@ export default function TrendingPage() {
                   </Col>
                 </Row>
 
-                {/* ── Row 3: Keyword Cloud + Trend Momentum ──────── */}
+                {/* Row 3: Keyword Cloud + Trend Momentum */}
                 <Row className="g-3 mb-4">
                   <Col xs={12} lg={5}>
                     <div className="trending-section-card">
@@ -270,7 +272,7 @@ export default function TrendingPage() {
               </>
             )}
 
-            {/* ══ TABLE / LIST VIEW: article table ════════════════ */}
+            {/* === TABLE / LIST VIEW: article table === */}
             {(activeView === 'table' || activeView === 'list') && (
               <div className="trending-section-card mb-4">
                 <div className="d-flex justify-content-between align-items-center">

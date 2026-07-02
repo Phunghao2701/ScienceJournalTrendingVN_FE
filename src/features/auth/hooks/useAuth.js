@@ -1,7 +1,15 @@
 /**
- * Hook auth dùng chung cho các màn hình đăng nhập, đăng ký và profile.
+ * Primary auth hook for login, register, profile, and logout flows.
  *
  * File: features/auth/hooks/useAuth.js
+ *
+ * Architecture: delegates all API calls to authService.js; reads/writes
+ * auth state via authStore (Zustand) and display email via userStore.
+ * This is the current auth implementation. AuthContext.jsx (features/auth/contexts/)
+ * is an older parallel implementation -- do not use it for new code.
+ *
+ * Consumed by: LoginForm, RegisterForm, ProfilePage, Header, and any component
+ * that needs auth state without importing Zustand stores directly.
  */
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -20,16 +28,16 @@ import {
 } from '../services/authService';
 
 /**
- * Gom toàn bộ thao tác auth vào một hook duy nhất.
+ * Consolidates all auth operations into a single hook.
  *
- * Hook này đọc/ghi state qua Zustand, còn việc gọi API được tách sang
- * `authService` để component page không phải biết chi tiết endpoint.
+ * Reads/writes state via Zustand (authStore + userStore); API calls are
+ * delegated to authService.js so page components are shielded from endpoint details.
  */
 export default function useAuth() {
   const navigate = useNavigate();
   const [googleRedirect, setGoogleRedirect] = useState('/');
 
-  // State auth chính lấy từ Zustand store.
+  // Primary auth state from Zustand. These are the source-of-truth values for gates and UI.
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -41,13 +49,13 @@ export default function useAuth() {
   const setError = useAuthStore((state) => state.setError);
   const clearAuthState = useAuthStore((state) => state.logout);
 
-  // Store phụ dùng để hiển thị email trên header/landing.
+  // userStore holds only the display email for header/landing; kept separate from authStore.
   const setEmail = useUserStore((state) => state.setEmail);
   const clearEmail = useUserStore((state) => state.clearEmail);
 
   /**
-   * Lấy profile người dùng hiện tại từ backend.
-   * Dùng sau login hoặc khi cần đồng bộ lại thông tin cá nhân.
+   * Fetches the current user's profile from the backend and syncs both stores.
+   * Call after login or when profile data may have changed.
    */
   const fetchProfile = useCallback(async () => {
     setLoading(true);
@@ -68,8 +76,8 @@ export default function useAuth() {
   }, [setEmail, setError, setLoading, setUser]);
 
   /**
-   * Cấu hình Google OAuth dạng auth-code.
-   * Sau khi Google trả code, FE gửi code đó về BE để BE xác thực và trả token/user.
+   * Configures Google OAuth in auth-code flow.
+   * After Google returns the code, FE sends it to BE for validation; BE returns token/user.
    */
   const googleLogin = useGoogleLogin({
     flow: 'auth-code',
@@ -102,8 +110,8 @@ export default function useAuth() {
   });
 
   /**
-   * Đăng nhập bằng email/password.
-   * `remember` quyết định BE có set refresh-token cookie dài hạn hay không.
+   * Logs in with email/password credentials.
+   * `remember` tells the BE whether to set a long-lived refresh-token cookie.
    */
   const login = useCallback(async (email, password, remember = true, onSuccess) => {
     setLoading(true);
@@ -129,7 +137,7 @@ export default function useAuth() {
   }, [loginSuccess, setEmail, setError, setLoading]);
 
   /**
-   * Mở popup/redirect Google OAuth và ghi nhớ trang cần quay lại sau login.
+   * Opens the Google OAuth popup/redirect and saves the post-login target route.
    */
   const loginWithGoogle = useCallback((redirectTo = '/') => {
     setGoogleRedirect(redirectTo);
@@ -137,8 +145,8 @@ export default function useAuth() {
   }, [googleLogin]);
 
   /**
-   * Đăng ký tài khoản mới.
-   * BE sẽ gửi email xác thực nếu tạo tài khoản thành công.
+   * Registers a new user account.
+   * On success, BE sends a verification email; account is inactive until verified.
    */
   const register = useCallback(async (data) => {
     setLoading(true);
@@ -156,7 +164,9 @@ export default function useAuth() {
   }, [setError, setLoading]);
 
   /**
-   * Đăng xuất: gọi BE clear session/cookie, sau đó xóa state FE.
+   * Logs out: calls BE to clear session/cookie, then clears Zustand and userStore,
+   * and navigates to /login. logoutSession() always calls removeToken() in finally
+   * to ensure local cleanup even if the network request fails.
    */
   const logout = useCallback(async () => {
     await logoutSession();
@@ -166,7 +176,7 @@ export default function useAuth() {
   }, [clearAuthState, clearEmail, navigate]);
 
   /**
-   * Cập nhật profile user và đồng bộ lại store sau khi API thành công.
+   * Updates the current user's profile and syncs the updated object back into authStore and userStore.
    */
   const updateProfile = useCallback(async (profileData) => {
     setLoading(true);
@@ -191,7 +201,7 @@ export default function useAuth() {
   }, [setEmail, setError, setLoading, setUser]);
 
   /**
-   * Xóa tài khoản hiện tại rồi đưa người dùng về trang đăng ký.
+   * Deletes the current account, clears all auth state, and redirects to /register.
    */
   const deleteAccount = useCallback(async () => {
     setLoading(true);

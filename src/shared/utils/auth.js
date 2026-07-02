@@ -1,7 +1,13 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * Auth utility functions for the ResearchPulse FE.
  *
- * File: shared\utils\auth.js
+ * File: shared/utils/auth.js
+ *
+ * These helpers are called outside React components (route guards, Axios interceptors),
+ * so they access Zustand via .getState() rather than hooks.
+ *
+ * NOTE: jwtDecode is imported but currently unused — kept for potential future use
+ * (e.g. reading token expiry client-side without an extra API round-trip).
  */
 import { useAuthStore } from '../../app/store/authStore';
 import { useUserStore } from '../../app/store/userStore';
@@ -11,11 +17,16 @@ import { jwtDecode } from 'jwt-decode';
 
 
 /**
- * Xóa các token cũ đang lưu ở phía client.
+ * Removes all client-side token copies from localStorage and sessionStorage.
  *
- * Luồng auth hiện tại ưu tiên HTTP-only cookie, nhưng một số phần code cũ
- * vẫn có thể lưu token vào localStorage/sessionStorage. Xóa cả hai nhóm key
- * giúp logout hoặc xử lý phiên hết hạn sạch hơn.
+ * The current auth flow uses HTTP-only cookies, but older code paths may have
+ * written tokens under 'token' or 'researchpulse_token'. Both keys in both
+ * storages are cleared here to ensure a clean logout regardless of which path
+ * originally stored the token.
+ *
+ * NOTE: httpClient.js reads localStorage key 'accessToken' (a third key, distinct
+ * from the ones removed here) — that key is NOT cleared by this function.
+ * See storageKeys.js for the full inconsistency note.
  */
 export const removeToken = () => {
   localStorage.removeItem('token');
@@ -25,22 +36,27 @@ export const removeToken = () => {
 };
 
 /**
- * Kiểm tra người dùng hiện tại còn phiên đăng nhập hợp lệ hay không.
+ * Checks whether the current session is still valid, hydrating Zustand if needed.
  *
- * Trường hợp nhanh: Zustand đã có user nên không cần gọi API.
- * Trường hợp F5/reload: Zustand mất dữ liệu, gọi `/auth/check-auth` để BE xác thực
- * bằng cookie HTTP-only và trả lại thông tin user.
+ * Fast path: if Zustand already has isAuthenticated + a user email, returns true
+ * immediately — avoids redundant network calls on re-renders or route transitions.
+ *
+ * Slow path (e.g. after page refresh): Zustand is empty, so calls GET /users/me
+ * to let the BE validate the HTTP-only cookie and return the user payload.
+ * Falls back to GET /users/profile if /users/me returns 404 (endpoint varies by BE version).
+ *
+ * Called by ProtectedRoute (src/app/routes/ProtectedRoute.jsx) to gate private pages.
  */
 export const isAuthenticated = async () => {
   try {
     const authStore = useAuthStore.getState();
 
-    // ưu tiên dev: nếu Zustand đã có trạng thái isAuthenticated hợp lệ thì trả true ngay
+    // Fast path: Zustand already hydrated — skip the network call.
     if (authStore.isAuthenticated && useUserStore.getState().email) {
       return true;
     }
 
-    // còn thiếu dữ liệu: gọi BE để xác thực theo luồng HEAD (users/me + fallback)
+    // Slow path: Zustand empty (e.g. after page refresh) — validate session via BE cookie.
     let meResponse;
     try {
       meResponse = await api.get('/users/me');
@@ -52,10 +68,10 @@ export const isAuthenticated = async () => {
       }
     }
 
-    // BE có thể trả payload nhiều format
+    // BE returns either { data: { ...user } } or { ...user } directly — normalize both shapes.
     const meData = meResponse?.data?.data ?? meResponse?.data;
 
-    // Chỉ cần lấy được user payload là coi như authenticated
+    // Any valid user payload returned by BE confirms the session is still live.
     if (meData) {
       useUserStore.getState().setUser?.(meData);
       useUserStore.getState().setEmail?.(meData?.email);
@@ -68,8 +84,8 @@ export const isAuthenticated = async () => {
 
 
   } catch (error) {
-    // Nếu dính lỗi 401 triệt để (kể cả sau khi Axios Interceptor đã cố Refresh thất bại)
-    useAuthStore.getState().logout(); // Đảm bảo clear sạch Zustand cũ nếu có
+    // Hard 401: the Axios refresh interceptor in api.js already attempted token renewal and failed.
+    useAuthStore.getState().logout(); // Clear any stale Zustand auth state before returning false.
     localStorage.removeItem('researchpulse_token');
     return false;
   }

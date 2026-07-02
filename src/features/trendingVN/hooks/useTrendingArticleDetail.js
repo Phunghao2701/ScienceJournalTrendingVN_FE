@@ -1,3 +1,24 @@
+/**
+ * React Query hook for the article detail page in the TrendingVN feature.
+ *
+ * File: features/trendingVN/hooks/useTrendingArticleDetail.js
+ *
+ * Manages four queries:
+ *   1. Article detail (GET /articles/:id via getArticleDetailApi)
+ *   2. Citing works  (GET /articles/:id/citing-works, enabled after query 1 resolves)
+ *   3. References    (GET /articles/:id/references, enabled after query 1 resolves)
+ *   4. Recommended   (GET /articles?topic_id=..., enabled only when topicId is valid)
+ *
+ * Bookmark state is dual-tracked:
+ *   - API field: article.apiData.is_bookmarked (server truth)
+ *   - localStorage: bookmark_{username|'guest'}_{id} (optimistic local fallback)
+ * Bookmark toggles use optimistic updates with rollback on error.
+ *
+ * primary_topic from the API is a string containing a numeric ID (e.g. "6"),
+ * not a number -- converted via Number() before use in the recommended query.
+ *
+ * Imports from: article/api/articleApi (NOT trending.api.js)
+ */
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getArticleDetailApi, getArticlesListApi, bookmarkArticleApi, getArticleCitingWorksApi, getArticleReferencesApi } from '../../article/api/articleApi';
@@ -7,7 +28,7 @@ export const useTrendingArticleDetail = (id, currentUser) => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 1. Query lấy chi tiết bài báo
+  // 1. Query: article detail -- the root query; queries 2-4 depend on its result
   const { data: article, isLoading, error, refetch } = useQuery({
     queryKey: ['trendingVN', 'articleDetail', id],
     queryFn: async () => {
@@ -19,10 +40,10 @@ export const useTrendingArticleDetail = (id, currentUser) => {
       }
       throw new Error('Không thể tải chi tiết bài báo khoa học.');
     },
-    staleTime: 1000 * 60 * 5, // 5 phút
+    staleTime: 1000 * 60 * 5, // 5-minute cache
   });
 
-  // Effect phụ để khởi tạo state bookmark từ article data
+  // Sync bookmark state from the API response and localStorage after query resolves.
   useEffect(() => {
     if (article) {
       const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${id}`;
@@ -31,9 +52,9 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     }
   }, [article, currentUser, id]);
 
-  // 2. Query lấy dữ liệu liên quan (phụ thuộc vào topicId của bài báo)
-  // primary_topic từ API là string chứa topic_id (ví dụ "6"), không phải object.
-  // Fallback: lấy topic_id từ phần tử đầu tiên của mảng topics.
+  // 2. Resolve topicId for the recommended articles query.
+  // primary_topic from the API is a string like "6" (not a number or object).
+  // Fallback: use the topic_id of the first element in the topics array.
   const rawTopicId =
     article?.parsedArticle?.primary_topic ||
     article?.parsedArticle?.topics?.[0]?.topic_id;
@@ -75,21 +96,21 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // 3. Mutation cho Bookmark
+  // 3. Bookmark mutation with optimistic update and rollback on error.
   const bookmarkMutation = useMutation({
     mutationFn: async (newBookmarkState) => {
       await bookmarkArticleApi(id, newBookmarkState);
       return newBookmarkState;
     },
     onMutate: async (newBookmarkState) => {
-      // Optimistic Update
+      // Optimistic update: apply immediately before the API call resolves.
       setIsBookmarked(newBookmarkState);
       const localBookmarkKey = `bookmark_${currentUser?.username}_${id}`;
       localStorage.setItem(localBookmarkKey, newBookmarkState.toString());
       return { previousState: !newBookmarkState };
     },
     onError: (err, newBookmarkState, context) => {
-      // Rollback
+      // Rollback to previous state on API failure.
       setIsBookmarked(context.previousState);
       const localBookmarkKey = `bookmark_${currentUser?.username}_${id}`;
       localStorage.setItem(localBookmarkKey, context.previousState.toString());

@@ -1,12 +1,13 @@
 /**
  * shared/utils/formatNumber.js
- * Helper formatters dùng chung cho toàn hệ thống.
+ * Shared display formatters used across article counts, author stats, and trending metric cards.
  */
 
 /**
- * Format large number with K/M suffix
+ * Formats a large number with K/M suffix for compact display in stat cards and tables.
+ * Trailing ".0" is stripped (e.g. 2000 -> "2K" not "2.0K").
  * @param {number} n
- * @returns {string}  e.g. 1200 → "1.2K", 1500000 → "1.5M"
+ * @returns {string}  e.g. 1200 -> "1.2K", 1500000 -> "1.5M", null/NaN -> "—"
  */
 export function formatCount(n) {
   if (n == null || isNaN(n)) return '—';
@@ -16,9 +17,10 @@ export function formatCount(n) {
 }
 
 /**
- * Format growth delta with sign
+ * Formats a growth delta with an explicit +/- sign for display in trending stat cards.
+ * Zero returns '—' (intentional: no delta is treated as no meaningful change, not "+0").
  * @param {number} delta
- * @returns {string}  e.g. 5 → "+5", -3 → "-3", 0 → "—"
+ * @returns {string}  e.g. 5 -> "+5", -3 -> "-3", 0 -> "—"
  */
 export function formatGrowth(delta) {
   if (delta == null || isNaN(delta)) return '—';
@@ -28,7 +30,8 @@ export function formatGrowth(delta) {
 }
 
 /**
- * Truncate long string
+ * Truncates a string to at most `max` characters, appending an ellipsis if cut.
+ * Default max of 40 matches the character cap used in article title table cells.
  */
 export function truncate(str, max = 40) {
   if (!str) return '';

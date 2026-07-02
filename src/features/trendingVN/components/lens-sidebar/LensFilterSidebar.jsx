@@ -1,21 +1,29 @@
-/**
+﻿/**
+ * LensFilterSidebar: Lens.org-style left sidebar shared by TrendingVNPage and TrendingPage.
+ *
  * File: src/features/trendingVN/components/lens-sidebar/LensFilterSidebar.jsx
  *
- * Sidebar trai kieu Lens.org dung chung cho TrendingVNPage va TrendingPage.
- * Gom 2 phan:
- *   1. Icon rail hep (48px) - cac nut chuc nang
- *   2. Expanded drawer (280px) - hien khi chon tab filter / profile / info
+ * NOTE: TrendingVNPage does NOT use this component — it renders its own inline sidebar.
+ * This component is used only by TrendingPage (the analysis view). The two implementations
+ * share the same icon rail + expandable drawer structure (known duplication).
+ *
+ * Layout:
+ *   1. Icon rail (48px wide) -- icon buttons that open/close the drawer
+ *   2. Expanded drawer (280px) -- visible when activeTab is non-null
+ *      - 'filters' tab: list of filter categories
+ *      - 'profile' tab: user info + Work Area links
+ *      - 'info' tab: support suggestions
  *
  * Props:
- * - activeTab: string | null     -- Tab dang mo: 'filters' | 'profile' | 'info' | null
- * - onTabChange: function         -- Callback(tabKey) khi bam icon; null = dong drawer
- * - user: object | null           -- Thong tin nguoi dung hien tai (tu authStore)
- * - onNavigate: function          -- Callback(path) de navigate ma khong phu thuoc hook
- * - onSaveQuery: function         -- Callback mo modal Save Query
- * - onExport: function            -- Callback mo modal Export
- * - onClearSearch: function       -- Callback xoa bo loc / tim kiem
- * - onToggleGrouping: function    -- Callback bat/tat che do nhom bai bao
- * - onToggleCustomise: function   -- Callback bat/tat panel Customise
+ * - activeTab: string | null     -- Currently open tab: 'filters' | 'profile' | 'info' | null
+ * - onTabChange: function        -- Callback(tabKey) when a rail icon is clicked; pass null to close
+ * - user: object | null          -- Current user info from authStore
+ * - onNavigate: function         -- Callback(path) for navigation without depending on useNavigate
+ * - onSaveQuery: function        -- Callback to open the Save Query modal
+ * - onExport: function           -- Callback to open the Export modal
+ * - onClearSearch: function      -- Callback to clear all filters / search
+ * - onToggleGrouping: function   -- Callback to toggle article grouping mode
+ * - onToggleCustomise: function  -- Callback to toggle the Customise panel
  */
 
 import { useTranslation } from 'react-i18next';
@@ -23,7 +31,7 @@ import { Dropdown } from 'react-bootstrap';
 import Icon from '../../../../shared/components/Icon';
 import './LensFilterSidebar.css';
 
-// ─── Helper: lay chu viet tat tu ten (VD: "Nguyen Van A" -> "NA") ─────────────
+// Extract initials from a display name (e.g. "Nguyen Van A" -> "NA")
 function getInitials(name) {
   if (!name) return 'TM';
   const parts = name.split(/\s+/).filter(Boolean);
@@ -31,7 +39,7 @@ function getInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-// ─── Danh sach cac muc trong tab Filters ──────────────────────────────────────
+// Filter category items shown in the Filters tab
 const FILTER_ITEMS = [
   { key: 'dateRange',       icon: 'lucide:calendar'    },
   { key: 'flags',           icon: 'lucide:flag'        },
@@ -50,7 +58,7 @@ const FILTER_ITEMS = [
   { key: 'newSearch',       icon: 'lucide:search'      },
 ];
 
-// ─── Danh sach muc trong tab Work Area ────────────────────────────────────────
+// Work Area items shown in the Profile tab
 const WORK_AREA_ITEMS = [
   { key: 'sbSavedQueries',   icon: 'lucide:save',      path: '/dashboard' },
   { key: 'sbSearchHistory',  icon: 'lucide:search'                        },
@@ -65,7 +73,7 @@ const WORK_AREA_ITEMS = [
   { key: 'sbSettings',       icon: 'lucide:settings',  path: '/profile'   },
 ];
 
-// ─── Danh sach goi y trong tab Info ───────────────────────────────────────────
+// Suggestion items shown in the Info/Support tab
 const SUGGESTION_ITEMS = [
   { key: 'sbCreateCollection',  descKey: 'sbCreateCollectionDesc',  icon: 'lucide:folder-plus'  },
   { key: 'sbSaveQuery',         descKey: 'sbSaveQueryDesc',         icon: 'lucide:save'         },
@@ -85,7 +93,7 @@ export default function LensFilterSidebar({
 }) {
   const { t } = useTranslation();
 
-  // ── Xu ly click item trong Filter list ──────────────────────────────────────
+  // Handle clicks on filter category items
   const handleFilterItemClick = (key) => {
     switch (key) {
       case 'flags':        onClearSearch?.();        break;
@@ -96,12 +104,12 @@ export default function LensFilterSidebar({
     }
   };
 
-  // ── Xu ly click item trong Work Area list ───────────────────────────────────
+  // Handle clicks on Work Area items (navigate if the item has a path)
   const handleWorkAreaClick = (item) => {
     if (item.path) onNavigate?.(item.path);
   };
 
-  // ── Xu ly click goi y (Info tab) ────────────────────────────────────────────
+  // Handle clicks on suggestion items in the Info tab
   const handleSuggestionClick = (key) => {
     switch (key) {
       case 'sbSaveQuery':       onSaveQuery?.();  break;
@@ -113,10 +121,10 @@ export default function LensFilterSidebar({
   return (
     <div className="lfs-wrapper">
 
-      {/* ── Icon Rail hep (48px) ─────────────────────────────────────────── */}
+      {/* Icon rail (48px wide) */}
       <aside className="lfs-icon-rail">
 
-        {/* Nut home hoac back */}
+        {/* Home / back button (shows chevron-left when a tab is open) */}
         {activeTab ? (
           <button
             className="lfs-rail-btn active"
@@ -135,7 +143,7 @@ export default function LensFilterSidebar({
           </button>
         )}
 
-        {/* Nut back/forward */}
+        {/* Article search button */}
         <button
           className={'lfs-rail-btn' + (!activeTab ? ' active' : '')}
           title={t('articleSearch')}
@@ -144,7 +152,7 @@ export default function LensFilterSidebar({
           <Icon icon="lucide:chevron-right" width="18" />
         </button>
 
-        {/* Nut Filters */}
+        {/* Filters tab button */}
         <button
           className={'lfs-rail-btn' + (activeTab === 'filters' ? ' active' : '')}
           title={t('filtersLabel')}
@@ -153,7 +161,7 @@ export default function LensFilterSidebar({
           <Icon icon="lucide:filter" width="18" />
         </button>
 
-        {/* Nut Work Area / Profile */}
+        {/* Profile / Work Area tab button */}
         <button
           className={'lfs-rail-btn' + (activeTab === 'profile' ? ' active' : '')}
           title={t('sbWorkArea')}
@@ -162,7 +170,7 @@ export default function LensFilterSidebar({
           <Icon icon="lucide:user-cog" width="18" />
         </button>
 
-        {/* Nut Info / Support */}
+        {/* Info / Support tab button */}
         <button
           className={'lfs-rail-btn' + (activeTab === 'info' ? ' active' : '')}
           title={t('info')}
@@ -171,7 +179,7 @@ export default function LensFilterSidebar({
           <Icon icon="lucide:info" width="18" />
         </button>
 
-        {/* Nut More */}
+        {/* More tab button */}
         <button
           className={'lfs-rail-btn' + (activeTab === 'more' ? ' active' : '')}
           title={t('more')}
@@ -182,11 +190,11 @@ export default function LensFilterSidebar({
 
       </aside>
 
-      {/* ── Expanded Drawer (280px) — hien khi co activeTab ─────────────── */}
+      {/* Expanded drawer (280px) -- visible when activeTab is non-null */}
       {activeTab && (
         <aside className="lfs-expanded-drawer">
 
-          {/* ══ TAB: FILTERS ══════════════════════════════════════════════ */}
+          {/* === TAB: FILTERS === */}
           {activeTab === 'filters' && (
             <div className="lfs-drawer-content">
               <div className="lfs-drawer-header">
@@ -213,11 +221,11 @@ export default function LensFilterSidebar({
             </div>
           )}
 
-          {/* ══ TAB: PROFILE / WORK AREA ══════════════════════════════════ */}
+          {/* === TAB: PROFILE / WORK AREA === */}
           {activeTab === 'profile' && (
             <div className="lfs-drawer-content">
 
-              {/* Block thong tin nguoi dung */}
+              {/* User info block: avatar initials + name + account type */}
               <div className="lfs-profile-block">
                 <div className="lfs-profile-avatar">
                   {getInitials(user?.name)}
@@ -277,7 +285,7 @@ export default function LensFilterSidebar({
               {/* Section title */}
               <div className="lfs-section-title">{t('sbWorkArea')}</div>
 
-              {/* Danh sach muc Work Area */}
+              {/* Work Area item list */}
               <div className="lfs-drawer-scrollable">
                 {WORK_AREA_ITEMS.map((item) => (
                   <div
@@ -294,7 +302,7 @@ export default function LensFilterSidebar({
             </div>
           )}
 
-          {/* ══ TAB: INFO / SUPPORT ═══════════════════════════════════════ */}
+          {/* === TAB: INFO / SUPPORT === */}
           {activeTab === 'info' && (
             <div className="lfs-drawer-content">
               <div className="lfs-drawer-header">

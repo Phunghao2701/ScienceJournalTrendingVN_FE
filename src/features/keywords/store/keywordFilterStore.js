@@ -1,13 +1,19 @@
 ﻿/**
- * File source thuộc hệ thống FE ResearchPulse.
+ * Zustand store for Keywords page filter, sort, and pagination state.
  *
- * File: features\keywords\store\keywordFilterStore.js
+ * File: features/keywords/store/keywordFilterStore.js
+ *
+ * Same filter/reset pattern as catalogSearchStore (features/catalog/store/catalogSearchStore.js),
+ * but without an exported DEFAULT_STATE constant -- clearFilters hardcodes reset values inline.
+ * Not persisted to localStorage intentionally: stale keyword filters between sessions
+ * would be confusing since keyword popularity rankings change frequently.
+ * Consumed by: useKeywords.js, KeywordListPage.jsx, KeywordSearchBar.jsx, KeywordSortDropdown.jsx.
  */
 import { create } from 'zustand';
 
 /**
- * Store quản lý filter, sort và pagination của trang Keywords.
- * Không lưu localStorage để tránh giữ stale filter giữa các phiên làm việc.
+ * Manages keyword search string, sort field/order, page, limit, and view mode.
+ * All filter-changing actions also reset page to 1 to avoid showing empty results.
  */
 export const useKeywordFilterStore = create((set) => ({
   keyword: '',
@@ -17,55 +23,35 @@ export const useKeywordFilterStore = create((set) => ({
   sortOrder: 'desc',
   viewMode: 'list',
 
-  /**
-   * Cập nhật keyword tìm kiếm và reset về trang đầu tiên.
-   *
-   * @param {string} keyword - Từ khóa người dùng nhập.
-   */
+  /** Updates the search keyword and resets to page 1. */
   setKeyword: (keyword) => {
     set({ keyword, page: 1 });
   },
 
-  /**
-   * Cập nhật trang hiện tại.
-   *
-   * @param {number} page - Trang cần hiển thị.
-   */
+  /** Updates the current page without changing any active filters. */
   setPage: (page) => {
     set({ page });
   },
 
-  /**
-   * Cập nhật số lượng item trên mỗi trang và reset về trang đầu.
-   *
-   * @param {number} limit - Số lượng keyword trên mỗi trang.
-   */
+  /** Updates items-per-page and resets to page 1. */
   setLimit: (limit) => {
     set({ limit, page: 1 });
   },
 
-  /**
-   * Cập nhật cách sắp xếp danh sách keyword.
-   *
-   * @param {string} sortBy - Field dùng để sort.
-   * @param {string} sortOrder - Thứ tự sort: asc hoặc desc.
-   */
+  /** Updates sort field and direction, resets to page 1.
+   *  sortBy values match field names accepted by GET /api/v1/keywords (e.g. 'article_count'). */
   setSort: (sortBy, sortOrder) => {
     set({ sortBy, sortOrder, page: 1 });
   },
 
-  /**
-   * Cập nhật kiểu hiển thị keyword list.
-   *
-   * @param {string} viewMode - Kiểu hiển thị, ví dụ list hoặc cloud.
-   */
+  /** Switches display mode between 'list' (KeywordList.jsx) and 'cloud' (KeywordMomentumCloud.jsx). */
   setViewMode: (viewMode) => {
     set({ viewMode });
   },
 
-  /**
-   * Reset filter về trạng thái mặc định.
-   */
+  /** Resets all filters to defaults.
+   *  Note: values are hardcoded here rather than referencing a DEFAULT_STATE constant,
+   *  unlike catalogSearchStore which exports CATALOG_DEFAULT_SEARCH_STATE for reuse. */
   clearFilters: () => {
     set({
       keyword: '',

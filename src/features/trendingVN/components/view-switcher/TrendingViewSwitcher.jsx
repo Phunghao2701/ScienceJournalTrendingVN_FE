@@ -1,19 +1,21 @@
 /**
+ * TrendingViewSwitcher: tab bar for switching between Table, List, and Analysis views.
+ *
  * File: src/features/trendingVN/components/view-switcher/TrendingViewSwitcher.jsx
  *
- * Tab switcher "Table | List | Analysis" hien thi giua filter bar va noi dung.
- * Khi chon "Analysis" -> hien thi charts, treemap, keyword cloud, trend momentum.
- * Khi chon "Table" / "List" -> hien thi TrendingArticleTable.
+ * Displayed between the filter bar and the main content area.
+ * Selecting "Analysis" renders charts, treemap, keyword cloud, and trend momentum cards.
+ * Selecting "Table" or "List" renders TrendingArticleTable.
  *
  * Props:
- * - activeView: string          -- View dang active: 'table' | 'list' | 'analysis'
- * - onViewChange: function      -- Callback(viewKey) khi doi tab
+ * - activeView: string       -- Active view key: 'table' | 'list' | 'analysis'
+ * - onViewChange: function   -- Callback(viewKey) invoked on tab click
  */
 
 import Icon from '../../../../shared/components/Icon';
 import './TrendingViewSwitcher.css';
 
-// ── Danh sach tab theo mau ──────────────────────────────────────────────────
+// -- Tab definitions matching the design --
 const VIEW_TABS = [
   { key: 'table',    icon: 'lucide:table',      label: 'Table'    },
   { key: 'list',     icon: 'lucide:list',        label: 'List'     },

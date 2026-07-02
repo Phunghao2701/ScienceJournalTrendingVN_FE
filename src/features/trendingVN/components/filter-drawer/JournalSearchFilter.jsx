@@ -1,3 +1,17 @@
+/**
+ * JournalSearchFilter: typeahead search for selecting a journal inside FilterDrawer.
+ *
+ * File: features/trendingVN/components/filter-drawer/JournalSearchFilter.jsx
+ *
+ * Calls getJournalsApi({ search, limit: 10 }) from trending.api.js with 300 ms debounce.
+ * Minimum 2 characters before a search fires. Closes the dropdown on outside click.
+ * Once a journal is selected, shows it as a chip with a clear button.
+ *
+ * Props:
+ * - selectedJournal: object | 'all' -- Currently selected journal or 'all' (none)
+ * - onSelect: function              -- Callback(journal) when an option is chosen
+ * - onClear: function               -- Callback when the clear button is clicked
+ */
 import { useState, useEffect, useRef } from 'react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';

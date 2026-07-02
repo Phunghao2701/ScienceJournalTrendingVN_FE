@@ -1,12 +1,13 @@
 /**
  * File: shared/constants/systemConstants.js
- * Danh sách tập trung các vai trò (roles), trạng thái (statuses) và thông số cấu hình hệ thống.
- * Tránh việc hardcode các giá trị chuỗi ở nhiều component khác nhau.
+ * Centralized role and account-status constants — import these instead of
+ * hardcoding raw strings like 'RESEARCHER' or 'Active' across components.
  */
 
 /**
- * Danh sách vai trò trên hệ thống ResearchPulse.
- * Dùng cho các dropdown phân quyền, hiển thị badge và thiết lập form.
+ * All user roles recognized by the ResearchPulse system.
+ * Consumed by role dropdowns (registration form, admin account form) and RoleBadge component.
+ * Values must match the role strings expected by the BE auth and user management endpoints.
  */
 export const SYSTEM_ROLES = [
   { value: 'RESEARCHER', label: 'Researcher' },
@@ -16,10 +17,11 @@ export const SYSTEM_ROLES = [
 ];
 
 /**
- * Danh sách trạng thái của tài khoản người dùng trên hệ thống.
- * 'Active' - Tài khoản đang hoạt động bình thường.
- * 'Inactive' - Tài khoản đã bị vô hiệu hóa bởi quản trị viên.
- * 'Pending' - Tài khoản đang trong hàng đợi chờ được duyệt kích hoạt.
+ * Possible status values for a user account in the ResearchPulse system.
+ *   Active   - account is fully operational
+ *   Inactive - account disabled by an administrator
+ *   Pending  - account registered but awaiting admin approval
+ * Labels intentionally contain Vietnamese text — displayed as-is in the admin UI dropdowns.
  */
 export const ACCOUNT_STATUSES = [
   { value: 'Active', label: 'Hoạt động (Active)' },

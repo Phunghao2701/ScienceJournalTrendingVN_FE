@@ -1,20 +1,24 @@
 /**
+ * TrendingStatCard: summary metric card for the TrendingVN stats bar.
+ *
  * File: src/features/trendingVN/components/stat-cards/TrendingStatCard.jsx
  *
- * Stat Card hien thi so lieu tong quan trang TrendingVN.
- * Layout theo mau: label nho tren + badge growth goc phai + so to + desc nho duoi.
- * Hai kieu badge growth:
- *   - Loai text: "+18% up arrow" (growthType: "up" / "down")
- *   - Loai chip nhan: "Article Trend" hoac "#1" (growthType: "tag")
+ * Layout: small label (top-left) + growth badge (top-right) + large value + small description.
+ * Growth badge has five variants controlled by growthType:
+ *   - "up"      -- "+18%" with an up-arrow icon (green)
+ *   - "down"    -- "-5%" with a down-arrow icon (red)
+ *   - "tag"     -- plain chip label (e.g. "Article Trend")
+ *   - "rank"    -- rank chip (e.g. "#1")
+ *   - "neutral" -- muted chip (default)
  *
  * Props:
- * - label: string        -- Nhan tren cung (VD: "Trending Articles")
- * - value: string|number -- Gia tri chinh (VD: "128" hoac "AI / ML")
- * - description: string  -- Mo ta phu duoi value (VD: "Dang tang toc ve luong trich dan")
- * - growth: string       -- Noi dung badge (VD: "+18%", "Article Trend", "#1")
- * - growthType: string   -- "up" | "down" | "tag" | "rank" | "neutral"
- * - isTextValue: bool    -- Value la text (VD: ten topic) thay vi so
- * - accentColor: string  -- Mau accent (override default primary)
+ * - label: string        -- Top label (e.g. "Trending Articles")
+ * - value: string|number -- Main display value (e.g. "128" or "AI / ML")
+ * - description: string  -- Secondary text below the value
+ * - growth: string       -- Badge content (e.g. "+18%", "Article Trend", "#1")
+ * - growthType: string   -- Badge style variant (see above)
+ * - isTextValue: bool    -- True when value is a topic name rather than a number
+ * - accentColor: string  -- CSS color string to override the default accent line color
  */
 
 import Icon from '../../../../shared/components/Icon';
@@ -29,7 +33,7 @@ export default function TrendingStatCard({
   isTextValue = false,
   accentColor,
 }) {
-  // ── Render badge growth theo tung kieu ────────────────────────────────────
+  // Render the growth badge based on growthType variant
   const renderGrowthBadge = () => {
     if (!growth) return null;
 
@@ -50,11 +54,11 @@ export default function TrendingStatCard({
       );
     }
     if (growthType === 'tag') {
-      // Chip nhan: "Article Trend"
+      // Label chip (e.g. "Article Trend")
       return <span className="tsc-badge tsc-badge--tag">{growth}</span>;
     }
     if (growthType === 'rank') {
-      // Chip hang: "#1"
+      // Rank chip (e.g. "#1")
       return <span className="tsc-badge tsc-badge--rank">{growth}</span>;
     }
     // neutral
@@ -67,16 +71,16 @@ export default function TrendingStatCard({
   return (
     <div className="tsc-card">
 
-      {/* ── Accent line tren cung ─────────────────────────────────────── */}
+      {/* Colored accent line at the top of the card */}
       <div className="tsc-accent" style={accentStyle} />
 
-      {/* ── Header: label trai + badge phai ──────────────────────────── */}
+      {/* Header row: label (left) + growth badge (right) */}
       <div className="tsc-header">
         <span className="tsc-label">{label}</span>
         {renderGrowthBadge()}
       </div>
 
-      {/* ── Gia tri chinh (so lon) ────────────────────────────────────── */}
+      {/* Main value (large number or text); shows a skeleton shimmer while undefined */}
       <div className={valueClass}>
         {value ?? (
           <span
@@ -86,7 +90,7 @@ export default function TrendingStatCard({
         )}
       </div>
 
-      {/* ── Mo ta phu ─────────────────────────────────────────────────── */}
+      {/* Secondary description text */}
       {description && (
         <div className="tsc-desc">{description}</div>
       )}

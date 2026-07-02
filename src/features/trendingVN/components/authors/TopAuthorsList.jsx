@@ -1,24 +1,26 @@
 /**
+ * TopAuthorsList: ranked list of the most influential authors.
+ *
  * File: src/features/trendingVN/components/authors/TopAuthorsList.jsx
  *
- * Bang xep hang tac gia anh huong nhat.
- * Layout theo mau: rank | ten + uni-badge | bar + score so lon.
- * Score hien thi so don gian (VD: 98.4), bar theo ti le.
+ * Layout per row: rank number | name + university badge | citation bar | score.
+ * Score is normalized 0-100 relative to the highest cited_by_count in the list.
+ * Bar width is proportional to cited_by_count of the top author.
  *
- * Data: GET /api/v1/author/leaderboard
- * Fields: author_id, display_name, url_image,
- *         works_count, cited_by_count, h_index, i10_index, final_rank
+ * Data: GET /api/v1/author/leaderboard (via useTrending.fetchAuthors)
+ * Fields used: author_id, display_name, url_image,
+ *              works_count, cited_by_count, h_index, i10_index, final_rank
  *
  * Props:
- * - authors: array    -- Danh sach tac gia tu API
- * - loading: boolean  -- Dang tai du lieu
+ * - authors: array    -- Author list from API (up to 5 shown)
+ * - loading: boolean  -- Show skeleton while loading
  */
 
 import { useTranslation } from 'react-i18next';
 import Icon from '../../../../shared/components/Icon';
 import './TopAuthorsList.css';
 
-// ── Format so lon gon ────────────────────────────────────────────────────────
+// Format large numbers compactly (e.g. 1200000 -> "1.2M", 3500 -> "3.5k")
 function fmtCount(num) {
   if (!num && num !== 0) return '0';
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -26,13 +28,13 @@ function fmtCount(num) {
   return String(num);
 }
 
-// ── Tinh score hien thi (0-100) tu cited_by_count ───────────────────────────
+// Normalize cited_by_count to a 0-100 display score relative to the list max
 function calcScore(cited, maxCited) {
   if (!maxCited || maxCited === 0) return 0;
   return +((cited / maxCited) * 100).toFixed(1);
 }
 
-// ── Mau badge university theo index (giong TopUniversitiesGrid) ──────────────
+// Badge colors for university pills, cycling by author index (same palette as TopUniversitiesGrid)
 const UNI_BADGE_COLORS = [
   { bg: '#EAF4FF', text: '#1565C0' }, // blue nhat
   { bg: '#EDE9FE', text: '#6D28D9' }, // tim nhat
@@ -44,7 +46,7 @@ const UNI_BADGE_COLORS = [
   { bg: '#FDF4FF', text: '#7E22CE' }, // violet nhat
 ];
 
-// ── Avatar tac gia ───────────────────────────────────────────────────────────
+// Author avatar: shows url_image if available, otherwise renders initials
 function AuthorAvatar({ urlImage, displayName }) {
   const initials = displayName
     ? displayName.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase()
@@ -67,7 +69,7 @@ function AuthorAvatar({ urlImage, displayName }) {
 export default function TopAuthorsList({ authors = [], loading = false }) {
   const { t } = useTranslation();
 
-  // ── Skeleton ─────────────────────────────────────────────────────────────
+  // -- Skeleton --
   if (loading) {
     return (
       <div className="tal-skeleton-list">
@@ -78,7 +80,7 @@ export default function TopAuthorsList({ authors = [], loading = false }) {
     );
   }
 
-  // ── Empty state ───────────────────────────────────────────────────────────
+  // -- Empty state --
   if (!authors.length) {
     return (
       <div className="tal-empty">
@@ -88,7 +90,7 @@ export default function TopAuthorsList({ authors = [], loading = false }) {
     );
   }
 
-  // ── Chuan bi du lieu ─────────────────────────────────────────────────────
+  // Slice to top 5 and find the max cited_by_count for bar scaling
   const listData = authors.slice(0, 5);
   const maxCited = Math.max(...listData.map((a) => a.cited_by_count || 0), 1);
 
@@ -100,8 +102,7 @@ export default function TopAuthorsList({ authors = [], loading = false }) {
         const barPct = (cited / maxCited) * 100;
         const rank = author.rank || author.final_rank || i + 1;
 
-        // University badge — dung initials ten tac gia lam placeholder
-        // khi BE co field last_known_institution thi thay vao day
+        // University badge: use last_known_institution when available; fall back to initials placeholder
         const uniName = author.last_known_institution || null;
         const uniBadgeText = uniName
           ? uniName.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase()
@@ -113,12 +114,12 @@ export default function TopAuthorsList({ authors = [], loading = false }) {
             key={author.author_id ? String(author.author_id) : String(i)}
             className="tal-row"
           >
-            {/* ── So thu hang ─────────────────────────────────────── */}
+            {/* Rank number */}
             <span className={'tal-rank' + (i < 3 ? ' tal-rank--top' : '')}>
               {String(rank).padStart(2, '0')}
             </span>
 
-            {/* ── Ten tac gia + uni badge ──────────────────────────── */}
+            {/* Author name and university badge */}
             <div className="tal-info">
               <div className="tal-name-row">
                 <span className="tal-name" title={author.display_name}>
@@ -133,7 +134,7 @@ export default function TopAuthorsList({ authors = [], loading = false }) {
                 </span>
               </div>
 
-              {/* Bar hien thi ti le cited_by_count ─────────────────── */}
+              {/* Citation bar (width proportional to cited_by_count) */}
               <div className="tal-bar-wrapper">
                 <div
                   className="tal-bar-fill"
@@ -142,7 +143,7 @@ export default function TopAuthorsList({ authors = [], loading = false }) {
               </div>
             </div>
 
-            {/* ── Score so lon ben phai ────────────────────────────── */}
+            {/* Normalized score (right column) */}
             <span className="tal-score">{score}</span>
 
           </div>

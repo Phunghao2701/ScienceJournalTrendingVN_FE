@@ -1,8 +1,11 @@
 /**
- * File source thuá»™c há»‡ thá»‘ng FE ResearchPulse.
- * Thiáº¿t káº¿ trang chi tiáº¿t bÃ i bÃ¡o theo phong cÃ¡ch chuyÃªn nghiá»‡p Ä‘a cá»™t cá»§a Lens.org.
+ * ArticleDetailPage: full-detail view for a single article, styled after Lens.org multi-column layout.
  *
- * File: trendingVN\pages\ArticleDetailPage.jsx
+ * File: src/features/trendingVN/pages/ArticleDetailPage.jsx
+ *
+ * Layout: Header -> top search bar -> two-column content (left: article detail, right: sidebar)
+ * Tabs: Summary | Citing Works | References | Collections
+ * Data source: GET /api/v1/articles/:id (via useTrendingArticleDetail)
  */
 import { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -475,7 +478,7 @@ ER  - `;
     <div className="article-detail-page-wrapper grid-bg">
       <Header />
 
-      {/* Query Search Bar Top - MÃ´ phá»ng giao diá»‡n Lens.org */}
+      {/* Top search bar (mirrors Lens.org search UX) */}
       <section className="lens-top-search-section">
         <div className="lens-search-container-fluid d-flex align-items-center justify-content-between flex-wrap gap-3">
           {/* Left Side */}
@@ -740,13 +743,13 @@ ER  - `;
               <span className="lens-breadcrumb-current">Chi tiáº¿t bÃ i bÃ¡o</span>
             </div>
 
-            {/* TiÃªu Ä‘á» & ThÃ´ng tin cÆ¡ báº£n */}
+            {/* Article title and core metadata */}
             <section className="lens-article-header-section">
               <h1 className="lens-article-title">
                 {article.title}
               </h1>
 
-              {/* DÃ²ng metadata phá»¥ */}
+              {/* Secondary metadata row */}
               <div className="lens-meta-line flex-wrap gap-2">
                 <span className="lens-badge-type">
                   <Icon icon="lucide:file-text" className="me-1" />
@@ -797,7 +800,7 @@ ER  - `;
                 </span>
               </div>
 
-              {/* TÃ¡c giáº£ */}
+              {/* Authors list */}
               <div className="lens-authors-line">
                 <strong>Authors:</strong>{' '}
                 {visibleAuthors.length > 0 ? (
@@ -833,7 +836,7 @@ ER  - `;
                 )}
               </div>
 
-              {/* DÃ²ng lÆ°á»£t trÃ­ch dáº«n */}
+              {/* Citation stats row */}
               <div className="lens-stats-plain-line text-xs font-sans mt-2 mb-2 d-flex flex-wrap gap-4">
                 <span>Citing Patents: <strong className="text-dark">{article.citing_patents ?? 0}</strong></span>
                 <span className="pointer" onClick={() => setShowCitationsModal(true)}>
@@ -844,7 +847,7 @@ ER  - `;
                 </span>
               </div>
 
-              {/* DÃ²ng nhÃ£n thÃ´ng tin phá»¥ */}
+              {/* Additional info badge row */}
               <div className="lens-additional-info-badges d-flex align-items-center gap-2 mt-2 mb-3">
                 <span className="text-xs fw-bold text-muted-custom">Additional Info:</span>
                 {article.is_open_access && (
@@ -873,7 +876,7 @@ ER  - `;
                 )}
               </div>
 
-              {/* Danh sÃ¡ch cÃ¡c biá»ƒu tÆ°á»£ng Ä‘á»‹nh danh (Identifiers & Links) */}
+              {/* External identifier badges (DOI, Open Access, links) */}
               <div className="lens-external-links-badges gap-3 flex-wrap mt-2">
                 <span className="lens-ext-badge text-uppercase gray">
                   <Icon icon="lucide:file-text" className="me-1 text-dark" />
@@ -914,7 +917,7 @@ ER  - `;
               </div>
             </section>
 
-            {/* Khu vá»±c Tabs Ä‘iá»u hÆ°á»›ng chÃ­nh: Summary, Citing Works, References, Recommended & Collections */}
+            {/* Main navigation tabs: Summary | Citing Works | References | Collections */}
             <div className="lens-tab-bar">
               <Button 
                 variant="link" 
@@ -946,11 +949,11 @@ ER  - `;
               </Button>
             </div>
 
-            {/* Ná»™i dung theo Tab */}
+            {/* Tab content area */}
             {activeTab === 'summary' ? (
               <div className="lens-summary-tab-content">
                 
-                {/* Thanh Action nhá»: Share, Add to project, Download Citation */}
+                {/* Action bar: Share, Add to Collection, Download Citation */}
                 <div className="lens-actions-bar">
                   <Button variant="link" className="lens-action-btn" onClick={handleShareArticle}>
                     <Icon icon="lucide:share-2" />
@@ -971,10 +974,10 @@ ER  - `;
                   </Button>
                 </div>
 
-                {/* Grid chi tiáº¿t trong Summary */}
+                {/* Summary two-column grid */}
                 <div className="lens-summary-grid">
                   
-                  {/* Cá»™t trÃ¡i cá»§a Summary (Abstract, Authors, Field of Study, Identifiers) */}
+                  {/* Left pane: Abstract, Authors, Field of Study, Identifiers */}
                   <div className="lens-summary-left-pane">
                     
                     {/* TL;DR (AI summary) if available */}
@@ -1121,7 +1124,7 @@ ER  - `;
 
                   </div>
 
-                  {/* Cá»™t pháº£i cá»§a Summary (Metadata boxes) */}
+                  {/* Right pane: metadata cards */}
                   <div className="lens-summary-right-pane">
                     
                     {/* Metadata Card 1 */}
@@ -1355,14 +1358,14 @@ ER  - `;
           </main>
       </div>
 
-      {/* Modal hiá»ƒn thá»‹ chi tiáº¿t TrÃ­ch dáº«n vÃ  Export Citation */}
+      {/* Citations detail and Export Citation modal */}
       <Modal show={showCitationsModal} onHide={() => setShowCitationsModal(false)} size="lg" centered>
         <Modal.Header closeButton>
           <Modal.Title className="font-display fw-bold">Citations & Citation Manager</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="row g-4">
-            {/* Cá»™t trÃ¡i: ThÃ´ng tin trÃ­ch dáº«n */}
+            {/* Left column: citation statistics */}
             <div className="col-12 col-md-5 border-end">
               <div className="lens-modal-stat-box">
                 <div className="text-muted-custom text-xs fw-bold text-uppercase mb-1">Tá»•ng lÆ°á»£t trÃ­ch dáº«n</div>
@@ -1379,7 +1382,7 @@ ER  - `;
               </div>
             </div>
 
-            {/* Cá»™t pháº£i: Xuáº¥t trÃ­ch dáº«n */}
+            {/* Right column: export citation formats */}
             <div className="col-12 col-md-7">
               <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
                 <Icon icon="lucide:download" className="text-primary" />

@@ -1,3 +1,19 @@
+/**
+ * FilterGroup: collapsible accordion section used inside FilterDrawer.
+ *
+ * File: features/trendingVN/components/filter-drawer/FilterGroup.jsx
+ *
+ * Clicking the header toggles the body. A badge showing activeCount is shown
+ * next to the title when the group has at least one active filter.
+ *
+ * Props:
+ * - title: string         -- Section heading text
+ * - icon: string          -- Iconify icon key displayed left of the title
+ * - isOpen: boolean       -- Whether the body is currently visible
+ * - onToggle: function    -- Callback invoked when the header is clicked
+ * - activeCount: number   -- Active filter count shown as a badge (0 hides badge)
+ * - children: ReactNode   -- Filter controls rendered in the body
+ */
 import { Icon } from '@iconify/react';
 
 export default function FilterGroup({ title, icon, isOpen, onToggle, activeCount = 0, children }) {

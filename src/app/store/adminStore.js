@@ -2,9 +2,13 @@ import { create } from 'zustand';
 import { MOCK_USERS, MOCK_REQUESTS } from '../../shared/constants/mockData';
 
 /**
- * Zustand admin store
- * Quản lý trạng thái danh sách thành viên (users), yêu cầu nâng quyền (pendingRequests) và nháp bài viết (drafts).
- * Đã cấu trúc lại để đọc dữ liệu khởi tạo từ mockData.js nhằm tuân thủ quy tắc chất lượng mã nguồn.
+ * Zustand store for admin-side user management and article drafts.
+ * Manages: user directory, pending role-upgrade requests, and local article drafts.
+ *
+ * NOTE: All state here is in-memory mock data (seeded from shared/constants/mockData.js)
+ * and is NOT connected to any BE API. This store is UI-layer only.
+ * When a real admin users API is wired up, replace these methods with async actions
+ * that call admin/api/adminUsers.api.js instead.
  */
 export const useAdminStore = create((set) => ({
   users: MOCK_USERS,
@@ -12,21 +16,23 @@ export const useAdminStore = create((set) => ({
   drafts: [], // holds user's local drafts
 
   /**
-   * Add a new user to the mock users directory.
+   * Adds a new user to the in-memory mock directory (not persisted to BE).
+   * id derived from array length — not collision-safe, acceptable for mock-only use.
    */
   addUser: (userData) => set((state) => {
     const newUser = {
       id: String(state.users.length + 1),
       name: `${userData.first_name} ${userData.last_name}`,
       created_at: new Date().toISOString().split('T')[0],
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100', // generic placeholder; real flow would use uploaded avatar URL
       ...userData,
     };
     return { users: [...state.users, newUser] };
   }),
 
   /**
-   * Update details of an existing user.
+   * Updates an existing user record in the mock directory.
+   * Re-derives `name` from first_name/last_name so the display name stays in sync.
    */
   updateUser: (userId, updatedData) => set((state) => ({
     users: state.users.map((u) => {
@@ -52,7 +58,10 @@ export const useAdminStore = create((set) => ({
   })),
 
   /**
-   * Approve a pending role request. Adds request user or updates status.
+   * Approves a pending role-upgrade request.
+   * If the requester exists in the user list: updates their role and sets status to Active.
+   * If not: creates a minimal user record with a placeholder email derived from first name.
+   * Both branches are mock-only — real approval would POST to a BE endpoint.
    */
   approveRequest: (requestId) => set((state) => {
     const req = state.pendingRequests.find((r) => r.id === requestId);
@@ -100,10 +109,11 @@ export const useAdminStore = create((set) => ({
   })),
 
   /**
-   * Save article draft.
+   * Upserts a local article draft (not persisted to BE or localStorage).
+   * Matches by draftData.id — assigns Date.now() as id for new drafts.
    */
   saveDraft: (draftData) => set((state) => {
-    // Overwrite or append based on identifier
+    // Overwrite existing draft by id, or append as new with timestamp id.
     const existingIdx = state.drafts.findIndex((d) => d.id === draftData.id);
     if (existingIdx >= 0) {
       const updatedDrafts = [...state.drafts];

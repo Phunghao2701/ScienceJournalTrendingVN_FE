@@ -1,18 +1,20 @@
 /**
+ * TrendingFilterBar: search + inline filter controls for TrendingPage (the analysis view).
+ *
  * File: src/features/trendingVN/components/filter-bar/TrendingFilterBar.jsx
  *
- * Thanh filter tim kiem cho trang TrendingVN.
- * Layout theo mau: search bar rong + 3 dropdown nho inline + nut Apply / Reset.
- * Pattern draft-vs-applied: chi fetch lai khi bam "Apply".
+ * Layout: wide search input + 3 small dropdowns (university, year, field) + Apply / Reset.
+ * Uses the draft-vs-applied pattern: new values are staged in draftFilters and
+ * only trigger a re-fetch when the user clicks "Apply" (or presses Enter in search).
  *
  * Props:
- * - draftFilters: object       -- Gia tri filter dang soan (chua apply)
- * - subjectAreas: array        -- Danh sach linh vuc cho dropdown
- * - subjectCategories: array   -- Danh sach chuyen nganh cho dropdown
- * - filtersLoading: boolean    -- Dang tai du lieu dropdown
- * - onFilterChange: function   -- Callback khi thay doi filter (key, value)
- * - onApply: function          -- Callback khi bam Apply
- * - onReset: function          -- Callback khi bam Reset
+ * - draftFilters: object       -- Staged filter values (not yet applied)
+ * - subjectAreas: array        -- Research field options for the Field dropdown
+ * - subjectCategories: array   -- University/category options for the Universities dropdown
+ * - filtersLoading: boolean    -- Disables dropdowns while options are loading
+ * - onFilterChange: function   -- Callback(key, value) called on every input change
+ * - onApply: function          -- Callback triggered by Apply button or Enter key
+ * - onReset: function          -- Callback to clear all filters back to defaults
  */
 
 import Icon from '../../../../shared/components/Icon';
@@ -30,7 +32,7 @@ export default function TrendingFilterBar({
   return (
     <div className="tfb-bar">
 
-      {/* ── Search bar chinh (flex: 1 chiem phan lon nhat) ────────── */}
+      {/* Search bar (flex: 1, takes majority of width) */}
       <div className="tfb-search-wrap">
         <Icon icon="lucide:search" className="tfb-search-icon" />
         <input
@@ -52,7 +54,7 @@ export default function TrendingFilterBar({
         )}
       </div>
 
-      {/* ── Dropdown: All Universities ────────────────────────────── */}
+      {/* Dropdown: Universities */}
       <select
         className="tfb-select"
         value={draftFilters.subject_category_id || ''}
@@ -71,7 +73,7 @@ export default function TrendingFilterBar({
         ))}
       </select>
 
-      {/* ── Dropdown: Year ────────────────────────────────────────── */}
+      {/* Dropdown: Year */}
       <select
         className="tfb-select"
         value={draftFilters.year || ''}
@@ -86,7 +88,7 @@ export default function TrendingFilterBar({
         <option value="2020">Year: 2020</option>
       </select>
 
-      {/* ── Dropdown: Field ──────────────────────────────────────── */}
+      {/* Dropdown: Research Field */}
       <select
         className="tfb-select"
         value={draftFilters.subject_area_id || ''}
@@ -103,7 +105,7 @@ export default function TrendingFilterBar({
             {area.display_name || area.name}
           </option>
         ))}
-        {/* Default options neu chua co du lieu tu API */}
+        {/* Hardcoded fallbacks shown only when the subject-areas API returns nothing */}
         {subjectAreas.length === 0 && (
           <>
             <option value="cs">Field: Computer Science</option>
@@ -113,13 +115,13 @@ export default function TrendingFilterBar({
         )}
       </select>
 
-      {/* ── Nut Apply ─────────────────────────────────────────────── */}
+      {/* Apply button */}
       <button className="tfb-btn-apply" onClick={onApply}>
         <Icon icon="lucide:filter" width="13" />
         Apply
       </button>
 
-      {/* ── Nut Reset ─────────────────────────────────────────────── */}
+      {/* Reset button */}
       <button className="tfb-btn-reset" onClick={onReset}>
         Reset
       </button>

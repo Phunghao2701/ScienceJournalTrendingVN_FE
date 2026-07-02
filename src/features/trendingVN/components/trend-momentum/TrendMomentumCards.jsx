@@ -1,20 +1,21 @@
 /**
+ * TrendMomentumCards: 4-card "Research Trend Momentum" section matching the Vietnam Research Index design.
+ *
  * File: src/features/trendingVN/components/trend-momentum/TrendMomentumCards.jsx
  *
- * 4 highlight cards "Research Trend Momentum" theo mau Vietnam Research Index.
- * Layout: border trai mau | label nho uppercase | ten to | badge ben phai.
+ * Layout per card: colored left border | small uppercase label | large value text | right badge.
  *
- * 4 cards (chi dung gia tri that tu API, khong fabricate % tang truong):
- *   1. TOP TRENDING TOPIC      -- topics[0].display_name | badge N/A (BE chua co data tang truong theo thoi gian)
- *   2. MOST ACTIVE UNIVERSITY  -- universities[].papers cao nhat (du lieu that tu getUniversityRankingsApi)
- *   3. MOST INFLUENTIAL AUTHOR -- authors[0].display_name | badge h_index (du lieu that)
- *   4. MOST CITED TOPIC        -- topics[1].display_name | badge N/A (khong co citation growth that)
+ * Cards (uses only real API values -- no fabricated growth percentages):
+ *   1. TOP TRENDING TOPIC      -- topics[0].display_name | badge N/A (no time-series growth data from BE)
+ *   2. MOST ACTIVE UNIVERSITY  -- university with max papers count (from getUniversityRankingsApi)
+ *   3. MOST INFLUENTIAL AUTHOR -- authors[0].display_name | badge shows h_index
+ *   4. MOST CITED TOPIC        -- topics[1].display_name | badge N/A (no citation growth API)
  *
  * Props:
- * - topics: array        -- Danh sach topics tu useTrending (da sort theo score giam dan)
- * - authors: array       -- Danh sach authors tu useTrending (da sort theo cited_by_count/h_index)
- * - universities: array  -- Danh sach universities tu useTrending, item: { name, papers, cites }
- * - loading: boolean     -- Dang tai du lieu
+ * - topics: array        -- Topic list from useTrending (pre-sorted by score descending)
+ * - authors: array       -- Author list from useTrending (pre-sorted by cited_by_count / h_index)
+ * - universities: array  -- University list from useTrending; each item: { name, papers, cites }
+ * - loading: boolean     -- Show skeleton cards while loading
  */
 
 import { useTranslation } from 'react-i18next';
@@ -29,7 +30,7 @@ export default function TrendMomentumCards({
 }) {
   const { t } = useTranslation();
 
-  // ── Skeleton ─────────────────────────────────────────────────────────────
+  // -- Skeleton --
   if (loading) {
     return (
       <div className="tmc-list">
@@ -40,29 +41,29 @@ export default function TrendMomentumCards({
     );
   }
 
-  // ── Empty state ───────────────────────────────────────────────────────────
+  // -- Empty state --
   if (!topics.length && !authors.length) {
     return (
       <div className="tmc-empty">{t('noTrendData')}</div>
     );
   }
 
-  // ── Lay du lieu that cho tung card (khong fabricate cong thuc gia) ───────
+  // Extract real data for each card (no fabricated growth formulas)
   const topTopic = topics[0] || null;
   const secondTopic = topics[1] || null;
   const topAuthor = authors[0] || null;
 
-  // University hoat dong nhieu nhat: chon theo so bai bao that (papers), khong dua vao thu tu BE tra ve
+  // Most active university: pick by real paper count, not by BE array order
   const mostActiveUni = universities.length
     ? universities.reduce((best, u) => ((u.papers || 0) > (best.papers || 0) ? u : best), universities[0])
     : null;
 
-  // ── 4 cards data ─────────────────────────────────────────────────────────
+  // -- Card definitions --
   const CARDS = [
     {
       label: 'TOP TRENDING TOPIC',
       value: topTopic?.display_name || null,
-      badge: null, // BE chua co du lieu so sanh theo thoi gian de tinh % tang truong that
+      badge: null, // No time-series growth data available from BE yet
       badgeVariant: 'tmc-badge--up',
       badgeIcon: 'lucide:trending-up',
       borderColor: '#16A34A',
@@ -86,7 +87,7 @@ export default function TrendMomentumCards({
     {
       label: 'MOST CITED TOPIC',
       value: secondTopic?.display_name || null,
-      badge: null, // Khong co API tinh citation growth that theo thoi gian
+      badge: null, // No API for real citation growth over time
       badgeVariant: 'tmc-badge--teal',
       badgeIcon: null,
       borderColor: '#0891B2',
@@ -101,7 +102,7 @@ export default function TrendMomentumCards({
           className="tmc-card"
           style={{ borderLeftColor: card.borderColor }}
         >
-          {/* ── Phan trai: label + gia tri ──────────────────────── */}
+          {/* Left: label + value */}
           <div className="tmc-card-left">
             <div className="tmc-label">{card.label}</div>
             <div className="tmc-value">
@@ -113,7 +114,7 @@ export default function TrendMomentumCards({
             </div>
           </div>
 
-          {/* ── Badge ben phai: hien thi that, hoac N/A neu chua co API ───── */}
+          {/* Right badge: shows real value when available, N/A when no API data */}
           {card.value && card.badge && (
             <div className={'tmc-badge ' + card.badgeVariant}>
               {card.badgeIcon && (

@@ -1,19 +1,24 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * Primary authenticated Axios instance for the ResearchPulse FE.
  *
- * File: shared\services\api.js
+ * File: shared/services/api.js
+ *
+ * TWO Axios clients exist in this codebase — use the right one:
+ *   api.js (this file): reads token from Zustand authStore, sends HTTP-only cookies,
+ *     has full 401 -> GET /auth/refresh -> retry loop. Use for all authenticated calls.
+ *   httpClient.js: legacy, reads token from localStorage, no auto-refresh on 401.
+ *     Only used by authApi.js (account activation endpoint) to avoid refresh loops.
  */
 import axios from 'axios';
 import { useAuthStore } from '../../app/store/authStore';
 
 /**
- * Axios instance dùng chung cho toàn bộ FE.
+ * Main Axios instance used by all authenticated feature APIs.
  *
- * Luồng auth hiện tại sau khi merge nhánh Duy:
- * - BE lưu access token/refresh token trong HTTP-only cookie.
- * - `withCredentials: true` giúp browser gửi cookie kèm request.
- * - Nếu API trả 401, interceptor sẽ thử gọi `/auth/refresh` đúng 1 lần
- * để lấy access token mới rồi gọi lại request ban đầu.
+ * Auth flow: BE stores tokens in HTTP-only cookies (set on login response).
+ *   withCredentials: true causes the browser to attach those cookies automatically.
+ *   On 401, the response interceptor calls GET /auth/refresh once to obtain a new
+ *   access token, updates Zustand authStore, then replays the original request.
  */
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -23,7 +28,8 @@ const api = axios.create({
   withCredentials: true
 });
 
-// Interceptor gửi token kèm request
+// Request interceptor: injects Bearer token from Zustand store into every request.
+// Uses useAuthStore.getState() (not the hook) — safe to call outside React components.
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
@@ -37,7 +43,8 @@ api.interceptors.request.use(
   }
 );
 
-// Axios instance for public endpoints (does not send cookies or tokens)
+// Unauthenticated Axios instance — no Bearer token, no cookies sent.
+// Use for public read endpoints (e.g. GET /journals, GET /articles) that do not require auth.
 export const publicApi = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   headers: {
@@ -46,7 +53,7 @@ export const publicApi = axios.create({
 });
 
 
-// Interceptor xử lý response và tự động refresh token khi gặp lỗi 401
+// Response interceptor: transparent 401 recovery — refresh token, then replay the original request.
 
 api.interceptors.response.use(
   (response) => {
@@ -55,7 +62,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Mỗi request chỉ được refresh một lần để tránh vòng lặp vô hạn khi token lỗi
+    // _retry flag prevents infinite loops if the refresh token itself is also expired or invalid.
     if (error.response && error.response.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -66,20 +73,21 @@ api.interceptors.response.use(
         );
 
         if (res.status === 200) {
-          // 🔥 HỢP NHẤT: Hỗ trợ cả 2 format response từ BE của nhánh Duy
+          // Supports both BE response shapes: { token } and { data: { token } }
+          // — handles format divergence between two merged backend branches.
           const newToken = res.data?.token || res.data?.data?.token || null;
 
           if (newToken) {
-            // 🔥 Giữ thay đổi: Lấy hàm loginSuccess trực tiếp từ kho Zustand mà không dùng Hook
+            // Access Zustand store directly (no hook) to update auth state outside the React tree.
             const { loginSuccess } = useAuthStore.getState();
             loginSuccess(newToken);
 
-            // Gán token mới vào header của request bị lỗi trước đó
+            // Inject the refreshed token into the originally failed request before replaying it.
             originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
 
           }
 
-          // Thực hiện lại request ban đầu với token mới
+          // Replay the original request now that the token has been refreshed.
           return api(originalRequest);
         }
       } catch (refreshError) {

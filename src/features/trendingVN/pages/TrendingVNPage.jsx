@@ -1,11 +1,29 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * TrendingVNPage: Vietnam academic article search page (Lens.org-style layout).
  *
- * File: features\trendingVN\pages\TrendingVNPage.jsx
- * Mô tả: Trang tìm kiếm bài báo khoa học Việt Nam — bố cục tham chiếu Lens.org.
- *        Gồm: thanh thống kê ngang, toolbar hành động, danh sách card bài báo (trái),
- *        sidebar phân tích với lưới nhà xuất bản, biểu đồ năm, và trạng thái truy cập (phải).
- *        Nút "Analysis" ẩn/hiện sidebar bên phải.
+ * File: features/trendingVN/pages/TrendingVNPage.jsx
+ *
+ * NOTE: This page uses useArticleList (not useTrending) for article data.
+ *       TrendingAnalysisTab (embedded here) calls useTrending independently,
+ *       causing a second round of API calls when the Analysis tab is active.
+ *
+ * Layout:
+ *   Left icon rail (inline, mirrors LensFilterSidebar but NOT using that component)
+ *   + expanded drawer (filters / profile / info / more)
+ *   Main content:
+ *     - Top info bar + page title + filter indicator
+ *     - Stats color bar (6 slots; slots 3-5 show N/A pending aggregate API)
+ *     - Full-width search bar
+ *     - Tab row (Articles / Explore Citations) + view toggles (table / list / analysis)
+ *     - Left column: toolbar + article list/table/analysis
+ *     - Right column: sidebar charts (publisher grid, publication date, legal status,
+ *                     top authors, top topics)
+ *   Modals: Save Query, Share, Export
+ *
+ * Key state:
+ *   showSidebar: always true (hardcoded, cannot be toggled)
+ *   legalStatusCounts: maps article fields creatively to legal status categories
+ *                      (workaround; no dedicated legal status field in article model)
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -36,7 +54,7 @@ export default function TrendingVNPage() {
   const [activeLeftTab, setActiveLeftTab] = useState(null); // 'filters', 'profile', 'info', 'more'
   const [activeTooltip, setActiveTooltip] = useState(null); // { name, count, x, y }
 
-  // Hook quản lý danh sách bài báo, bộ lọc, phân trang (sync với URL)
+  // Article list, filters, and pagination (synced with URL params via useArticleList)
   const {
     articles,
     total,
@@ -71,17 +89,17 @@ export default function TrendingVNPage() {
     navigate(`/articles/${id}/visual`);
   };
 
-  // --- State giao diện ---
-  const [showSidebar] = useState(true); // Ẩn/hiện sidebar phân tích
+  // --- UI state ---
+  const [showSidebar] = useState(true); // hardcoded true -- right sidebar cannot be toggled
   const [viewMode, setViewMode] = useState(location.state?.openAnalysisTab ? 'analysis' : 'list');      // 'list' | 'table' | 'analysis'
-  const [expandedAbstracts, setExpandedAbstracts] = useState({}); // Toggle abstract từng bài
-  const [allExpanded, setAllExpanded] = useState(false);          // Toggle tất cả abstract
-  const [showCustomise, setShowCustomise] = useState(false);      // Ẩn/hiện panel Customise
+  const [expandedAbstracts, setExpandedAbstracts] = useState({}); // per-article abstract expand state
+  const [allExpanded, setAllExpanded] = useState(false);          // toggle all abstracts at once
+  const [showCustomise, setShowCustomise] = useState(false);      // show/hide Customise panel
 
-  // --- State chọn dòng bài báo ---
+  // --- Article row selection state ---
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // Reset selection khi danh sách bài báo thay đổi
+  // Reset row selection when the article list changes
   useEffect(() => {
     setSelectedIds([]);
   }, [articles]);
@@ -171,20 +189,20 @@ export default function TrendingVNPage() {
     }
   };
 
-  // --- State của các tính năng nâng cao (Save Query, Share, Export, Grouping) ---
+  // --- Advanced feature state (Save Query, Share, Export, Grouping) ---
   const [showSaveQueryModal, setShowSaveQueryModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [groupingMode, setGroupingMode] = useState('none'); // 'none', 'simple-group', 'simple-expand', 'extended-group', 'extended-expand'
 
-  // State form lưu truy vấn
+  // Save Query form state
   const [queryTitle, setQueryTitle] = useState('');
   const [queryDesc, setQueryDesc] = useState('');
   const [queryNotify, setQueryNotify] = useState(false);
   const [queryEmailAlerts, setQueryEmailAlerts] = useState(false);
-  const [queryAccess, setQueryAccess] = useState('restricted'); // 'restricted' hoặc 'public'
+  const [queryAccess, setQueryAccess] = useState('restricted'); // 'restricted' or 'public'
 
-  // State form xuất dữ liệu
+  // Export form state
   const [exportDocCount, setExportDocCount] = useState(1000);
   const [exportFormat, setExportFormat] = useState('CSV');
   const [exportFileName, setExportFileName] = useState('articles-export');
@@ -199,7 +217,7 @@ export default function TrendingVNPage() {
     year: true,
   });
 
-  // Cấu hình hiển thị cột — chỉ 6 trường theo yêu cầu
+  // Column visibility config (6 fields: doi, authors, article, journal, keywords, issn)
   const [visibleColumns, setVisibleColumns] = useState({
     doi: true,
     authors: true,
@@ -209,28 +227,28 @@ export default function TrendingVNPage() {
     issn: true,
   });
 
-  // Toggle ẩn/hiện từng cột trong Customise panel
+  // Toggle individual column visibility in the Customise panel
   const toggleColumn = (key) => {
     setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // --- State bộ lọc (load từ API) ---
-  // Input tìm kiếm cục bộ (tránh gọi API liên tục khi gõ)
+  // --- Filter state ---
+  // Local search input (avoids triggering API on every keystroke)
   const [localSearchInput, setLocalSearchInput] = useState(filters.search);
 
-  // Đồng bộ ô tìm kiếm khi URL thay đổi (back/forward trình duyệt)
+  // Keep local search input in sync with URL filter (browser back/forward navigation)
   useEffect(() => {
     setLocalSearchInput(filters.search);
   }, [filters.search]);
 
   const { journalOptions, topicOptions } = useTrendingFilters();
 
-  // Toggle abstract một bài báo
+  // Toggle expand/collapse for a single article abstract
   const toggleAbstract = (id) => {
     setExpandedAbstracts(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Toggle tất cả abstract
+  // Toggle all abstracts at once
   const handleToggleAllAbstracts = () => {
     const nextState = !allExpanded;
     setAllExpanded(nextState);
@@ -241,7 +259,7 @@ export default function TrendingVNPage() {
     setExpandedAbstracts(newExpanded);
   };
 
-  // Copy DOI vào clipboard
+  // Copy DOI to clipboard
   const handleCopyDoi = (e, doi) => {
     e.stopPropagation();
     if (!doi) return;
@@ -277,7 +295,7 @@ export default function TrendingVNPage() {
     updateFilters({ sortBy, sortOrder });
   };
 
-  // Lưu truy vấn tìm kiếm hiện tại vào danh sách lưu trữ cục bộ
+  // Save current search query to localStorage
   const handleSaveQuery = (e) => {
     e.preventDefault();
     if (!queryTitle.trim()) {
@@ -313,11 +331,11 @@ export default function TrendingVNPage() {
     }
   };
 
-  // Thực hiện xuất danh sách bài báo khoa học dựa trên các cột được tích chọn
+  // Export the article list using the selected column fields
   const handleExportSubmit = (e) => {
     e.preventDefault();
 
-    // Giới hạn số bài báo xuất theo cấu hình của người dùng (mặc định lấy tối đa số bài hiện có)
+    // Slice articles to the user-configured export count
     const docsToExport = articles.slice(0, exportDocCount);
     if (docsToExport.length === 0) {
       toast.warning(t('noArticlesToExport'));
@@ -331,7 +349,7 @@ export default function TrendingVNPage() {
     if (exportFormat === 'CSV') {
       mimeType = 'text/csv;charset=utf-8;';
 
-      // Xây dựng header dựa trên các trường được chọn
+      // Build CSV header row from selected fields
       const selectedHeaders = [];
       if (exportFields.title) selectedHeaders.push('Title');
       if (exportFields.authors) selectedHeaders.push('Authors');
@@ -344,7 +362,7 @@ export default function TrendingVNPage() {
 
       const csvRows = [selectedHeaders.join(',')];
 
-      // Đưa dữ liệu bài viết vào từng dòng
+      // Write one CSV row per article
       docsToExport.forEach(art => {
         const row = [];
         if (exportFields.title) row.push(`"${(art.title || '').replace(/'/g, '""')}"`);
@@ -363,7 +381,7 @@ export default function TrendingVNPage() {
 
       fileContent = csvRows.join('\n');
     } else {
-      // Định dạng JSON
+      // JSON format
       mimeType = 'application/json;charset=utf-8;';
       const jsonList = docsToExport.map(art => {
         const item = {};
@@ -380,7 +398,7 @@ export default function TrendingVNPage() {
       fileContent = JSON.stringify(jsonList, null, 2);
     }
 
-    // Tiến hành tải xuống trình duyệt
+    // Trigger browser file download
     try {
       const blob = new Blob([fileContent], { type: mimeType });
       const url = URL.createObjectURL(blob);
@@ -400,19 +418,19 @@ export default function TrendingVNPage() {
     }
   };
 
-  // Submit form tìm kiếm
+  // Submit search form
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     updateFilters({ search: localSearchInput });
   };
 
-  // Xóa ô tìm kiếm
+  // Clear the search input and reset the search filter
   const handleClearSearch = () => {
     setLocalSearchInput('');
     updateFilters({ search: '' });
   };
 
-  // Tính toán các filter chip đang active
+  // Compute active filter chips for display below the toolbar
   const activeChips = useMemo(() => {
     const chips = [];
     if (filters.search) {
@@ -437,7 +455,7 @@ export default function TrendingVNPage() {
 
   const hasActiveFilters = activeChips.length > 0 || filters.sortBy !== 'created_at' || filters.sortOrder !== 'desc';
 
-  // Tính số bài theo từng năm (dùng cho biểu đồ Publication Date)
+  // Count articles per year for the Publication Date sidebar chart (last 8 years)
   const yearCounts = useMemo(() => {
     const counts = {};
     articles.forEach(art => {
@@ -453,7 +471,7 @@ export default function TrendingVNPage() {
     return Math.max(...yearCounts.map(item => item.count)) || 1;
   }, [yearCounts]);
 
-  // Tính Trạng thái pháp lý (Legal Status) động dựa trên danh sách bài báo hiện có
+  // Compute Legal Status counts dynamically from article fields (workaround -- no dedicated legal status field)
   const legalStatusCounts = useMemo(() => {
     const counts = {
       expired: 0,
@@ -462,11 +480,11 @@ export default function TrendingVNPage() {
       pending: 0,
       inactive: 0,
       unknown: 0,
-      article: 0 // Thay đổi từ patented sang article theo yêu cầu
+      article: 0 // renamed from 'patented' -- now counts articles with a DOI
     };
 
     articles.forEach(art => {
-      // Phân loại trạng thái động dựa trên các thuộc tính của bài viết (DOI, Open Access, Journal,...)
+      // Classify status using article attributes (DOI, open access flag, journal presence, etc.)
       if (art.doi) {
         counts.article++;
       }
@@ -509,7 +527,7 @@ export default function TrendingVNPage() {
     return Math.max(...legalStatusCounts.map(item => item.count)) || 1;
   }, [legalStatusCounts]);
 
-  // Tính Top tác giả hàng đầu (mô phỏng biểu đồ cột đứng Inventor Name Exact)
+  // Compute top authors by article count (mirrors the Inventor Name Exact bar chart in Lens)
   const authorCounts = useMemo(() => {
     const counts = {};
     articles.forEach(art => {
@@ -529,7 +547,7 @@ export default function TrendingVNPage() {
     return sorted;
   }, [articles]);
 
-  // Tính Top chủ đề hàng đầu (mô phỏng biểu đồ tròn Document Types)
+  // Compute top topics by article count (mirrors the Document Types donut chart in Lens)
   const topicCounts = useMemo(() => {
     const counts = {};
     articles.forEach(art => {
@@ -551,7 +569,7 @@ export default function TrendingVNPage() {
     return top4;
   }, [articles, t]);
 
-  // Tính toán góc vẽ cho các sector của hình tròn donut
+  // Compute start/end angles for each donut slice from topicCounts
   const donutSlices = useMemo(() => {
     const totalCount = topicCounts.reduce((sum, item) => sum + item.count, 0);
     if (totalCount === 0) return [];
@@ -576,7 +594,7 @@ export default function TrendingVNPage() {
     });
   }, [topicCounts]);
 
-  // Gom nhóm danh sách bài viết theo chủ đề nếu ở chế độ gom nhóm Simple/Extended Family
+  // Group articles by primary_topic when groupingMode is 'simple-group' or 'extended-group'
   const groupedArticles = useMemo(() => {
     if (groupingMode !== 'simple-group' && groupingMode !== 'extended-group') {
       return null;
@@ -592,7 +610,7 @@ export default function TrendingVNPage() {
     return Object.entries(groups);
   }, [articles, groupingMode, t]);
 
-  // Helper vẽ đường dẫn của donut slice (SVG path)
+  // Return an SVG path string for a donut slice between two angles
   const getDonutSlicePath = (startAngleDeg, endAngleDeg, cx, cy, rOut, rIn) => {
     if (endAngleDeg - startAngleDeg >= 359.9) {
       return `
@@ -629,7 +647,7 @@ export default function TrendingVNPage() {
     `.trim().replace(/\s+/g, ' ');
   };
 
-  // Helper lấy từ viết tắt của tên tác giả (Initials)
+  // Return two-letter initials from a display name
   const getInitials = (name) => {
     if (!name) return '??';
     const parts = name.split(/\s+/).filter(Boolean);
@@ -637,7 +655,7 @@ export default function TrendingVNPage() {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
-  // Format số lớn (ví dụ: 1,234)
+  // Format a large number with locale separators (e.g. 1234 -> "1,234")
   const fmt = (n) => new Intl.NumberFormat().format(n || 0);
 
   const renderPublicationDateChart = () => {
@@ -916,7 +934,7 @@ export default function TrendingVNPage() {
       <div className="lens-layout-wrapper">
 
         {/* ==================== LEFT ICON SIDEBAR (Lens-style) ==================== */}
-        {/* Thanh điều hướng dọc bên trái với các icon chức năng */}
+        {/* Vertical icon rail: home/back, search, filters, profile, info, more */}
         <aside className="lens-left-sidebar">
           {activeLeftTab ? (
             <button className="lens-sidebar-icon-btn active" title={t('close')} onClick={() => setActiveLeftTab(null)}>
@@ -1134,7 +1152,7 @@ export default function TrendingVNPage() {
           <Container fluid className="px-lg-3 py-0">
 
             {/* ==================== 1. TOP INFO BAR ==================== */}
-            {/* Thanh thông tin trên cùng: tổng số bài báo + link tìm kiếm */}
+            {/* Database article count and explore-sectors link */}
             <div className="lens-top-info-bar">
               <div className="total-count">
                 <Icon icon="lucide:search" width="13" className="me-1" />
@@ -1149,7 +1167,7 @@ export default function TrendingVNPage() {
             <h1 className="lens-page-title">{t('articleSearchResults')}</h1>
 
             {/* ==================== 3. FILTER INDICATOR ==================== */}
-            {/* Hiển thị tổng số kết quả + trạng thái filter */}
+            {/* Shows total result count and how many filters are active */}
             <div className="lens-filter-indicator">
               <span className="filter-count-link" onClick={clearFilters}>
                 {t('articles')} ({fmt(total)})
@@ -1165,7 +1183,7 @@ export default function TrendingVNPage() {
             </div>
 
             {/* ==================== 4. STATS COLOR BAR ==================== */}
-            {/* Thanh thống kê ngang — để trống giá trị để người dùng tự điền sau */}
+            {/* Horizontal stats bar: 6 segments (some require BE aggregate endpoint, shown as N/A) */}
             <div className="lens-stats-bar">
               {/* Slot 1: Total articles — uses pagination total (accurate) */}
               <div className="stat-segment" onClick={() => clearFilters()} style={{ cursor: 'pointer' }}>
@@ -1285,7 +1303,7 @@ export default function TrendingVNPage() {
             ) : (
             <Row className="g-0">
 
-              {/* ===== CỘT TRÁI: Toolbar + Kết quả ===== */}
+              {/* ===== LEFT COLUMN: toolbar + article results ===== */}
               <Col lg={showSidebar ? 8 : 12} md={12} className="transition-col">
 
                 {/* --- Action toolbar: Expand, Customise, Save, Share, Export, Sort --- */}
@@ -1351,8 +1369,7 @@ export default function TrendingVNPage() {
                   </div>
                 )}
 
-                {/* --- Panel Customise Your Results View --- */}
-                {/* Hiện khi bấm nút "Customise List", chứa 6 checkbox */}
+                {/* --- Panel Customise Your Results View (6 column-visibility checkboxes) --- */}
                 <Collapse in={showCustomise}>
                   <div className="lens-customise-panel">
                     <div className="customise-title">{t('customiseYourResultsView')}</div>
@@ -1405,7 +1422,7 @@ export default function TrendingVNPage() {
                 {/* ==================== ARTICLE RESULTS ==================== */}
                 <div className="lens-results-body">
                   {isLoading && articles.length === 0 ? (
-                    /* --- Trạng thái Loading: skeleton cards --- */
+                    /* --- Loading: skeleton cards --- */
                     <div className="d-flex flex-column gap-0">
                       {[1, 2, 3].map(i => (
                         <div key={i} className="lens-article-card p-3">
@@ -1417,7 +1434,7 @@ export default function TrendingVNPage() {
                       ))}
                     </div>
                   ) : error ? (
-                    /* --- Trạng thái Lỗi --- */
+                    /* --- Error state --- */
                     <div className="text-center p-5 bg-white border">
                       <Icon icon="lucide:alert-circle" className="text-danger mb-2" width="36" />
                       <h6 style={{ fontWeight: 700 }}>{t('errorOccurred')}</h6>
@@ -1427,7 +1444,7 @@ export default function TrendingVNPage() {
                       </Button>
                     </div>
                   ) : articles.length === 0 ? (
-                    /* --- Trạng thái Trống --- */
+                    /* --- Empty state --- */
                     <div className="text-center p-5 bg-white border">
                       <Icon icon="lucide:search-x" className="text-muted mb-2" width="36" />
                       <h6 style={{ fontWeight: 700 }}>{t('noArticlesFound')}</h6>
@@ -1437,10 +1454,10 @@ export default function TrendingVNPage() {
                       </Button>
                     </div>
                   ) : viewMode === 'list' ? (
-                    /* ===== CHẾ ĐỘ LIST: Card bài báo theo bố cục Lens ===== */
+                    /* ===== LIST MODE: Article cards in Lens-style layout ===== */
                     <div className="d-flex flex-column gap-0">
                       {groupedArticles ? (
-                        // Hiển thị danh sách được gom nhóm (Grouped View)
+                        // Grouped view (simple-group or extended-group mode)
                         groupedArticles.map(([groupName, groupList]) => (
                           <div key={groupName} className="lens-group-section mb-3 border rounded shadow-sm overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
                             <div className="lens-group-header p-2 d-flex align-items-center justify-content-between bg-light border-bottom">
@@ -1473,7 +1490,7 @@ export default function TrendingVNPage() {
                           </div>
                         ))
                       ) : (
-                        // Hiển thị danh sách thường phẳng
+                        // Flat list (no grouping)
                         articles.map((article, index) => (
                           <TrendingArticleCard
                             key={article.article_id}
@@ -1493,7 +1510,7 @@ export default function TrendingVNPage() {
                       )}
                     </div>
                   ) : viewMode === 'table' ? (
-                    /* ===== CHẾ ĐỘ TABLE ===== */
+                    /* ===== TABLE MODE ===== */
                     <div className="bg-white border overflow-hidden">
                       {selectedIds.length > 0 && (
                         <div
@@ -1545,7 +1562,7 @@ export default function TrendingVNPage() {
                       />
                     </div>
                   ) : (
-                    /* ===== CHẾ ĐỘ ANALYSIS: Hiển thị các biểu đồ full width dạng bento grid ===== */
+                    /* ===== ANALYSIS MODE: full-width bento-grid charts dashboard ===== */
                     <div className="lens-analysis-dashboard">
                       <Row className="g-3">
                         <Col lg={6} md={12}>
@@ -1569,7 +1586,7 @@ export default function TrendingVNPage() {
                     </div>
                   )}
 
-                  {/* Phân trang */}
+                  {/* Pagination */}
                   {totalPages > 1 && !isLoading && (
                     <div className="lens-pagination-row">
                       <AdminPagination
@@ -1584,10 +1601,10 @@ export default function TrendingVNPage() {
                 </div>
               </Col>
 
-              {/* ===== CỘT PHẢI: Sidebar phân tích (ẩn/hiện bằng nút Analysis) ===== */}
+              {/* ===== RIGHT COLUMN: analysis sidebar (always visible -- showSidebar is hardcoded true) ===== */}
               {showSidebar && (
                 <Col lg={4} md={12} className="lens-sidebar-col">
-                  {/* --- Panel 1: Applicant Name Exact (lưới nhà xuất bản) --- */}
+                  {/* --- Panel 1: Publisher grid (mirrors Applicant Name Exact panel in Lens) --- */}
                   <div className="lens-sidebar-panel">
                     <PublisherGrid />
                   </div>

@@ -1,6 +1,7 @@
 /**
- * Hook / Zustand Store quản lý trạng thái tập trung cho phân hệ Journal, Volume, Issue.
- * Thỏa mãn tiêu chuẩn: Comment mô tả ngắn gọn cho từng hàm xử lý.
+ * useJournalManagement: Zustand store for centralized Journal / Volume / Issue management state.
+ *
+ * File: src/features/journal/hooks/useJournalManagement.js
  */
 import { create } from 'zustand';
 import { getIssuesApi, getVolumesApi, searchJournalsApi } from '../api/journalApi';
@@ -41,14 +42,14 @@ export const useJournalManagement = create((set, get) => ({
   journals: [],
   volumes: [],
   issues: [],
-  currentJournal: null,  // Lưu trữ tạp chí đang hoạt động/được chọn trong khu vực quản lý
-  selectedVolume: null,   // Lưu trữ Volume đang được xem chi tiết để render ra Issue tương ứng
+  currentJournal: null,  // Currently active/selected journal in the management area
+  selectedVolume: null,   // Currently selected volume; used to filter the visible issue list
   loading: false,
   error: null,
 
   // --- FUNCTIONS / ACTIONS ---
 
-  /** Khởi tạo dữ liệu Journal, Volume, Issue từ API backend */
+  /** Load journals, volumes, and issues from the backend on first use (or when force=true). */
   fetchInitialData: async ({ force = false } = {}) => {
     if (!force && get().journals && get().journals.length > 0) {
       return;
@@ -86,13 +87,13 @@ export const useJournalManagement = create((set, get) => ({
     }
   },
 
-  /** Đặt tạp chí đang hoạt động hiện tại (Ứng dụng cho Switch Journal Modal) */
+  /** Set the active journal (used by the Switch Journal Modal). */
   setCurrentJournal: (journalId) => {
     const targetJournal = get().journals.find(j => j.id === journalId);
-    set({ currentJournal: targetJournal, selectedVolume: null }); // Reset lại volume khi chuyển đổi tạp chí
+    set({ currentJournal: targetJournal, selectedVolume: null }); // Reset selected volume when switching journals
   },
 
-  /** Thêm mới một Tạp chí (Journal) vào danh sách tổng */
+  /** Add a newly created journal to the top of the list. */
   addJournal: async (journalData) => {
     try {
       set({ loading: true });
@@ -112,7 +113,7 @@ export const useJournalManagement = create((set, get) => ({
     }
   },
 
-  /** Cập nhật thông tin chi tiết cấu hình của Journal (Dùng cho Edit Journal) */
+  /** Update journal configuration details (used by Edit Journal page). */
   updateJournal: async (id, updatedData) => {
     try {
       set({ loading: true });
@@ -130,12 +131,12 @@ export const useJournalManagement = create((set, get) => ({
     }
   },
 
-  /** Đặt Volume đang chọn để thực hiện lọc danh sách Issue hiển thị song song */
+  /** Set the selected volume to filter the issue list displayed alongside it. */
   setSelectedVolume: (volumeId) => {
     set({ selectedVolume: volumeId });
   },
 
-  /** Tạo một Volume mới liên kết vào Journal hiện tại đang quản lý */
+  /** Create a new volume linked to the currently active journal. */
   createVolume: async (volumeFields) => {
     try {
       set({ loading: true });
@@ -172,7 +173,7 @@ export const useJournalManagement = create((set, get) => ({
     }
   },
 
-  /** Tạo một Issue mới gắn chặt vào Volume đang được chỉ định xem và cập nhật totalIssues của Volume tương ứng */
+  /** Create a new issue under the selected volume and increment that volume's totalIssues count. */
   createIssue: async (issueFields) => {
     try {
       set({ loading: true });

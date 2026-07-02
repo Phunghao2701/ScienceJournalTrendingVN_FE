@@ -1,10 +1,18 @@
 ﻿/**
- * File source thuộc hệ thống FE ResearchPulse.
+ * Zustand store for Journal Catalog search, filter, and pagination state.
  *
- * File: features\catalog\store\catalogSearchStore.js
+ * File: features/catalog/store/catalogSearchStore.js
+ *
+ * Global store (vs component-local state) so that filter selections persist across
+ * tab switches within CatalogSearchPage, and so child components (FilterPanel, JournalTable)
+ * can read/write the same state without prop-drilling.
+ * hydrateFromQuery() allows the URL to seed the store on page load.
+ * Consumed by: useCatalog.js, useCatalogSearch.js, CatalogSearchPage.jsx, FilterPanel.jsx.
  */
 import { create } from 'zustand';
 
+// Exported so both hydrateFromQuery and clearFilters share one source of truth for defaults.
+// sort: 'metric' orders journals by composite impact score — best default for discovery use.
 export const CATALOG_DEFAULT_SEARCH_STATE = {
   keyword: '',
   page: 1,
@@ -32,7 +40,9 @@ export const useCatalogSearchStore = create((set) => ({
   /** Switch between list and table result views. */
   setViewMode: (viewMode) => set({ viewMode: viewMode === 'table' ? 'table' : 'list' }),
 
-  /** Replace selected subject areas and reset dependent categories/page. */
+  /** Replaces selected subject areas and resets categories + page.
+   *  Categories are cleared because they are children of areas — a stale category
+   *  from a different area would produce incorrect API filter results. */
   setSelectedAreas: (selectedAreas) => set({ selectedAreas, selectedCategories: [], page: 1 }),
 
   /** Replace selected subject categories and reset pagination. */
@@ -47,6 +57,7 @@ export const useCatalogSearchStore = create((set) => ({
   /** Reset filters to defaults while preserving the default metric sort. */
   clearFilters: () => set({ ...CATALOG_DEFAULT_SEARCH_STATE }),
 
-  /** Hydrate store values from URL query params. */
+  /** Seeds the store from URL query params on page load, merging over defaults.
+   *  Called by useCatalogSearch.js when the route already has existing search params. */
   hydrateFromQuery: (queryState) => set({ ...CATALOG_DEFAULT_SEARCH_STATE, ...queryState }),
 }));

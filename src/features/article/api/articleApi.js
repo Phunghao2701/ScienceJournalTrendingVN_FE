@@ -1,13 +1,13 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * Article API: CRUD and supplementary endpoints for academic article resources.
  *
- * File: features\article\api\articleApi.js
+ * File: src/features/article/api/articleApi.js
  */
 import api from '../../../shared/services/api';
 
 /**
- * Lấy danh sách hoặc tìm kiếm bài báo khoa học
- * @param {Object} params - Tham số tìm kiếm, phân trang và sắp xếp (search, page, limit, sortBy, sortOrder)
+ * Fetch or search articles with pagination and sorting.
+ * @param {Object} params - Query params (search, page, limit, sortBy, sortOrder, publication_year, journal_id, topic_id, access)
  * @returns {Promise} Axios promise
  */
 export const getArticlesListApi = (params) => {
@@ -15,8 +15,8 @@ export const getArticlesListApi = (params) => {
 };
 
 /**
- * Tạo mới bài báo khoa học
- * @param {Object} data - Dữ liệu bài báo
+ * Create a new article.
+ * @param {Object} data - Article payload
  * @returns {Promise} Axios promise
  */
 export const createArticleApi = (data) => {
@@ -24,8 +24,8 @@ export const createArticleApi = (data) => {
 };
 
 /**
- * Lấy chi tiết bài báo theo ID
- * @param {number|string} id - ID bài báo
+ * Fetch full detail for a single article by ID.
+ * @param {number|string} id - Article ID
  * @returns {Promise} Axios promise
  */
 export const getArticleDetailApi = (id) => {
@@ -50,9 +50,9 @@ export const bookmarkArticleApi = (id) => {
 };
 
 /**
- * Cập nhật thông tin bài báo khoa học theo ID
- * @param {number|string} id - ID bài báo
- * @param {Object} data - Dữ liệu cập nhật
+ * Update article metadata by ID.
+ * @param {number|string} id - Article ID
+ * @param {Object} data - Fields to update
  * @returns {Promise} Axios promise
  */
 export const updateArticleApi = (id, data) => {
@@ -60,8 +60,8 @@ export const updateArticleApi = (id, data) => {
 };
 
 /**
- * Xóa mềm bài báo khoa học theo ID
- * @param {number|string} id - ID bài báo
+ * Soft-delete an article by ID.
+ * @param {number|string} id - Article ID
  * @returns {Promise} Axios promise
  */
 export const deleteArticleApi = (id) => {

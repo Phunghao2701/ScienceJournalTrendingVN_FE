@@ -1,7 +1,7 @@
 /**
- * File source thuộc hệ thống FE ResearchPulse.
+ * useAuthors: custom hook managing all Author module state -- list, detail, articles, area breakdowns, and leaderboard.
  *
- * File: features\author\hooks\useAuthors.js
+ * File: src/features/author/hooks/useAuthors.js
  */
 import { useState, useCallback } from 'react';
 import {
@@ -13,9 +13,8 @@ import {
   getSubjectAreasApi,
 } from '../api/author.api';
 
-// ── DỮ LIỆU GIẢ ĐỊNH DỰ PHÒNG (KHỚP VỚI THIẾT KẾ GIAO DIỆN) ───────────────────
-// Các bản ghi này được sử dụng khi API backend không khả dụng (ví dụ: lỗi 404 hoặc mất kết nối).
-// Chứa thông tin chi tiết đầy đủ của "GS. TS. Nguyễn Văn A", "Dr. Michael Jordan", v.v.
+// === MOCK FALLBACK DATA (matches UI design) ===
+// These records are used when the backend API is unavailable (e.g. 404 or network failure).
 const MOCK_AUTHORS = [
   {
     id: '1',
@@ -87,7 +86,7 @@ const MOCK_AUTHORS = [
   }
 ];
 
-// Cơ sở dữ liệu giả định cho bảng xếp hạng, khớp với số lượng bài báo và lượt trích dẫn.
+// Mock leaderboard records -- article counts and citation counts match MOCK_AUTHORS above.
 const MOCK_LEADERBOARD = [
   { id: '1', author_id: '1', name: 'GS. TS. Nguyễn Văn A', subject_area: 'Computer Vision', article_count: 124, citation_count: 4520, papers: 124, citations: 4520 },
   { id: '2', author_id: '2', name: 'PGS. TS. Trần Thị B', subject_area: 'Deep Learning', article_count: 87, citation_count: 2980, papers: 87, citations: 2980 },
@@ -113,7 +112,7 @@ const createUnknownAuthorFallback = (authorId) => ({
   subject_areas: []
 });
 
-// Cơ sở dữ liệu giả định cho danh sách bài báo của từng tác giả.
+// Mock article lists keyed by author ID, used when the per-author articles API fails.
 const MOCK_ARTICLES_MAP = {
   '1': [
     {
@@ -197,7 +196,7 @@ const MOCK_ARTICLES_MAP = {
   ]
 };
 
-// Chuẩn hóa dữ liệu tác giả từ API để các component có thể hiển thị nhất quán.
+// Normalize an author record from the API into a consistent shape for all components.
 const normalizeAuthorRecord = (author) => {
   if (!author || typeof author !== 'object') return author;
   const rawName = author.display_name ?? author.full_name ?? author.name ?? '';
@@ -237,7 +236,7 @@ const sortAuthorsByImpact = (list = []) => {
   });
 };
 
-// Cơ sở dữ liệu giả định cho tỷ lệ phần trăm đóng góp của các lĩnh vực nghiên cứu.
+// Mock subject-area breakdown percentages keyed by author ID.
 const MOCK_BREAKDOWNS_MAP = {
   '1': [
     { subject_area: 'Machine Learning', count: 56, percentage: 45 },
@@ -269,8 +268,7 @@ const normalizeAreasBreakdown = (data) => {
   if (Array.isArray(data?.breakdown)) return data.breakdown;
   if (Array.isArray(data?.data)) return data.data;
 
-  // Nếu backend trả về một object chứa metadata và các trường lĩnh vực,
-  // chúng ta cố gắng chuyển đổi nó thành mảng phù hợp để component có thể render.
+  // If the backend returns a metadata object with field keys, convert it to an array for rendering.
   if (typeof data === 'object') {
     const ignoredKeys = new Set(['author_id', 'orcid', 'display_name', 'full_name', 'name', 'success', 'message']);
     const keys = Object.keys(data).filter((key) => !ignoredKeys.has(key));
@@ -351,24 +349,23 @@ const normalizeSubjectAreaItems = (payload) => {
 };
 
 /**
- * Hook quản lý trạng thái tùy chỉnh chính cho mô-đun Tác giả.
- * 
- * @returns {Object} Các trạng thái, cờ loading, đối tượng lỗi và các hàm kích hoạt gọi API.
+ * Primary custom hook for the Author module.
+ *
+ * @returns {Object} Data states, loading flags, error objects, and async fetch trigger functions.
  */
 export default function useAuthors() {
-  // ── CÁC TRẠNG THÁI DỮ LIỆU CHÍNH ───────────────────────────────────────────
-  const [authors, setAuthors] = useState([]);                      // Danh sách tác giả hiển thị trên trang danh sách/lưới
-  const [totalAuthors, setTotalAuthors] = useState(0);              // Tổng số lượng tác giả phục vụ tính toán phân trang
-  const [totalPages, setTotalPages] = useState(1);                  // Tổng số trang từ API pagination
-  const [currentAuthor, setCurrentAuthor] = useState(null);          // Thông tin hồ sơ chi tiết của tác giả đang được xem
-  const [authorArticles, setAuthorArticles] = useState([]);          // Danh sách bài báo được viết bởi tác giả đang được xem
-  const [authorBreakdown, setAuthorBreakdown] = useState([]);         // Chỉ số đóng góp của các lĩnh vực nghiên cứu
-  const [subjectAreas, setSubjectAreas] = useState([]);               // Danh sách subject area cho bộ lọc
-  const [leaderboard, setLeaderboard] = useState([]);                // Danh sách bảng xếp hạng các tác giả hàng đầu
-  const [leaderboardBreakdowns, setLeaderboardBreakdowns] = useState({}); // Breakdown theo tác giả cho leaderboard
+  // === Core data states ===
+  const [authors, setAuthors] = useState([]);                      // Author list shown on the directory/grid page
+  const [totalAuthors, setTotalAuthors] = useState(0);              // Total author count for pagination calculation
+  const [totalPages, setTotalPages] = useState(1);                  // Total pages returned by the API pagination envelope
+  const [currentAuthor, setCurrentAuthor] = useState(null);          // Full profile of the author currently being viewed
+  const [authorArticles, setAuthorArticles] = useState([]);          // Articles published by the currently viewed author
+  const [authorBreakdown, setAuthorBreakdown] = useState([]);         // Subject-area contribution breakdown for the author
+  const [subjectAreas, setSubjectAreas] = useState([]);               // Subject area list for the filter dropdown
+  const [leaderboard, setLeaderboard] = useState([]);                // Global top-author leaderboard list
+  const [leaderboardBreakdowns, setLeaderboardBreakdowns] = useState({}); // Per-author breakdowns for leaderboard enrichment
 
-  // ── CÁC TRẠNG THÁI LOADING RIÊNG BIỆT ──────────────────────────────────────
-  // Mỗi quá trình tải dữ liệu có cờ loading spinner/skeleton riêng để tránh làm nghẽn giao diện.
+  // === Per-operation loading flags (each section spins independently) ===
   const [loadingAuthors, setLoadingAuthors] = useState(false);
   const [loadingAuthorDetail, setLoadingAuthorDetail] = useState(false);
   const [loadingArticles, setLoadingArticles] = useState(false);
@@ -376,8 +373,7 @@ export default function useAuthors() {
   const [loadingSubjectAreas, setLoadingSubjectAreas] = useState(false);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
 
-  // ── CÁC TRẠNG THÁI LỖI RIÊNG BIỆT ─────────────────────────────────────────
-  // Lỗi biệt lập ngăn các endpoint bị lỗi làm gián đoạn các phần chức năng khác trên trang.
+  // === Per-operation error states (isolated so one failure does not block others) ===
   const [errorAuthors, setErrorAuthors] = useState(null);
   const [errorAuthorDetail, setErrorAuthorDetail] = useState(null);
   const [errorArticles, setErrorArticles] = useState(null);
@@ -385,11 +381,11 @@ export default function useAuthors() {
   const [errorSubjectAreas, setErrorSubjectAreas] = useState(null);
   const [errorLeaderboard, setErrorLeaderboard] = useState(null);
 
-  // ── 1. Lấy danh sách tác giả kèm theo bộ lọc ─────────────────────────────────
+  // --- 1. Fetch author list with filters ---
   /**
-   * Lấy danh sách đăng ký tác giả. Kích hoạt tìm kiếm dữ liệu giả định cục bộ nếu backend gặp lỗi.
-   * 
-   * @param {Object} [params={}] - Tham số bộ lọc truy vấn.
+   * Fetch the registered author list. Falls back to local mock search if the backend returns an error.
+   *
+   * @param {Object} [params={}] - Filter/query params (page, limit, search, sort, subject_area, country).
    * @returns {Promise<void>}
    */
   const fetchAuthors = useCallback(async (params = {}) => {
@@ -397,7 +393,7 @@ export default function useAuthors() {
     setErrorAuthors(null);
     try {
       const response = await getAuthorsApi(params);
-      // Xác thực phản hồi. Kiểm tra trường hợp dự phòng của Axios/Vite (ví dụ: trả về index.html)
+      // Validate response -- guard against Axios/Vite dev-server fallback returning index.html
       if (response.data && typeof response.data === 'object' && response.data.success !== false) {
         const payload = response.data.data;
         const items = extractItemsFromCollectionPayload(payload);
@@ -426,7 +422,7 @@ export default function useAuthors() {
     } catch (err) {
       console.warn('API error fetching authors list, using mock fallback:', err?.message || String(err));
       
-      // Logic lọc/tìm kiếm cục bộ cho Dữ liệu giả định
+      // Local filter/search logic applied to mock fallback data
       const keyword = (params.search || '').toLowerCase().trim();
       const area = (params.subject_area || '').trim();
       const sort = params.sort || '';
@@ -452,7 +448,7 @@ export default function useAuthors() {
         filtered.sort((a, b) => getAuthorMetric(b, ['citation_count', 'cited_by_count', 'citations']) - getAuthorMetric(a, ['citation_count', 'cited_by_count', 'citations']));
       }
 
-      // Phân trang dữ liệu
+      // Paginate mock results to match requested page/limit
       const page = parseInt(params.page || '1', 10);
       const limit = parseInt(params.limit || '10', 10);
       const startIndex = (page - 1) * limit;
@@ -466,11 +462,11 @@ export default function useAuthors() {
     }
   }, []);
 
-  // ── 2. Lấy thông tin chi tiết của một tác giả ────────────────────────────────
+  // --- 2. Fetch a single author's detail ---
   /**
-   * Lấy thông tin hồ sơ cơ bản (tiểu sử, tên, học vị) của một tác giả.
-   * 
-   * @param {string|number} authorId - Mã định danh duy nhất của tác giả.
+   * Fetch the basic profile for one author (bio, name, academic title).
+   *
+   * @param {string|number} authorId - Unique author identifier.
    * @returns {Promise<void>}
    */
   const fetchAuthorDetail = useCallback(async (authorId) => {
@@ -494,11 +490,12 @@ export default function useAuthors() {
     }
   }, []);
 
-  // ── 3. Lấy danh sách bài báo của tác giả ───────────────────────────────────
+  // --- 3. Fetch articles by author ---
   /**
-   * Lấy danh sách các bài báo nghiên cứu được viết bởi tác giả.
-   * 
-   * @param {string|number} authorId - Mã định danh duy nhất của tác giả.
+   * Fetch the list of research articles published by an author.
+   *
+   * @param {string|number} authorId - Unique author identifier.
+   * @param {Object} [params={}] - Optional pagination/filter params.
    * @returns {Promise<void>}
    */
   const fetchAuthorArticles = useCallback(async (authorId, params = {}) => {
@@ -522,11 +519,11 @@ export default function useAuthors() {
     }
   }, []);
 
-  // ── 4. Lấy tỷ lệ phân bổ lĩnh vực nghiên cứu của tác giả ─────────────────────
+  // --- 4. Fetch subject-area breakdown for an author ---
   /**
-   * Lấy tỷ lệ phần trăm các danh mục xuất bản phục vụ hiển thị biểu đồ.
-   * 
-   * @param {string|number} authorId - Mã định danh duy nhất của tác giả.
+   * Fetch publication category percentages for chart display.
+   *
+   * @param {string|number} authorId - Unique author identifier.
    * @returns {Promise<void>}
    */
   const fetchAuthorAreasBreakdown = useCallback(async (authorId) => {
@@ -569,11 +566,11 @@ export default function useAuthors() {
     }
   }, []);
 
-  // ── 5. Lấy danh sách bảng xếp hạng toàn cầu ──────────────────────────────────
+  // --- 5. Fetch global author leaderboard ---
   /**
-   * Lấy danh sách xếp hạng tác giả nổi bật toàn cầu.
-   * 
-   * @param {Object} [params={}] - Tham số lọc truy vấn (giới hạn số lượng, lĩnh vực).
+   * Fetch the ranked list of top authors worldwide.
+   *
+   * @param {Object} [params={}] - Optional filter params (limit, subject_area).
    * @returns {Promise<void>}
    */
   const fetchLeaderboard = useCallback(async (params = {}) => {
@@ -618,7 +615,7 @@ export default function useAuthors() {
         list = list.filter(item => item.subject_area.toLowerCase().includes(area));
       }
       
-      // Cắt bớt danh sách nếu có cung cấp giới hạn số lượng (ví dụ: tiện ích Dashboard)
+      // Trim the mock list if a limit is provided (e.g. Dashboard widget)
       if (params.limit) {
         list = list.slice(0, parseInt(params.limit, 10));
       }
@@ -629,11 +626,11 @@ export default function useAuthors() {
     }
   }, []);
 
-  // ── BỘ TẢI TIỆN ÍCH KẾT HỢP ────────────────────────────────────────────────
+  // --- Combined utility loader ---
   /**
-   * Hàm trợ giúp để lấy song song toàn bộ thông tin chi tiết của tác giả (Hồ sơ, Bài báo, Lĩnh vực).
-   * 
-   * @param {string|number} authorId - Mã định danh duy nhất của tác giả.
+   * Convenience helper: fetch all author detail data in parallel (profile, articles, area breakdown).
+   *
+   * @param {string|number} authorId - Unique author identifier.
    * @returns {Promise<void>}
    */
   const fetchAuthorDetailsFull = useCallback(async (authorId) => {

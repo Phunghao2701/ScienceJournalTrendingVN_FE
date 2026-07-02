@@ -1,12 +1,16 @@
 /**
-* Lưu ý: Submission Status ở đây dùng để LỌC danh sách (khác với
- * ARTICLE_STATUS_OPTIONS trong articleStatus.js dùng cho dropdown
- * "Update Status" trong Update Article) - nhưng dùng chung style badge.
+ * Filter option lists for the Admin Article Repository page.
+ *
+ * Note: Submission Status here is used for LIST FILTERING (distinct from
+ * ARTICLE_STATUS_OPTIONS in articleStatus.js which drives the "Update Status"
+ * dropdown in Update Article), but both share the same badge style map.
+ *
+ * File: src/features/admin/constants/articleListFilters.js
  */
 import { ARTICLE_REVIEW_STATUS_STYLE } from './articleStatus';
 
-// Option "All Journals" + danh sách journal (tạm tĩnh, sẽ thay bằng
-// GET /api/v1/journal khi tích hợp API)
+// "All Journals" sentinel plus a static placeholder list;
+// replace with GET /api/v1/journal when the API is integrated.
 export const JOURNAL_FILTER_OPTIONS = [
   'All Journals',
   'International Physics Review',
@@ -15,8 +19,8 @@ export const JOURNAL_FILTER_OPTIONS = [
   'Advanced Bio-Quantum Research',
 ];
 
-// Option "All Statuses" + toàn bộ status từ ARTICLE_REVIEW_STATUS_STYLE
-// (đảm bảo label đồng bộ giữa filter và badge trong table)
+// "All Statuses" sentinel plus every status derived from ARTICLE_REVIEW_STATUS_STYLE
+// so filter labels stay in sync with table badge labels.
 export const STATUS_FILTER_OPTIONS = [
   { value: 'all', label: 'All Statuses' },
   ...Object.entries(ARTICLE_REVIEW_STATUS_STYLE).map(([value, { label }]) => ({

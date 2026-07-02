@@ -1,22 +1,23 @@
 /**
+ * TopJournalsChart: pure CSS/div bar chart for the top 7 journals by citations.
+ *
  * File: src/features/trendingVN/components/charts/TopJournalsChart.jsx
  *
- * Bar chart hien thi Top Journals theo trich dan.
- * Pure div + CSS, khong dung chart library. Toi da 7 cot.
- * Du lieu tu GET /api/v1/trending-vn/top-journals
+ * No charting library — bars are plain divs sized by percentage height.
+ * Maximum 7 bars rendered (first 7 items in the journals array).
+ * Data source: GET /api/v1/trending-vn/top-journals (via useTrending.fetchJournals)
  *
- * Fields su dung:
- * - journal_id: string
- * - journal_name: string           -- ten hien thi
- * - total_recent_citations: number -- gia tri chinh de tinh chieu cao cot
- * - recent_articles_count: number  -- so bai bao (hien thi trong tooltip)
- * - top_keywords: array            -- keyword pho bien nhat cua journal do
- * - top_topics: array              -- topic pho bien nhat cua journal do
+ * Fields used per journal item:
+ * - journal_id: string                   -- React key
+ * - journal_name: string                 -- Display label (falls back to display_name)
+ * - total_recent_citations: number       -- Primary bar value (falls back to article_count)
+ * - recent_articles_count: number        -- Shown in the hover tooltip
+ * - top_keywords, top_topics: array      -- Available for future tooltip enhancement
  *
  * Props:
- * - journals: array    -- Danh sach journal tu useTrending hook
- * - loading: boolean   -- Dang tai du lieu
- * - onViewAll: function -- Callback khi bam "View Top 10 Journals" (optional)
+ * - journals: array      -- Journal list from useTrending hook
+ * - loading: boolean     -- Show skeleton bars while loading
+ * - onViewAll: function  -- Callback for the "View Top 10 Journals" footer link (optional)
  */
 
 import { useTranslation } from 'react-i18next';
@@ -26,7 +27,7 @@ import './TopJournalsChart.css';
 export default function TopJournalsChart({ journals = [], loading = false, onViewAll }) {
   const { t } = useTranslation();
 
-  // ── Skeleton khi dang tai ────────────────────────────────────────────────
+  // -- Skeleton --
   if (loading) {
     const skeletonHeights = [100, 68, 55, 82, 45, 72, 38];
     return (
@@ -42,7 +43,7 @@ export default function TopJournalsChart({ journals = [], loading = false, onVie
     );
   }
 
-  // ── Empty state ───────────────────────────────────────────────────────────
+  // -- Empty state --
   if (!journals.length) {
     return (
       <div className="tjc-empty">
@@ -52,25 +53,25 @@ export default function TopJournalsChart({ journals = [], loading = false, onVie
     );
   }
 
-  // ── Chuan bi du lieu ─────────────────────────────────────────────────────
+  // -- Prepare chart data --
   const chartData = journals.slice(0, 7);
 
-  // Uu tien total_recent_citations (endpoint moi), fallback article_count (endpoint cu)
+  // Prefer total_recent_citations (new endpoint); fall back to article_count (legacy endpoint)
   const getValue = (j) =>
     j.total_recent_citations ?? j.citation_count ?? j.article_count ?? 1;
 
-  // Lay ten journal: endpoint moi dung journal_name, endpoint cu dung display_name
+  // New endpoint uses journal_name; legacy endpoint uses display_name
   const getName = (j) => j.journal_name || j.display_name || '—';
 
   const maxVal = Math.max(...chartData.map(getValue), 1);
 
-  // Format so tren dinh cot
+  // Format number shown above each bar
   const fmtVal = (n) => {
     if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'K';
     return String(n);
   };
 
-  // Viet tat ten journal (toi da 2 tu)
+  // Abbreviate journal name for the x-axis label (max 2 words)
   const shortLabel = (name) => {
     if (!name) return '—';
     const parts = name.split(' ').filter(Boolean);
@@ -78,7 +79,7 @@ export default function TopJournalsChart({ journals = [], loading = false, onVie
     return parts.slice(0, 2).join(' ');
   };
 
-  // Tooltip: ten day du + so bai bao + trich dan
+  // Tooltip: full journal name + article count + citation count
   const getTooltip = (j) => {
     const name = getName(j);
     const cites = getValue(j);
@@ -92,7 +93,7 @@ export default function TopJournalsChart({ journals = [], loading = false, onVie
   return (
     <div className="tjc-wrapper">
 
-      {/* ── Khu vuc cac cot bar ─────────────────────────────────── */}
+      {/* -- Bar columns area -- */}
       <div className="tjc-bars-area">
         {chartData.map((journal, i) => {
           const val       = getValue(journal);
@@ -104,10 +105,10 @@ export default function TopJournalsChart({ journals = [], loading = false, onVie
               className="tjc-bar-col"
               title={getTooltip(journal)}
             >
-              {/* So tren dinh cot */}
+              {/* Value label above bar */}
               <span className="tjc-bar-value">{fmtVal(val)}</span>
 
-              {/* Than cot */}
+              {/* Bar fill */}
               <div
                 className="tjc-bar"
                 style={{ height: String(heightPct) + '%' }}
@@ -117,7 +118,7 @@ export default function TopJournalsChart({ journals = [], loading = false, onVie
         })}
       </div>
 
-      {/* ── Labels ten journal phia duoi ────────────────────────── */}
+      {/* -- Journal name labels below bars -- */}
       <div className="tjc-labels-area">
         {chartData.map((journal, i) => (
           <div key={String(i)} className="tjc-bar-label">
@@ -126,7 +127,7 @@ export default function TopJournalsChart({ journals = [], loading = false, onVie
         ))}
       </div>
 
-      {/* ── Footer link ──────────────────────────────────────────── */}
+      {/* -- Footer -- */}
       <div className="tjc-footer">
         <button className="tjc-view-all-btn" onClick={onViewAll}>
           {t('viewTop10Journals')}

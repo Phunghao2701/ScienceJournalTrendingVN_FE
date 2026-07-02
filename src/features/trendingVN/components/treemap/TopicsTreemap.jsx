@@ -1,23 +1,28 @@
 /**
+ * TopicsTreemap: flex-based treemap showing the top 6 most-cited articles.
+ *
  * File: src/features/trendingVN/components/treemap/TopicsTreemap.jsx
  *
- * Treemap hien thi Top 6 bai bao noi bat nhat theo citation_count.
- * Moi o = 1 bai bao, size bang nhau (flexGrow = 1), mau blue dam -> nhat.
- * O "Others" = phan con lai, mau xam.
+ * Each cell represents one article. Cells share equal flex-grow so they are
+ * visually the same size; color varies from dark blue (#1565C0) to light blue
+ * (#90CAF9) in index order. A grey "Others" cell counts remaining articles
+ * when the total exceeds 6.
  *
- * Data: articles tu useTrending, duoc sort theo citation_count DESC o FE.
- * Fields su dung: article_id, title, citation_count, publication_year, primary_topic
+ * Sorting is done client-side (citation_count DESC); the articles prop is the
+ * full article list from the useTrending hook.
+ *
+ * Fields used per article: article_id, title, citation_count, publication_year, primary_topic
  *
  * Props:
- * - articles: array    -- Danh sach bai bao tu useTrending hook
- * - loading: boolean   -- Dang tai du lieu
+ * - articles: array   -- Article list from useTrending hook
+ * - loading: boolean  -- Show skeleton while loading
  */
 
 import { useTranslation } from 'react-i18next';
 import Icon from '../../../../shared/components/Icon';
 import './TopicsTreemap.css';
 
-// ── Blue palette dam → nhat theo design system ───────────────────────────────
+// Blue shades dark to light, one per cell (index 0 = most-cited)
 const BLUE_SHADES = [
   '#1565C0',
   '#1976D2',
@@ -27,14 +32,14 @@ const BLUE_SHADES = [
   '#90CAF9',
 ];
 
-// ── Format so citations ───────────────────────────────────────────────────────
+// Format citation count (e.g. 1500 -> "1.5K")
 function fmtCites(n) {
   if (!n && n !== 0) return '0';
   if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
   return Number(n).toLocaleString('en-US');
 }
 
-// ── Rut gon ten bai bao ───────────────────────────────────────────────────────
+// Truncate a long article title for display inside a compact cell
 function shortTitle(title, maxLen = 40) {
   if (!title) return '—';
   return title.length > maxLen ? title.substring(0, maxLen) + '...' : title;
@@ -45,12 +50,12 @@ const MAX_MAIN = 6;
 export default function TopicsTreemap({ articles = [], loading = false }) {
   const { t } = useTranslation();
 
-  // ── Skeleton ─────────────────────────────────────────────────────────────
+  // -- Skeleton --
   if (loading) {
     return <div className="ttm-skeleton skeleton-shimmer" />;
   }
 
-  // ── Empty state ───────────────────────────────────────────────────────────
+  // -- Empty state --
   if (!articles.length) {
     return (
       <div className="ttm-empty">
@@ -60,7 +65,7 @@ export default function TopicsTreemap({ articles = [], loading = false }) {
     );
   }
 
-  // ── Sort theo citation_count DESC, lay top 6 ─────────────────────────────
+  // Sort by citation_count descending and take top 6
   const sorted = [...articles]
     .sort((a, b) => (b.citation_count || 0) - (a.citation_count || 0));
 
@@ -72,7 +77,7 @@ export default function TopicsTreemap({ articles = [], loading = false }) {
     <div>
       <div className="ttm-wrapper">
 
-        {/* ── Top 6 bai bao ───────────────────────────────────────── */}
+        {/* Top 6 article cells */}
         {mainArticles.map((article, i) => {
           const cites    = article.citation_count || 0;
           const pct      = totalCites > 0
@@ -102,7 +107,7 @@ export default function TopicsTreemap({ articles = [], loading = false }) {
           );
         })}
 
-        {/* ── O "Others" ──────────────────────────────────────────── */}
+        {/* "Others" cell for remaining articles beyond top 6 */}
         {otherCount > 0 && (
           <div
             className="ttm-cell others"
@@ -122,7 +127,7 @@ export default function TopicsTreemap({ articles = [], loading = false }) {
 
       </div>
 
-      {/* ── Ghi chu duoi treemap ─────────────────────────────────── */}
+      {/* Footnote below treemap */}
       <p className="ttm-footnote">{t('areaProportional')}</p>
     </div>
   );

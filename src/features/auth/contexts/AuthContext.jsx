@@ -1,7 +1,18 @@
 ﻿/**
- * File source thuộc hệ thống FE ResearchPulse.
+ * Legacy React context-based auth implementation.
  *
- * File: features\auth\contexts\AuthContext.jsx
+ * File: features/auth/contexts/AuthContext.jsx
+ *
+ * LEGACY: This context exists alongside the newer useAuth.js hook
+ * (features/auth/hooks/useAuth.js). Key differences from useAuth.js:
+ *   - Maintains local useState for user/isLoading/error (NOT Zustand)
+ *   - Calls auth.api.js directly (NOT via authService.js)
+ *   - logout() only clears local component state; does NOT call BE, clear
+ *     Zustand, or remove tokens from localStorage
+ *   - fetchProfile() failure path removes 'researchpulse_token' from
+ *     localStorage directly (fourth location doing token removal in the app)
+ *
+ * Do not use this context in new code -- prefer useAuth.js instead.
  */
 import { createContext, useState, useEffect, useCallback } from 'react';
 import {
@@ -34,7 +45,7 @@ export function AuthProvider({ children }) {
     flow: "auth-code",
 
     onSuccess: async (codeResponse) => {
-      console.log("Mã code nhận được:", codeResponse.code);
+      console.log("Google auth code received:", codeResponse.code); // debug log
 
       try {
         const result = await loginGoogleApi(codeResponse.code);
@@ -78,33 +89,22 @@ export function AuthProvider({ children }) {
       console.error('Fetch profile error:', err);
       setError(err.response?.data?.message || err.message);
       setUser(null);
-      localStorage.removeItem('researchpulse_token');
+      localStorage.removeItem('researchpulse_token'); // direct removal; see authStore.logout() for the canonical path
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   /**
-   * Thực hiện gọi API đăng nhập và xử lý lưu trữ token.
-   * 
-   * Hàm này được bọc bởi `useCallback` để tránh tạo lại hàm trong các lần render. 
-   * Các bước thực hiện:
-   * 1. Gọi `loginApi` với `email` và `password`.
-   * 2. Nếu API trả về thành công:
-   *    - Lấy token từ response.
-   *    - Nếu `remember` là true (Ghi nhớ đăng nhập): Lưu token vào `localStorage` (tồn tại lâu dài).
-   *    - Nếu `remember` là false: Lưu token vào `sessionStorage` (mất khi đóng trình duyệt).
-   *    - Gọi callback `loginSuccess` (từ zustand store) để cập nhật trạng thái đã đăng nhập vào global store.
-   * 3. Nếu API trả về lỗi hoặc format không đúng: Ném ra lỗi và bắt tại khối `catch` để set state `error`.
+   * Calls loginApi and persists the returned token via authStore.loginSuccess().
+   * Does NOT write to sessionStorage despite the original JSDoc -- the `remember` flag
+   * is forwarded to the BE, which decides cookie lifetime; no sessionStorage logic exists here.
    *
-   * @async
-   * @function login
-   * @param {string} email - Địa chỉ email của người dùng.
-   * @param {string} password - Mật khẩu của người dùng.
-   * @param {boolean} remember - Cờ xác định có lưu trạng thái đăng nhập lâu dài không (true = localStorage, false = sessionStorage).
-   * @param {Function} loginSuccess - Hàm callback từ AuthStore để cập nhật token vào global state.
-   * @returns {Promise<Object>} Trả về object dữ liệu từ response của API (nếu thành công).
-   * @throws {Error} Ném lỗi nếu quá trình đăng nhập thất bại (sai thông tin, lỗi mạng, v.v.).
+   * @param {string} email
+   * @param {string} password
+   * @param {boolean} remember - Forwarded to BE for cookie duration; not used client-side here.
+   * @returns {Promise<Object>} Full response body on success.
+   * @throws {Error} On login failure or unexpected response shape.
    */
   const login = useCallback(async (email, password, remember) => {
     setIsLoading(true);
@@ -129,19 +129,11 @@ export function AuthProvider({ children }) {
     }
   }, [loginSuccess]);
 
-    /**
-   * Khởi chạy luồng đăng nhập bằng tài khoản Google (OAuth 2.0).
-   * 
-   * Hàm này thực hiện các công việc:
-   * 1. Lưu lại đường dẫn mà người dùng muốn được điều hướng tới (`redirectTo`) vào state `googleRedirect` 
-   *    để sử dụng sau khi xác thực Google thành công.
-   * 2. Kích hoạt hàm `googleLogin()` (thường được cung cấp bởi thư viện `@`react-oauth/google``) 
-   *    để mở popup hoặc chuyển hướng sang trang đăng nhập của Google.
+  /**
+   * Saves the post-login redirect path and triggers the Google OAuth popup/redirect.
+   * The actual token handling happens in useGoogleLogin's onSuccess callback above.
    *
-   * @function loginWithGoogle
-   * @param {string} [redirectTo="/"] - (Tùy chọn) Đường dẫn sẽ chuyển hướng người dùng tới sau khi đăng nhập Google thành công. Mặc định là trang chủ `/`.
-   * @param {Function} [loginSuccess] - (Tùy chọn) Hàm callback để xử lý sau khi lấy được token (lưu ý: hiện chưa được sử dụng trực tiếp trong thân hàm này, có thể đang được xử lý ở `onSuccess` của `useGoogleLogin`).
-   * @returns {void} Hàm không trả về giá trị.
+   * @param {string} [redirectTo="/"] - Route to navigate to after successful Google login.
    */
   const loginWithGoogle = (redirectTo = "/") => {
     setGoogleRedirect(redirectTo);
@@ -162,6 +154,9 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // NOTE: this logout only clears local context state (user = null).
+  // It does NOT call the BE, clear Zustand authStore, or remove localStorage tokens.
+  // For a full logout, use useAuth.js logout() instead.
   const logout = useCallback(() => {
     setUser(null);
   }, []);
@@ -204,6 +199,9 @@ export function AuthProvider({ children }) {
     }
   }, [logout]);
 
+  // Fetch profile once on mount (fetchProfile is stable via useCallback with [] deps,
+  // so this effect runs exactly once). The `if (!user)` guard is redundant for the
+  // same reason but acts as a safety check in case fetchProfile is ever made unstable.
   useEffect(() => {
     if (!user) {
       fetchProfile();

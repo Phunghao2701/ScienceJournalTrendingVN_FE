@@ -1,23 +1,29 @@
-// Các giá trị status hợp lệ (dùng để so sánh, tránh gõ sai string trực tiếp)
+/**
+ * Volume status enum and style map.
+ *
+ * File: src/features/admin/constants/volumeStatus.js
+ */
+
+// Valid status string constants -- use these instead of raw strings to prevent typos.
 const VOLUME_STATUS = {
-  PUBLISHED: 'published', // Volume đã xuất bản xong toàn bộ issue
-  IN_PREP: 'in_prep',      // Volume đang trong quá trình chuẩn bị, chưa hoàn tất
-  ARCHIVED: 'archived',    // Volume cũ, đã được lưu trữ
+  PUBLISHED: 'published', // All issues in the volume have been published.
+  IN_PREP: 'in_prep',      // Volume is being prepared; not yet complete.
+  ARCHIVED: 'archived',    // Older volume that has been archived.
 };
 
-// Map status -> { label hiển thị, className để style badge }
+// Maps each status to its display label and badge CSS class.
 const VOLUME_STATUS_STYLE = {
   [VOLUME_STATUS.PUBLISHED]: {
     label: 'Published',
-    className: 'status-badge--published', // style xanh (Q1-like)
+    className: 'status-badge--published', // green (Q1-like)
   },
   [VOLUME_STATUS.IN_PREP]: {
     label: 'In Prep',
-    className: 'status-badge--in-prep', // style cam nhạt (primary-light)
+    className: 'status-badge--in-prep', // light orange (primary-light)
   },
   [VOLUME_STATUS.ARCHIVED]: {
     label: 'Archived',
-    className: 'status-badge--archived', // style xám (bg-section/text-muted)
+    className: 'status-badge--archived', // grey (bg-section / text-muted)
   },
 };
 

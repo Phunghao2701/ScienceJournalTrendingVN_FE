@@ -1,3 +1,8 @@
+/**
+ * Publishers API: CRUD and restore endpoints for publisher records.
+ *
+ * File: src/features/admin/api/publishers.api.js
+ */
 import api from '../../../shared/services/api';
 
 export const getPublishers = (params = {}) => {

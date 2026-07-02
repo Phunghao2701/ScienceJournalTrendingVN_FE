@@ -1,3 +1,9 @@
+// toast.js
+// Pub/sub bridge that decouples toast triggering from the React component tree.
+// Pattern: registerToast() is called once in AppToast.jsx (src/shared/components/AppToast.jsx)
+// on mount, wiring up the actual UI renderer. After that, toast.success/error/etc. can be
+// called from anywhere — hooks, Axios interceptors, utils — without importing React components.
+
 /**
  * @typedef {Object} ToastOptions
  * @property {string} message - The message to display.

@@ -1,21 +1,22 @@
 /**
+ * TrendingBreadcrumb: context bar displayed above the page header.
+ *
  * File: src/features/trendingVN/components/breadcrumb/TrendingBreadcrumb.jsx
  *
- * Breadcrumb context bar hien thi phia tren page header.
- * Kieu: Home > 12,842 Papers > 47 Universities > 2020-2026
- * Theo sat giao dien mau Vietnam Research Index.
+ * Format: Home > 12,842 Papers > 47 Universities > 2020-2026
+ * Matches the Vietnam Research Index reference UI.
  *
  * Props:
- * - totalPapers: number   -- Tong so bai bao (VD: 12842)
- * - totalUniversities: number -- Tong so truong DH (VD: 47)
- * - yearRange: string     -- Khoang nam (VD: "2020-2026")
- * - onHomeClick: function -- Callback khi bam icon Home
+ * - totalPapers: number          -- Total article count (e.g. 12842)
+ * - totalUniversities: number    -- Total university count; hidden when 0 or null
+ * - yearRange: string            -- Year span string (e.g. "2020-2026"); hidden when null
+ * - onHomeClick: function        -- Callback when the Home icon is clicked
  */
 
 import Icon from '../../../../shared/components/Icon';
 import './TrendingBreadcrumb.css';
 
-// ── Format so co dau phan cach (VD: 12842 -> "12,842") ─────────────────────
+// Format number with thousands separator (e.g. 12842 -> "12,842")
 function fmtNum(n) {
   if (!n && n !== 0) return '—';
   return Number(n).toLocaleString('en-US');
@@ -30,20 +31,20 @@ export default function TrendingBreadcrumb({
   return (
     <nav className="tbc-bar" aria-label="Breadcrumb context">
 
-      {/* ── Home icon ──────────────────────────────────────────────── */}
+      {/* Home icon */}
       <button className="tbc-home-btn" onClick={onHomeClick} title="Home">
         <Icon icon="lucide:home" width="14" />
       </button>
 
-      {/* ── Separator ─────────────────────────────────────────────── */}
+      {/* Separator */}
       <Icon icon="lucide:chevron-right" width="12" className="tbc-sep" />
 
-      {/* ── Papers count ──────────────────────────────────────────── */}
+      {/* Papers count */}
       <span className="tbc-crumb tbc-crumb--link">
         {fmtNum(totalPapers)} Papers
       </span>
 
-      {/* ── Universities count (chi hien khi co data) ─────────────── */}
+      {/* Universities count (only rendered when totalUniversities > 0) */}
       {totalUniversities != null && totalUniversities > 0 && (
         <>
           <Icon icon="lucide:chevron-right" width="12" className="tbc-sep" />
@@ -53,7 +54,7 @@ export default function TrendingBreadcrumb({
         </>
       )}
 
-      {/* ── Year range (chi hien khi co data) ────────────────────── */}
+      {/* Year range (only rendered when yearRange is non-null) */}
       {yearRange && (
         <>
           <Icon icon="lucide:chevron-right" width="12" className="tbc-sep" />

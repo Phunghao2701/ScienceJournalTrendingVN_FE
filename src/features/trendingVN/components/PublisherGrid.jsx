@@ -82,7 +82,7 @@ export default function PublisherGrid({
         {t('publisherExact')}
       </h4>
 
-      <div className="publisher-lens-grid">
+      <div className="publisher-tvn-grid">
         {publishers.map((pub, index) => {
           const isLastColumn = (index + 1) % 4 === 0;
           const isLastRow = index >= 4;

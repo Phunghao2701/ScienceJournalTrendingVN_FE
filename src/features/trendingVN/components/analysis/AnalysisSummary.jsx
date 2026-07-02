@@ -1,4 +1,4 @@
-import { Badge } from 'react-bootstrap';
+import { Badge, Form } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 
 const fmt = (value) => new Intl.NumberFormat().format(Number(value || 0));
@@ -16,15 +16,23 @@ const SummaryCard = ({ icon, label, value, hint }) => (
   </div>
 );
 
-export default function AnalysisSummary({ summary, window }) {
+export default function AnalysisSummary({ summary, window, onYearRangeChange }) {
   const current = window?.current || {};
   const comparison = window?.comparison || {};
-  const windowLabel = current.from_year && current.to_year
-    ? `${current.from_year}-${current.to_year}`
-    : 'Current window';
+  // Sourced from the Analysis endpoint's own window.years — deliberately not the
+  // sidebar's analytics.yearDistribution, so this control stays independent of the
+  // List/Table filter sidebar.
+  const availableYears = window?.years || [];
   const comparisonLabel = comparison.from_year && comparison.to_year
     ? `${comparison.from_year}-${comparison.to_year}`
     : 'Comparison unavailable';
+
+  const handleFromYearChange = (e) => {
+    onYearRangeChange?.(e.target.value, current.to_year || '');
+  };
+  const handleToYearChange = (e) => {
+    onYearRangeChange?.(current.from_year || '', e.target.value);
+  };
 
   return (
     <section className="analysis-section">
@@ -34,7 +42,32 @@ export default function AnalysisSummary({ summary, window }) {
           <p>Vietnamese university scope. Counts reflect the filtered cohort returned by the backend.</p>
         </div>
         <div className="analysis-window-badges">
-          <Badge bg="light" text="dark">Current: {windowLabel}</Badge>
+          <div className="analysis-year-range-picker">
+            <span className="analysis-window-label">Current:</span>
+            <Form.Select
+              size="sm"
+              value={current.from_year || ''}
+              onChange={handleFromYearChange}
+              disabled={availableYears.length === 0}
+            >
+              <option value="">From</option>
+              {availableYears.map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </Form.Select>
+            <span>–</span>
+            <Form.Select
+              size="sm"
+              value={current.to_year || ''}
+              onChange={handleToYearChange}
+              disabled={availableYears.length === 0}
+            >
+              <option value="">To</option>
+              {availableYears.map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </Form.Select>
+          </div>
           <Badge bg="light" text="dark">Comparison: {comparisonLabel}</Badge>
         </div>
       </div>

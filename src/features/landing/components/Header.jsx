@@ -45,11 +45,11 @@ export default function Header() {
     <>
       <Navbar
         expand="md"
-        fixed="top"
-        className="transition-all duration-300 py-3"
+        className="transition-all duration-300 py-0"
         style={{
-          borderBottom: "1px solid var(--header-border)",
-          background: "var(--header-bg)",
+          minHeight: "56px",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          background: "#1F2F40",
           backdropFilter: "blur(12px)",
         }}
       >

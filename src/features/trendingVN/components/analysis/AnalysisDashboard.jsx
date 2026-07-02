@@ -15,6 +15,7 @@ export default function AnalysisDashboard({
   onEntityClick,
   onArticleClick,
   onRetry,
+  onYearRangeChange,
 }) {
   if (isLoading && !analysis) {
     return (
@@ -62,7 +63,11 @@ export default function AnalysisDashboard({
 
   return (
     <div className="analysis-dashboard">
-      <AnalysisSummary summary={analysis.summary} window={analysis.window} />
+      <AnalysisSummary
+        summary={analysis.summary}
+        window={analysis.window}
+        onYearRangeChange={onYearRangeChange}
+      />
       <div className="analysis-chart-grid">
         <AnalysisTimeSeriesChart
           title="Works over time"

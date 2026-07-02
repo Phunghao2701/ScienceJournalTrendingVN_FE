@@ -110,6 +110,8 @@ export const normalizeArticleDetail = (apiData = {}, id = '') => {
     doi: apiData.doi || '',
     doi_url: doiUrl,
     source_url: doiUrl,
+    openalex_id: apiData.openalex_id || apiData.openalex || apiData.work_id || apiData.openalex_work_id || apiData.openalex_url || '',
+    pdf_url: apiData.pdf_url || apiData.pdf_link || apiData.pdf || apiData.url_pdf || apiData.pdf_download_url || apiData.oa_pdf_url || apiData.best_oa_location_pdf_url || '',
     primary_topic: apiData.primary_topic || '',
     topic_name: apiData.topic_name || topics.find((topic) => topic.is_primary)?.display_name || '',
     keywords,

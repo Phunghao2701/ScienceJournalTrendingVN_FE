@@ -63,7 +63,7 @@ export const buildFilterUpdateSearchParams = (searchParams, newFilters, viewMode
   const params = new URLSearchParams(searchParams);
   const normalizedView = normalizeTrendingView(viewMode);
   const filterKeys = [
-    'search', 'year', 'journal', 'journal_id', 'institution_id', 'publisher_id',
+    'search', 'year', 'journal', 'journal_id', 'institution_id', 'institution_name', 'publisher_id',
     'author_id', 'topic', 'topic_id', 'keyword_id', 'access', 'selectedAccess',
     'selectedJournal', 'selectedInstitution', 'selectedPublisher', 'selectedAuthor',
     'selectedTopic', 'selectedKeyword', 'from_year', 'to_year', 'fromYear', 'toYear',
@@ -87,7 +87,9 @@ export const buildFilterUpdateSearchParams = (searchParams, newFilters, viewMode
     selectedKeyword: 'keyword_id',
     fromYear: 'from_year',
     toYear: 'to_year',
+    institutionName: 'institution_name',
   };
+  const changedKeys = new Set(Object.keys(newFilters).map((rawKey) => keyMap[rawKey] || rawKey));
   Object.entries(newFilters).forEach(([rawKey, rawValue]) => {
     const key = keyMap[rawKey] || rawKey;
     const value = key === 'access' ? normalizeAccessFilter(rawValue) : rawValue;
@@ -103,7 +105,52 @@ export const buildFilterUpdateSearchParams = (searchParams, newFilters, viewMode
     }
   });
 
+  // institution_name is metadata that rides alongside institution_id; whenever the id
+  // changes without an explicit name, drop the previous name instead of leaving it stale.
+  if (changedKeys.has('institution_id') && !changedKeys.has('institution_name')) {
+    params.delete('institution_name');
+  }
+
   return params;
+};
+
+// Pure label resolution for the institution filter chip: prefer the URL-carried
+// institution_name metadata (survives refresh/copy-link without an unsupported
+// /institutions/:id lookup), then fall back to a matching analytics row, then ''
+// so the caller can render a deterministic ID-based fallback without crashing.
+export const resolveInstitutionDisplayName = (institutionId, institutionNameParam, institutionList = []) => {
+  if (!institutionId || institutionId === 'all') return '';
+
+  const trimmedParam = String(institutionNameParam || '').trim();
+  if (trimmedParam) return trimmedParam;
+
+  const match = (institutionList || []).find(
+    (institution) => String(institution?.id ?? '') === String(institutionId)
+  );
+  return match?.display_name || match?.name || '';
+};
+
+// Lets the free-text search box also match a known institution (e.g. "FPT"), since the
+// backend text search only scans article/journal/author/keyword/topic fields, never
+// institution names. Case-insensitive, either direction contains the other (so both a
+// partial name and the full display_name match), first hit wins in list order.
+export const resolveInstitutionSearchMatch = (searchText, institutionList = []) => {
+  const trimmed = String(searchText || '').trim().toLowerCase();
+  if (!trimmed) return null;
+
+  const match = (institutionList || []).find((institution) => {
+    const candidates = [institution?.display_name, institution?.name]
+      .filter(Boolean)
+      .map((value) => String(value).trim().toLowerCase());
+    return candidates.some((name) => name && (name.includes(trimmed) || trimmed.includes(name)));
+  });
+
+  if (!match) return null;
+
+  return {
+    id: match.id,
+    name: match.display_name || match.name || '',
+  };
 };
 
 // Mirrors TrendingVNPage.buildResultsReturnPath(); kept pure/parameterized for testability.

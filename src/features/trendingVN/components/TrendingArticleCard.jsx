@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { Row, Col, Form, Collapse } from 'react-bootstrap';
+import { Row, Col } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import ScientificMathText from '../../../shared/components/ScientificMathText';
@@ -11,6 +11,7 @@ export default function TrendingArticleCard({
   groupingMode,
   visibleColumns,
   handleDetailClick,
+  updateFilters,
   handleCopyDoi,
   toggleAbstract,
 }) {
@@ -18,23 +19,54 @@ export default function TrendingArticleCard({
 
   const placeholder = '-';
   const publicationDate = article.publication_date || article.publication_year || placeholder;
+  const keywordItems = Array.isArray(article.keywords) ? article.keywords : [];
+  const visibleKeywordItems = keywordItems
+    .map((keyword) => ({
+      id: keyword.keyword_id || keyword.id,
+      name: keyword.display_name || keyword.name || keyword.keyword,
+    }))
+    .filter((keyword) => keyword.name);
+  const citationCount = article.citation_count ?? article.semantic_citation_count ?? 0;
+  const referenceCount = article.reference_count ?? 0;
+  const accessLabel = article.is_open_access ? 'Open Access' : 'Closed Access';
+  const publicationDateDetail = article.publication_date
+    && String(article.publication_date) !== String(article.publication_year || '')
+    ? article.publication_date
+    : null;
+
+  const applyEntityFilter = (paramName, id, fallbackText) => {
+    const nextFilter = id
+      ? { [paramName]: id }
+      : (fallbackText ? { search: fallbackText } : null);
+
+    if (!nextFilter) return;
+
+    if (typeof updateFilters === 'function') {
+      updateFilters(nextFilter);
+      return;
+    }
+
+    const params = new URLSearchParams();
+    Object.entries(nextFilter).forEach(([key, value]) => params.set(key, value));
+    params.set('page', '1');
+    navigate(`/articles?${params.toString()}`);
+  };
+
   const publicationParts = [
     <> <strong>Volume:</strong> {article.volume_number || placeholder}</>,
     <> <strong>Issue:</strong> {article.issue_number || placeholder}</>,
     article.pages ? <> <strong>Pages:</strong> {article.pages}</> : null,
-    publicationDate,
+    visibleColumns.publication && article.publication_year ? (
+      <button
+        type="button"
+        className="text-link"
+        style={{ background: 'none', border: 0, padding: 0, color: 'var(--primary)', cursor: 'pointer', font: 'inherit' }}
+        onClick={() => applyEntityFilter('year', article.publication_year)}
+      >
+        {publicationDate}
+      </button>
+    ) : (visibleColumns.publication ? publicationDate : null),
   ].filter(Boolean);
-
-  const navigateEntityFilter = (paramName, id, fallbackText) => {
-    const params = new URLSearchParams();
-    if (id) {
-      params.set(paramName, id);
-    } else if (fallbackText) {
-      params.set('search', fallbackText);
-    }
-    params.set('page', '1');
-    navigate(`/articles?${params.toString()}`);
-  };
 
   const entityButtonStyle = {
     background: 'none',
@@ -49,16 +81,22 @@ export default function TrendingArticleCard({
   const isExpanded = expandedAbstracts[article.article_id]
     || groupingMode === 'simple-expand'
     || groupingMode === 'extended-expand';
+  const hasMetadataLine = Boolean(
+    visibleColumns.citations
+    || visibleColumns.references
+    || (visibleColumns.doi && article.doi)
+    || (visibleColumns.issn && article.journal_issn)
+  );
 
   return (
-    <div key={article.article_id} className="lens-article-card">
+    <div key={article.article_id} className="tvn-article-card">
       <div className="d-flex align-items-start gap-1">
         <div className="d-flex flex-column align-items-center gap-1" style={{ minWidth: '22px' }}>
-          <Form.Check type="checkbox" className="lens-checkbox-sm" />
           <button
             type="button"
-            className="lens-article-expand-toggle"
+            className="tvn-article-expand-toggle"
             onClick={() => toggleAbstract(article.article_id)}
+            aria-expanded={Boolean(isExpanded)}
             aria-label={isExpanded ? 'Collapse article details' : 'Expand article details'}
             title={isExpanded ? 'Collapse' : 'Expand'}
           >
@@ -72,7 +110,7 @@ export default function TrendingArticleCard({
         <div className="flex-grow-1 min-w-0">
           {visibleColumns.article && (
             <div
-              className="lens-article-title"
+              className="tvn-article-title"
               onClick={() => handleDetailClick(article.article_id)}
             >
               <ScientificMathText title={article.title_plain || toScientificPlainText(article.title)}>
@@ -81,7 +119,7 @@ export default function TrendingArticleCard({
             </div>
           )}
 
-          <div className="lens-detail-line">
+          <div className="tvn-detail-line">
             <strong>Journal Article</strong>
             {visibleColumns.journal && article.journal_name && (
               <>
@@ -90,7 +128,7 @@ export default function TrendingArticleCard({
                   type="button"
                   className="text-link"
                   style={entityButtonStyle}
-                  onClick={() => navigateEntityFilter('journal_id', article.journal_id, article.journal_name)}
+                  onClick={() => applyEntityFilter('journal_id', article.journal_id, article.journal_name)}
                 >
                   {article.journal_name}
                 </button>
@@ -110,7 +148,7 @@ export default function TrendingArticleCard({
           </div>
 
           {visibleColumns.authors && (
-            <div className="lens-detail-line">
+            <div className="tvn-detail-line">
               <strong>Authors: </strong>
               {article.authors && article.authors.length > 0 ? (
                 article.authors.map((au, aIdx) => (
@@ -119,7 +157,7 @@ export default function TrendingArticleCard({
                     key={au.author_id || aIdx}
                     className="text-link cursor-pointer"
                     style={entityButtonStyle}
-                    onClick={() => navigateEntityFilter('author_id', au.author_id, au.display_name || au.name)}
+                    onClick={() => applyEntityFilter('author_id', au.author_id, au.display_name || au.name)}
                   >
                     {au.display_name || au.name}
                     {aIdx < article.authors.length - 1 ? '; ' : ''}
@@ -131,43 +169,118 @@ export default function TrendingArticleCard({
             </div>
           )}
 
-          <div className="lens-detail-line">
-            <strong>Citation Count:</strong>{' '}
-            <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
-              {article.citation_count || article.semantic_citation_count || 0}
-            </span>{' '}
-            | <strong>Reference Count:</strong> {article.reference_count ?? 0}
-            {visibleColumns.doi && article.doi && (
-              <>
-                {' | '}
-                <strong>DOI:</strong>{' '}
-                <span style={{ fontFamily: 'monospace', fontSize: '13.6px' }}>
-                  {article.doi}
-                </span>
-                <button
-                  style={{ background: 'none', border: 'none', padding: 0, marginLeft: '3px', cursor: 'pointer', color: 'var(--text-muted)' }}
-                  onClick={(e) => handleCopyDoi(e, article.doi)}
-                  title="Copy DOI"
-                >
-                  <Icon icon="lucide:copy" width="10" />
-                </button>
-              </>
-            )}
-          </div>
+          {visibleColumns.publisher && article.publisher_name && (
+            <div className="tvn-detail-line">
+              <strong>Publisher: </strong>
+              <button
+                type="button"
+                className="text-link"
+                style={entityButtonStyle}
+                onClick={() => applyEntityFilter('publisher_id', article.publisher_id, article.publisher_name)}
+              >
+                {article.publisher_name}
+              </button>
+            </div>
+          )}
 
-          <div className="lens-pill-row">
-            {article.is_open_access && (
-              <span className="lens-pill lens-pill-oa">
-                <Icon icon="lucide:lock-open" width="10" />
-                Open Access
+          {visibleColumns.topic && article.primary_topic && (
+            <div className="tvn-detail-line">
+              <strong>Topic: </strong>
+              <button
+                type="button"
+                className="text-link"
+                style={entityButtonStyle}
+                onClick={() => applyEntityFilter('topic_id', article.topic_id, article.primary_topic)}
+              >
+                {article.primary_topic}
+              </button>
+            </div>
+          )}
+
+          {visibleColumns.keywords && visibleKeywordItems.length > 0 && (
+            <div className="tvn-detail-line tvn-keyword-line">
+              <strong>Keywords: </strong>
+              <span className="d-inline-flex flex-wrap gap-1">
+                {visibleKeywordItems.map((keyword, idx) => (
+                  <button
+                    key={keyword.id || keyword.name || idx}
+                    type="button"
+                    className="tvn-inline-filter-chip"
+                    onClick={() => applyEntityFilter('keyword_id', keyword.id, keyword.name)}
+                  >
+                    {keyword.name}
+                  </button>
+                ))}
               </span>
+            </div>
+          )}
+
+          {hasMetadataLine && (
+            <div className="tvn-detail-line">
+              {visibleColumns.citations && (
+                <>
+                  <strong>Citation Count:</strong>{' '}
+                  <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
+                    {citationCount}
+                  </span>
+                </>
+              )}
+              {visibleColumns.references && (
+                <>
+                  {visibleColumns.citations ? ' | ' : ''}
+                  <strong>Reference Count:</strong> {referenceCount}
+                </>
+              )}
+              {visibleColumns.doi && article.doi && (
+                <>
+                  {(visibleColumns.citations || visibleColumns.references) ? ' | ' : ''}
+                  <strong>DOI:</strong>{' '}
+                  <span style={{ fontFamily: 'monospace', fontSize: '13.6px' }}>
+                    {article.doi}
+                  </span>
+                  <button
+                    style={{ background: 'none', border: 'none', padding: 0, marginLeft: '3px', cursor: 'pointer', color: 'var(--text-muted)' }}
+                    onClick={(e) => handleCopyDoi(e, article.doi)}
+                    title="Copy DOI"
+                  >
+                    <Icon icon="lucide:copy" width="10" />
+                  </button>
+                </>
+              )}
+              {visibleColumns.issn && article.journal_issn && (
+                <>
+                  {(visibleColumns.citations || visibleColumns.references || (visibleColumns.doi && article.doi)) ? ' | ' : ''}
+                  <strong>ISSN:</strong>{' '}
+                  <button
+                    type="button"
+                    className="text-link"
+                    style={entityButtonStyle}
+                    onClick={() => applyEntityFilter('search', article.journal_issn)}
+                  >
+                    {article.journal_issn}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="tvn-pill-row">
+            {visibleColumns.access && (
+              <button
+                type="button"
+                className={`tvn-pill ${article.is_open_access ? 'tvn-pill-oa' : 'tvn-pill-closed'}`}
+                onClick={() => applyEntityFilter('access', article.is_open_access ? 'oa' : 'closed')}
+              >
+                <Icon icon={article.is_open_access ? 'lucide:lock-open' : 'lucide:lock'} width="10" />
+                {accessLabel}
+              </button>
             )}
-            <span className="lens-pill lens-pill-pending">
+            <span className="tvn-pill tvn-pill-pending">
               <Icon icon="lucide:file-text" width="10" />
               Published
             </span>
             <span
-              className="lens-pill lens-pill-abstract"
+              className="tvn-pill tvn-pill-abstract"
               onClick={() => toggleAbstract(article.article_id)}
             >
               <Icon icon="lucide:text" width="10" />
@@ -175,8 +288,8 @@ export default function TrendingArticleCard({
             </span>
           </div>
 
-          <Collapse in={isExpanded}>
-            <div className="lens-expanded-box mt-3 p-3 border rounded bg-white" style={{ borderColor: 'var(--border)' }}>
+          {isExpanded && (
+            <div className="tvn-expanded-box mt-3 p-3 border rounded bg-white" style={{ borderColor: 'var(--border)' }}>
               <Row className="g-3">
                 <Col md={8} className="expanded-left-col">
                   <div className="expanded-section mb-3">
@@ -194,15 +307,19 @@ export default function TrendingArticleCard({
                         <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
                           Publisher
                         </div>
-                        <button
-                          type="button"
-                          className="text-xs text-primary d-flex align-items-center gap-1 font-semibold"
-                          style={entityButtonStyle}
-                          onClick={() => navigateEntityFilter('publisher_id', article.publisher_id, article.publisher_name || article.journal_name)}
-                        >
-                          <Icon icon="lucide:building-2" width="12" />
-                          {article.publisher_name || article.journal_name || 'Any journal'}
-                        </button>
+                        {article.publisher_name ? (
+                          <button
+                            type="button"
+                            className="text-xs text-primary d-flex align-items-center gap-1 font-semibold"
+                            style={entityButtonStyle}
+                            onClick={() => applyEntityFilter('publisher_id', article.publisher_id, article.publisher_name)}
+                          >
+                            <Icon icon="lucide:building-2" width="12" />
+                            {article.publisher_name}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-muted">Not available</span>
+                        )}
                       </div>
                     </Col>
                     <Col sm={6}>
@@ -212,40 +329,40 @@ export default function TrendingArticleCard({
                           <Icon icon="lucide:info" width="12" style={{ color: 'var(--primary-hover)', cursor: 'pointer' }} />
                         </div>
                         <div className="text-xs">
-                          <button
-                            type="button"
-                            className="badge bg-light text-dark border px-2 py-1 font-monospace"
-                            style={{ ...entityButtonStyle, fontSize: '0.68rem', fontWeight: 500 }}
-                            onClick={() => navigateEntityFilter('topic_id', article.topic_id, article.primary_topic)}
-                          >
-                            {article.primary_topic || 'Any topic'}
-                          </button>
+                          {article.primary_topic ? (
+                            <button
+                              type="button"
+                              className="badge bg-light text-dark border px-2 py-1 font-monospace"
+                              style={{ ...entityButtonStyle, fontSize: '0.68rem', fontWeight: 500 }}
+                              onClick={() => applyEntityFilter('topic_id', article.topic_id, article.primary_topic)}
+                            >
+                              {article.primary_topic}
+                            </button>
+                          ) : (
+                            <span className="text-muted">Not available</span>
+                          )}
                         </div>
                       </div>
                     </Col>
                   </Row>
 
-                  {article.keywords && article.keywords.length > 0 && (
+                  {visibleKeywordItems.length > 0 && (
                     <div className="expanded-section mb-3">
                       <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
                         Keywords
                       </div>
                       <div className="d-flex flex-wrap gap-2">
-                        {article.keywords.map((keyword, idx) => {
-                          const keywordId = keyword.keyword_id || keyword.id;
-                          const keywordName = keyword.display_name || keyword.name || keyword.keyword;
-                          return (
-                            <button
-                              key={keywordId || keywordName || idx}
-                              type="button"
-                              className="badge bg-light text-dark border px-2 py-1"
-                              style={{ ...entityButtonStyle, fontSize: '0.68rem', fontWeight: 500 }}
-                              onClick={() => navigateEntityFilter('keyword_id', keywordId, keywordName)}
-                            >
-                              {keywordName}
-                            </button>
-                          );
-                        })}
+                        {visibleKeywordItems.map((keyword, idx) => (
+                          <button
+                            key={keyword.id || keyword.name || idx}
+                            type="button"
+                            className="badge bg-light text-dark border px-2 py-1"
+                            style={{ ...entityButtonStyle, fontSize: '0.68rem', fontWeight: 500 }}
+                            onClick={() => applyEntityFilter('keyword_id', keyword.id, keyword.name)}
+                          >
+                            {keyword.name}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -262,7 +379,7 @@ export default function TrendingArticleCard({
                             type="button"
                             className="text-xs text-primary d-flex align-items-center gap-1 border rounded px-2 py-1 bg-light"
                             style={entityButtonStyle}
-                            onClick={() => navigateEntityFilter('author_id', au.author_id, au.display_name || au.name)}
+                            onClick={() => applyEntityFilter('author_id', au.author_id, au.display_name || au.name)}
                           >
                             <Icon icon="lucide:user" width="12" />
                             {au.display_name || au.name}
@@ -281,24 +398,19 @@ export default function TrendingArticleCard({
                 </Col>
 
                 <Col md={4} className="expanded-right-col border-start ps-3">
-                  <div className="expanded-section mb-3">
-                    <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
-                      Document Preview
-                    </div>
-                    <div className="preview-container border rounded d-flex flex-column align-items-center justify-content-center bg-light p-4 text-center" style={{ minHeight: '160px' }}>
-                      <Icon icon="lucide:alert-circle" className="text-danger mb-2" width="24" />
-                      <span className="text-xs text-muted fw-bold">No image yet</span>
-                    </div>
-                  </div>
-
                   <div className="expanded-section">
                     <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
                       Publication Details
                     </div>
                     <div className="history-timeline text-xs d-flex flex-column gap-2">
                       <div className="history-item">
-                        <div className="fw-semibold text-dark">Publication: {article.publication_year || placeholder}</div>
+                        <div className="fw-semibold text-dark">Publication year: {article.publication_year || placeholder}</div>
                       </div>
+                      {publicationDateDetail && (
+                        <div className="history-item border-top pt-1.5">
+                          <div className="fw-semibold text-dark">Publication date: {publicationDateDetail}</div>
+                        </div>
+                      )}
                       <div className="history-item border-top pt-1.5">
                         <div className="fw-semibold text-dark">Volume: {article.volume_number || '—'}</div>
                       </div>
@@ -307,12 +419,46 @@ export default function TrendingArticleCard({
                           Issue: {article.issue_number || '—'}
                         </div>
                       </div>
+                      {article.pages && (
+                        <div className="history-item border-top pt-1.5">
+                          <div className="fw-semibold text-dark">Pages: {article.pages}</div>
+                        </div>
+                      )}
+                      {article.doi && (
+                        <div className="history-item border-top pt-1.5">
+                          <div className="fw-semibold text-dark">
+                            DOI:{' '}
+                            <span style={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>{article.doi}</span>
+                            <button
+                              style={{ background: 'none', border: 'none', padding: 0, marginLeft: '3px', cursor: 'pointer', color: 'var(--text-muted)' }}
+                              onClick={(e) => handleCopyDoi(e, article.doi)}
+                              title="Copy DOI"
+                            >
+                              <Icon icon="lucide:copy" width="10" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {article.journal_issn && (
+                        <div className="history-item border-top pt-1.5">
+                          <div className="fw-semibold text-dark">ISSN: {article.journal_issn}</div>
+                        </div>
+                      )}
+                      <div className="history-item border-top pt-1.5">
+                        <div className="fw-semibold text-dark">Citation Count: {citationCount}</div>
+                      </div>
+                      <div className="history-item border-top pt-1.5">
+                        <div className="fw-semibold text-dark">Reference Count: {referenceCount}</div>
+                      </div>
+                      <div className="history-item border-top pt-1.5">
+                        <div className="fw-semibold text-dark">Access: {accessLabel}</div>
+                      </div>
                     </div>
                   </div>
                 </Col>
               </Row>
             </div>
-          </Collapse>
+          )}
         </div>
       </div>
     </div>

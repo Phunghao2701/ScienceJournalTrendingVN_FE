@@ -1,10 +1,10 @@
-﻿/**
+/**
  *
  * File: features\trendingVN\pages\TrendingVNPage.jsx
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { Container, Row, Col, Form, Button, Badge, Collapse, Modal, Dropdown } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Badge, Modal, Dropdown } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import useArticleAnalysis from '../hooks/useArticleAnalysis';
 import ArticleTable from '../../article/components/ArticleTable';
 import AdminPagination from '../../../shared/components/Pagination';
 import PublisherGrid from '../components/PublisherGrid';
+import SearchableSelect from '../../../shared/components/Select/SearchableSelect';
 import TrendingArticleCard from '../components/TrendingArticleCard';
 import AnalysisDashboard from '../components/analysis/AnalysisDashboard';
 import { toast } from '../../../shared/utils/toast';
@@ -28,6 +29,7 @@ import {
   getTrendingViewFromParams,
   shouldCanonicalizeTrendingView,
   buildExactReturnToPath,
+  resolveInstitutionSearchMatch,
 } from '../utils/trendingViewParams';
 import { computeYearChartLayout } from '../utils/paperVnAnalysis';
 import '../trendingVN.css';
@@ -42,6 +44,8 @@ export default function TrendingVNPage() {
   const isAnalysisView = viewMode === TRENDING_VIEW_MODES.ANALYSIS;
   const [activeLeftTab, setActiveLeftTab] = useState(null); // 'filters', 'profile', 'info', 'more'
   const [activeTooltip, setActiveTooltip] = useState(null); // { name, count, x, y }
+  const [drawerSelectOpen, setDrawerSelectOpen] = useState(null);
+  const [statsExpanded, setStatsExpanded] = useState(false);
 
   const {
     articles,
@@ -67,7 +71,11 @@ export default function TrendingVNPage() {
     error: analysisError,
     refetch: refetchAnalysis,
   } = useArticleAnalysis(filters, { enabled: isAnalysisView });
-  const entityLabels = useArticleEntityLabels(filters);
+  const institutionNameParam = (searchParams.get('institution_name') || '').trim();
+  const entityLabels = useArticleEntityLabels(filters, {
+    institutionNameParam,
+    institutionList: analytics?.topInstitutions || [],
+  });
 
   const buildResultsReturnPath = () => buildExactReturnToPath(location.pathname, location.search);
 
@@ -88,16 +96,9 @@ export default function TrendingVNPage() {
   const [allExpanded, setAllExpanded] = useState(false);          // Toggle táº¥t cáº£ abstract
   const [showCustomise, setShowCustomise] = useState(false);
 
-  const [showSaveQueryModal, setShowSaveQueryModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [groupingMode, setGroupingMode] = useState('none'); // 'none', 'simple-group', 'simple-expand', 'extended-group', 'extended-expand'
-
-  const [queryTitle, setQueryTitle] = useState('');
-  const [queryDesc, setQueryDesc] = useState('');
-  const [queryNotify, setQueryNotify] = useState(false);
-  const [queryEmailAlerts, setQueryEmailAlerts] = useState(false);
-  const [queryAccess, setQueryAccess] = useState('restricted'); // 'restricted' hoáº·c 'public'
 
   const [exportDocCount, setExportDocCount] = useState(10);
   const [exportFormat, setExportFormat] = useState('CSV');
@@ -118,12 +119,21 @@ export default function TrendingVNPage() {
     authors: true,
     article: true,
     journal: true,
+    publication: true,
+    publisher: false,
+    topic: false,
     keywords: false,
     issn: false,
+    access: true,
+    citations: true,
+    references: true,
   });
 
   const toggleColumn = (key) => {
-    setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }));
+    setVisibleColumns(prev => {
+      const nextColumns = { ...prev, [key]: !prev[key] };
+      return Object.values(nextColumns).some(Boolean) ? nextColumns : prev;
+    });
   };
 
   const [localSearchInput, setLocalSearchInput] = useState(filters.search);
@@ -138,7 +148,7 @@ export default function TrendingVNPage() {
     setLocalSearchInput(filters.search);
   }, [filters.search]);
 
-  const { journalOptions, topicOptions } = useTrendingFilters();
+  const { journalOptions, topicOptions, institutionOptions } = useTrendingFilters();
 
   const toggleAbstract = (id) => {
     setExpandedAbstracts(prev => ({ ...prev, [id]: !prev[id] }));
@@ -158,41 +168,6 @@ export default function TrendingVNPage() {
     e.stopPropagation();
     if (!doi) return;
     navigator.clipboard.writeText(doi);
-  };
-
-  const handleSaveQuery = (e) => {
-    e.preventDefault();
-    if (!queryTitle.trim()) {
-      toast.error('Please enter a query title');
-      return;
-    }
-
-    const newQuery = {
-      id: Date.now(),
-      title: queryTitle.trim(),
-      description: queryDesc.trim(),
-      notify: queryNotify,
-      emailAlerts: queryEmailAlerts,
-      access: queryAccess,
-      filters: { ...filters },
-      savedAt: new Date().toISOString()
-    };
-
-    try {
-      const storageKey = 'saved_search_queries';
-      const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      localStorage.setItem(storageKey, JSON.stringify([...existing, newQuery]));
-      
-      toast.success('Query saved successfully');
-      setShowSaveQueryModal(false);
-      setQueryTitle('');
-      setQueryDesc('');
-      setQueryNotify(false);
-      setQueryEmailAlerts(false);
-    } catch (err) {
-      console.error('Unable to save query:', err);
-      toast.error('Unable to save query');
-    }
   };
 
   const handleExportSubmit = (e) => {
@@ -279,6 +254,15 @@ export default function TrendingVNPage() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    const institutionMatch = resolveInstitutionSearchMatch(
+      localSearchInput,
+      institutionOptions.map(inst => ({ id: inst.institution_id, display_name: inst.display_name }))
+    );
+    if (institutionMatch) {
+      setLocalSearchInput('');
+      updateFilters({ selectedInstitution: institutionMatch.id, institutionName: institutionMatch.name || null, search: '' });
+      return;
+    }
     updateFilters({ search: localSearchInput });
   };
 
@@ -318,7 +302,8 @@ export default function TrendingVNPage() {
       chips.push({ key: 'selectedJournal', label: `${t('journalLabel')}: ${jName}`, value: 'all' });
     }
     if (filters.selectedInstitution && filters.selectedInstitution !== 'all') {
-      chips.push({ key: 'selectedInstitution', label: `Institution #${filters.selectedInstitution}`, value: 'all' });
+      const institutionDisplayName = entityLabels.institution || `#${filters.selectedInstitution}`;
+      chips.push({ key: 'selectedInstitution', label: `Institution: ${institutionDisplayName}`, value: 'all' });
     }
     if (filters.selectedPublisher && filters.selectedPublisher !== 'all') {
       const publisherName = entityLabels.publisher || 'Unknown publisher';
@@ -347,9 +332,23 @@ export default function TrendingVNPage() {
 
   const hasActiveFilters = activeChips.length > 0 || filters.sortBy !== 'created_at' || filters.sortOrder !== 'desc';
 
-  const handleEntityFilter = (paramName, idValue) => {
+  const handleEntityFilter = (paramName, idValue, displayName) => {
     if (!idValue) return;
-    updateFilters({ [paramName]: idValue });
+    if (paramName === 'institution_id' && idValue !== 'all') {
+      updateFilters({ institution_id: idValue, institution_name: displayName || null });
+    } else {
+      updateFilters({ [paramName]: idValue });
+    }
+  };
+
+  // Only positive local numeric institution IDs are actionable; the display name
+  // rides along as institution_name URL metadata so the chip never falls back to
+  // a bare `Institution #ID` after a standard click.
+  const handleInstitutionFilter = (institution) => {
+    const numericId = Number(institution?.id);
+    if (!Number.isInteger(numericId) || numericId <= 0) return;
+    const name = institution.display_name || institution.name || '';
+    updateFilters({ selectedInstitution: numericId, institutionName: name || null });
   };
 
   const analyticsTotals = analytics?.totals || {};
@@ -385,22 +384,6 @@ export default function TrendingVNPage() {
   }, [yearCounts]);
 
   const yearChartLayout = useMemo(() => computeYearChartLayout(yearCounts), [yearCounts]);
-
-  const accessStatusCounts = useMemo(() => {
-    const counts = Object.fromEntries(
-      (analytics?.accessDistribution || []).map((item) => [item.key || item.name, item.count || 0])
-    );
-
-    return [
-      { key: 'oa', label: t('openAccess'), count: counts.oa || counts.open || 0, color: '#4ea72a' },
-      { key: 'closed', label: t('closedAccess'), count: counts.closed || counts.subscription || 0, color: '#0099ab' },
-      { key: 'unknown', label: t('statusUnknown'), count: counts.unknown || counts.unavailable || counts.null || 0, color: '#64748B' }
-    ];
-  }, [analytics, t]);
-
-  const maxAccessCount = useMemo(() => {
-    return Math.max(...accessStatusCounts.map(item => item.count)) || 1;
-  }, [accessStatusCounts]);
 
   const authorCounts = useMemo(() => {
     return (analytics?.topAuthors || []).slice(0, 8);
@@ -443,6 +426,21 @@ export default function TrendingVNPage() {
     return Object.entries(groups);
   }, [articles, groupingMode, t]);
 
+  const customiseColumns = useMemo(() => ([
+    { key: 'article', label: t('colArticle') },
+    { key: 'authors', label: t('colAuthors') },
+    { key: 'journal', label: t('colJournal') },
+    { key: 'publication', label: t('publicationDate') },
+    { key: 'publisher', label: t('statPublishers') },
+    { key: 'topic', label: t('statTopics') },
+    { key: 'keywords', label: t('colKeywords') },
+    { key: 'access', label: t('accessStatus') },
+    { key: 'citations', label: t('citedByLabel') },
+    { key: 'references', label: t('referencesLabel', 'References') },
+    { key: 'doi', label: t('colDoi') },
+    { key: 'issn', label: t('colIssn') },
+  ]), [t]);
+
   const getInitials = (name) => {
     if (!name) return '??';
     const parts = name.split(/\s+/).filter(Boolean);
@@ -452,79 +450,65 @@ export default function TrendingVNPage() {
 
   const fmt = (n) => new Intl.NumberFormat().format(n || 0);
 
+  const renderDrawerSearchSelect = ({ placeholder, value, onChange, options, children }) => (
+    <div className="tvn-drawer-inline-select">
+      <SearchableSelect
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        options={options}
+      />
+      {children}
+    </div>
+  );
+
 
   return (
     <div className="trending-vn-page">
       <Header />
 
-      <div className="lens-layout-wrapper">
+      <div className="tvn-layout-wrapper">
 
         {/* ==================== LEFT ICON SIDEBAR (Lens-style) ==================== */}
-        <aside className="lens-left-sidebar">
-          {activeLeftTab ? (
-            <button className="lens-sidebar-icon-btn active" title={t('close')} onClick={() => setActiveLeftTab(null)}>
-              <Icon icon="lucide:chevron-left-circle" width="18" />
-            </button>
-          ) : (
-            <button className="lens-sidebar-icon-btn" title={t('home')} onClick={() => navigate('/')}>
-              <Icon icon="lucide:home" width="18" />
-            </button>
-          )}
-          <button className={`lens-sidebar-icon-btn ${!activeLeftTab ? 'active' : ''}`} title={t('articleSearch')} onClick={() => setActiveLeftTab(null)}>
+        <aside className="tvn-left-sidebar">
+          <button className="tvn-sidebar-icon-btn" title={t('home')} onClick={() => navigate('/')}>
+            <Icon icon="lucide:home" width="18" />
+          </button>
+          <button className={`tvn-sidebar-icon-btn ${!activeLeftTab ? 'active' : ''}`} title={t('articleSearch')} onClick={() => setActiveLeftTab(prev => (prev ? null : 'filters'))}>
             <Icon icon="lucide:chevron-right" width="18" />
           </button>
-          <button className={`lens-sidebar-icon-btn ${activeLeftTab === 'filters' ? 'active' : ''}`} title={t('filtersLabel')} onClick={() => setActiveLeftTab(activeLeftTab === 'filters' ? null : 'filters')}>
+          <button className={`tvn-sidebar-icon-btn ${activeLeftTab === 'filters' ? 'active' : ''}`} title={t('filtersLabel')} onClick={() => setActiveLeftTab(activeLeftTab === 'filters' ? null : 'filters')}>
             <Icon icon="lucide:filter" width="18" />
           </button>
-          <button className={`lens-sidebar-icon-btn ${activeLeftTab === 'profile' ? 'active' : ''}`} title={t('sbWorkArea')} onClick={() => setActiveLeftTab(activeLeftTab === 'profile' ? null : 'profile')}>
+          <button className={`tvn-sidebar-icon-btn ${activeLeftTab === 'profile' ? 'active' : ''}`} title={t('sbWorkArea')} onClick={() => setActiveLeftTab(activeLeftTab === 'profile' ? null : 'profile')}>
             <Icon icon="lucide:user-cog" width="18" />
           </button>
-          <button className={`lens-sidebar-icon-btn ${activeLeftTab === 'info' ? 'active' : ''}`} title={t('info')} onClick={() => setActiveLeftTab(activeLeftTab === 'info' ? null : 'info')}>
+          <button className={`tvn-sidebar-icon-btn ${activeLeftTab === 'info' ? 'active' : ''}`} title={t('info')} onClick={() => setActiveLeftTab(activeLeftTab === 'info' ? null : 'info')}>
             <Icon icon="lucide:info" width="18" />
           </button>
-          <button className={`lens-sidebar-icon-btn ${activeLeftTab === 'more' ? 'active' : ''}`} title={t('more')} onClick={() => setActiveLeftTab(activeLeftTab === 'more' ? null : 'more')}>
+          <button className={`tvn-sidebar-icon-btn ${activeLeftTab === 'more' ? 'active' : ''}`} title={t('more')} onClick={() => setActiveLeftTab(activeLeftTab === 'more' ? null : 'more')}>
             <Icon icon="lucide:more-horizontal" width="18" />
           </button>
         </aside>
 
         {/* ==================== EXPANDED SIDEBAR DRAWER (Lens-style) ==================== */}
-        {activeLeftTab && (
-          <aside className="lens-expanded-sidebar">
+        <aside className={`tvn-expanded-sidebar ${activeLeftTab ? 'is-open' : 'is-closed'}`} aria-hidden={!activeLeftTab}>
             {/* 1. FILTERS TAB VIEW */}
             {activeLeftTab === 'filters' && (
-              <div className="lens-drawer-content">
-                <div className="lens-drawer-header">
-                  <span className="lens-drawer-title">{t('sbFilters')}</span>
+              <div className="tvn-drawer-content">
+                <div className="tvn-drawer-header">
+                  <span className="tvn-drawer-title">{t('sbFilters')}</span>
                   <Icon icon="lucide:info" className="info-icon" width="14" style={{ color: 'var(--primary-hover)', cursor: 'pointer' }} />
                 </div>
-                <div className="lens-drawer-scrollable">
+                <div className="tvn-drawer-scrollable">
                   {[
-                    { key: 'dateRange', label: t('sbDateRange'), icon: 'lucide:calendar', action: () => {
-                      const el = document.querySelector('.lens-sidebar-panel');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }},
-                    { key: 'flags', label: t('sbFlags'), icon: 'lucide:flag', action: () => {
-                      updateFilters({ access: filters.selectedAccess === 'all' ? 'oa' : 'all' });
-                    }},
-                    { key: 'jurisdiction', label: t('sbJurisdiction'), icon: 'lucide:map-pin' },
-                    { key: 'publishers', label: 'Publishers', icon: 'lucide:building-2', action: () => {
-                      const el = document.querySelector('.publisher-grid-container');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }},
-                    { key: 'authors', label: 'Authors', icon: 'lucide:users', action: () => {
-                      const el = document.querySelector('.author-lens-grid');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }},
-                    { key: 'topics', label: 'Topics', icon: 'lucide:tags' },
-                    { key: 'journals', label: 'Journals', icon: 'lucide:book-open' },
-                    { key: 'accessStatus', label: t('accessStatus'), icon: 'lucide:lock-keyhole', action: () => {
-                      const el = document.querySelector('.legal-status-chart');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }},
-                    { key: 'docType', label: t('sbDocType'), icon: 'lucide:file-text' },
-                    { key: 'citedWorks', label: t('sbCitedWorks'), icon: 'lucide:book-open' },
-                    { key: 'biologicals', label: t('sbBiologicals'), icon: 'lucide:dna' },
-                    { key: 'classifications', label: t('sbClassifications'), icon: 'lucide:list' },
+                    { key: 'dateRange', label: t('sbDateRange'), icon: 'lucide:calendar', select: 'dateRange' },
+                    { key: 'accessStatus', label: t('accessStatus'), icon: 'lucide:lock-keyhole', select: 'access' },
+                    { key: 'institutions', label: t('statInstitutions'), icon: 'lucide:building', select: 'institutions' },
+                    { key: 'publishers', label: 'Publishers', icon: 'lucide:building-2', select: 'publishers' },
+                    { key: 'authors', label: 'Authors', icon: 'lucide:users', select: 'authors' },
+                    { key: 'topics', label: 'Topics', icon: 'lucide:tags', select: 'topics' },
+                    { key: 'journals', label: 'Journals', icon: 'lucide:book-open', select: 'journals' },
                     { key: 'docFamily', label: t('sbDocFamily'), icon: 'lucide:folder-git2', action: () => {
                       setGroupingMode(prev => prev === 'none' ? 'simple-group' : 'none');
                     }},
@@ -535,14 +519,101 @@ export default function TrendingVNPage() {
                       handleClearSearch();
                     }}
                   ].map(item => (
-                    <div
-                      key={item.key}
-                      className="lens-drawer-item"
-                      onClick={item.action || (() => {})}
-                    >
-                      <Icon icon={item.icon} width="16" className="item-icon" />
-                      <span className="item-label">{item.label}</span>
-                      <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
+                    <div key={item.key}>
+                      <div
+                        className="tvn-drawer-item"
+                        onClick={item.select
+                          ? () => setDrawerSelectOpen(prev => (prev === item.select ? null : item.select))
+                          : (item.action || (() => {}))}
+                      >
+                        <Icon icon={item.icon} width="16" className="item-icon" />
+                        <span className="item-label">{item.label}</span>
+                        <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
+                      </div>
+                      {item.select === 'journals' && drawerSelectOpen === 'journals' && (
+                        renderDrawerSearchSelect({
+                          placeholder: `${t('journalLabel')}...`,
+                          value: filters.selectedJournal !== 'all' ? filters.selectedJournal : '',
+                          onChange: (id) => updateFilters({ selectedJournal: id || 'all' }),
+                          options: journalOptions.map(j => ({ value: j.journal_id, label: j.display_name })),
+                        })
+                      )}
+                      {item.select === 'publishers' && drawerSelectOpen === 'publishers' && (
+                        renderDrawerSearchSelect({
+                          placeholder: 'Publisher...',
+                          value: filters.selectedPublisher !== 'all' ? filters.selectedPublisher : '',
+                          onChange: (id) => updateFilters({ selectedPublisher: id || 'all' }),
+                          options: (analytics?.topPublishers || []).map(p => ({ value: p.id, label: p.display_name || p.name })),
+                        })
+                      )}
+                      {item.select === 'institutions' && drawerSelectOpen === 'institutions' && (
+                        renderDrawerSearchSelect({
+                          placeholder: `${t('statInstitutions')}...`,
+                          value: filters.selectedInstitution !== 'all' ? filters.selectedInstitution : '',
+                          onChange: (id) => {
+                            if (!id) { updateFilters({ selectedInstitution: 'all', institutionName: null }); return; }
+                            const match = institutionOptions.find(inst => String(inst.institution_id) === String(id));
+                            updateFilters({ selectedInstitution: Number(id), institutionName: match?.display_name || null });
+                          },
+                          options: institutionOptions.map(inst => ({ value: inst.institution_id, label: inst.display_name })),
+                        })
+                      )}
+                      {item.select === 'authors' && drawerSelectOpen === 'authors' && (
+                        renderDrawerSearchSelect({
+                          placeholder: 'Author...',
+                          value: filters.selectedAuthor !== 'all' ? filters.selectedAuthor : '',
+                          onChange: (id) => {
+                            if (!id) { updateFilters({ selectedAuthor: 'all' }); return; }
+                            handleEntityFilter('author_id', id);
+                          },
+                          options: authorCounts.filter(a => a.id && a.name && a.name !== 'Unknown').map(a => ({ value: a.id, label: a.name })),
+                        })
+                      )}
+                      {item.select === 'topics' && drawerSelectOpen === 'topics' && (
+                        renderDrawerSearchSelect({
+                          placeholder: 'Topic...',
+                          value: filters.selectedTopic !== 'all' ? filters.selectedTopic : '',
+                          onChange: (id) => {
+                            if (!id) { updateFilters({ selectedTopic: 'all' }); return; }
+                            handleEntityFilter('topic_id', id);
+                          },
+                          options: topicOptions.map(tp => ({ value: tp.topic_id || tp.id, label: tp.display_name })),
+                        })
+                      )}
+                      {item.select === 'access' && drawerSelectOpen === 'access' && (
+                        <div className="tvn-drawer-inline-select d-flex gap-2">
+                          {[
+                            { key: 'all', label: t('accessAllLabel') },
+                            { key: 'oa', label: t('openAccess') },
+                            { key: 'closed', label: t('closedAccess') },
+                          ].map(opt => (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              className={`tvn-inline-pill ${filters.selectedAccess === opt.key || (opt.key === 'all' && (!filters.selectedAccess || filters.selectedAccess === 'all')) ? 'active' : ''}`}
+                              onClick={() => updateFilters({ access: opt.key })}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {item.select === 'dateRange' && drawerSelectOpen === 'dateRange' && (
+                        <div className="tvn-drawer-inline-select d-flex gap-2">
+                          <SearchableSelect
+                            placeholder={t('fromYearLabel')}
+                            value={filters.fromYear || ''}
+                            onChange={(y) => updateFilters({ fromYear: y })}
+                            options={yearCounts.map(y => ({ value: y.year, label: y.year }))}
+                          />
+                          <SearchableSelect
+                            placeholder={t('toYearLabel')}
+                            value={filters.toYear || ''}
+                            onChange={(y) => updateFilters({ toYear: y })}
+                            options={yearCounts.map(y => ({ value: y.year, label: y.year }))}
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -551,12 +622,12 @@ export default function TrendingVNPage() {
 
             {/* 2. PROFILE / WORK AREA TAB VIEW */}
             {activeLeftTab === 'profile' && (
-              <div className="lens-drawer-content">
-                <div className="lens-profile-block">
-                  <div className="lens-profile-avatar">
+              <div className="tvn-drawer-content">
+                <div className="tvn-profile-block">
+                  <div className="tvn-profile-avatar">
                     {user?.name ? getInitials(user.name) : 'TM'}
                   </div>
-                  <div className="lens-profile-info">
+                  <div className="tvn-profile-info">
                     <div className="profile-name">{user?.name || user?.username || 'Researcher'}</div>
                     <div className="profile-subtitle">
                       {t('personalAccount')}{' '}
@@ -568,13 +639,12 @@ export default function TrendingVNPage() {
                   <Icon icon="lucide:chevron-down" width="16" className="text-muted ms-auto" />
                 </div>
 
-                <div className="lens-profile-actions">
+                <div className="tvn-profile-actions">
                   <Dropdown className="flex-fill">
                     <Dropdown.Toggle variant="outline-primary" size="sm" className="w-100 font-sans text-xs d-flex align-items-center justify-content-between">
                       {t('sbNewItem')}
                     </Dropdown.Toggle>
                     <Dropdown.Menu className="text-xs">
-                      <Dropdown.Item onClick={() => setShowSaveQueryModal(true)}>{t('saveAsQuery')}</Dropdown.Item>
                       <Dropdown.Item onClick={() => setShowExportModal(true)}>{t('export')}</Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
@@ -590,8 +660,8 @@ export default function TrendingVNPage() {
                   </Dropdown>
                 </div>
 
-                <div className="lens-drawer-section-title">{t('sbWorkArea')}</div>
-                <div className="lens-drawer-scrollable">
+                <div className="tvn-drawer-section-title">{t('sbWorkArea')}</div>
+                <div className="tvn-drawer-scrollable">
                   {[
                     { key: 'savedQueries', label: t('sbSavedQueries'), icon: 'lucide:save', action: () => navigate('/dashboard') },
                     { key: 'searchHistory', label: t('sbSearchHistory'), icon: 'lucide:search' },
@@ -606,7 +676,7 @@ export default function TrendingVNPage() {
                   ].map(item => (
                     <div
                       key={item.key}
-                      className="lens-drawer-item"
+                      className="tvn-drawer-item"
                       onClick={item.action || (() => {})}
                     >
                       <Icon icon={item.icon} width="16" className="item-icon" />
@@ -620,19 +690,19 @@ export default function TrendingVNPage() {
 
             {/* 3. INFO / SUPPORT / SUGGESTIONS VIEW */}
             {activeLeftTab === 'info' && (
-              <div className="lens-drawer-content">
-                <div className="lens-drawer-header">
-                  <span className="lens-drawer-title">{t('sbSupport')}</span>
+              <div className="tvn-drawer-content">
+                <div className="tvn-drawer-header">
+                  <span className="tvn-drawer-title">{t('sbSupport')}</span>
                 </div>
                 
                 <div className="px-3 py-2">
                   <p className="text-muted" style={{ fontSize: '0.72rem', lineHeight: '1.4', margin: '0 0 10px 0' }}>
                     {t('sbSupportDesc')}
                   </p>
-                  <div className="lens-search-group" style={{ height: '32px' }}>
+                  <div className="tvn-search-group" style={{ height: '32px' }}>
                     <Form.Control
                       placeholder={t('sbSearchDoc')}
-                      className="lens-search-input py-1"
+                      className="tvn-search-input py-1"
                       style={{ fontSize: '0.78rem' }}
                     />
                     <span className="d-flex align-items-center pe-2">
@@ -643,33 +713,13 @@ export default function TrendingVNPage() {
 
                 <hr className="my-2 text-muted opacity-20" />
 
-                <div className="lens-drawer-header pt-1">
-                  <span className="lens-drawer-title">{t('sbSuggestions')}</span>
+                <div className="tvn-drawer-header pt-1">
+                  <span className="tvn-drawer-title">{t('sbSuggestions')}</span>
                   <Icon icon="lucide:info" className="info-icon" width="14" style={{ color: 'var(--primary-hover)', cursor: 'pointer' }} />
                 </div>
 
-                <div className="lens-drawer-scrollable">
-                  <div className="lens-suggestion-item" onClick={() => setShowSaveQueryModal(true)}>
-                    <div className="suggestion-icon-wrapper">
-                      <Icon icon="lucide:folder-plus" width="18" className="text-primary" />
-                    </div>
-                    <div className="suggestion-info">
-                      <div className="suggestion-title">{t('sbCreateCollection')}</div>
-                      <div className="suggestion-desc">{t('sbCreateCollectionDesc')}</div>
-                    </div>
-                  </div>
-
-                  <div className="lens-suggestion-item" onClick={() => setShowSaveQueryModal(true)}>
-                    <div className="suggestion-icon-wrapper">
-                      <Icon icon="lucide:save" width="18" className="text-primary" />
-                    </div>
-                    <div className="suggestion-info">
-                      <div className="suggestion-title">{t('sbSaveQuery')}</div>
-                      <div className="suggestion-desc">{t('sbSaveQueryDesc')}</div>
-                    </div>
-                  </div>
-
-                  <div className="lens-suggestion-item" onClick={() => setShowExportModal(true)}>
+                <div className="tvn-drawer-scrollable">
+                  <div className="tvn-suggestion-item" onClick={() => setShowExportModal(true)}>
                     <div className="suggestion-icon-wrapper">
                       <Icon icon="lucide:download-cloud" width="18" className="text-primary" />
                     </div>
@@ -684,61 +734,54 @@ export default function TrendingVNPage() {
 
             {/* 4. MORE MENU VIEW */}
             {activeLeftTab === 'more' && (
-              <div className="lens-drawer-content">
-                <div className="lens-drawer-header">
-                  <span className="lens-drawer-title">{t('more')}</span>
+              <div className="tvn-drawer-content">
+                <div className="tvn-drawer-header">
+                  <span className="tvn-drawer-title">{t('more')}</span>
                 </div>
-                <div className="lens-drawer-scrollable">
-                  <div className="lens-drawer-item" onClick={() => navigate('/')}>
+                <div className="tvn-drawer-scrollable">
+                  <div className="tvn-drawer-item" onClick={() => navigate('/')}>
                     <Icon icon="lucide:home" width="16" className="item-icon" />
                     <span className="item-label">{t('home')}</span>
                   </div>
-                  <div className="lens-drawer-item" onClick={() => navigate('/journals')}>
+                  <div className="tvn-drawer-item" onClick={() => navigate('/journals')}>
                     <Icon icon="lucide:book-open" width="16" className="item-icon" />
                     <span className="item-label">{t('journals')}</span>
                   </div>
-                  <div className="lens-drawer-item" onClick={() => navigate('/trends')}>
+                  <div className="tvn-drawer-item" onClick={() => navigate('/trends')}>
                     <Icon icon="lucide:trending-up" width="16" className="item-icon" />
                     <span className="item-label">{t('trends')}</span>
                   </div>
-                  <div className="lens-drawer-item" onClick={() => navigate('/geography')}>
+                  <div className="tvn-drawer-item" onClick={() => navigate('/geography')}>
                     <Icon icon="lucide:globe" width="16" className="item-icon" />
                     <span className="item-label">{t('geography')}</span>
                   </div>
                 </div>
               </div>
             )}
-          </aside>
-        )}
+        </aside>
 
         {/* ==================== MAIN CONTENT AREA ==================== */}
-        <div className="lens-main-content">
+        <div className="tvn-main-content">
         <Container fluid className="p-0">
 
         {/* ==================== 1. TOP INFO BAR ==================== */}
-        <div className="lens-top-info-bar">
+        <div className="tvn-top-info-bar">
           <div className="total-count">
             <Icon icon="lucide:search" width="13" className="me-1" />
             {t('databaseArticlesCount', { count: fmt(isAnalysisView ? activeResultTotal : stats.totalArticles) })}
           </div>
-          <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: '0.75rem' }}>
-            {t('exploreSectors')}
-          </div>
         </div>
 
         {/* ==================== 2. PAGE TITLE ==================== */}
-        <h1 className="lens-page-title">{t('articleSearchResults')}</h1>
+        <h1 className="tvn-page-title">{t('articleSearchResults')}</h1>
 
         {/* ==================== 3. FILTER INDICATOR ==================== */}
-        <div className="lens-filter-indicator">
-          <span className="filter-count-link" onClick={clearFilters}>
-            {t('articles')} ({fmt(activeResultTotal)})
-          </span>
-          <span>-</span>
-          <span>{t('allDocs')}</span>
-          <span>-</span>
-          <span>Scope: Vietnamese universities</span>
-          <span style={{ marginLeft: '16px' }}>
+        <div className="tvn-filter-indicator">
+          <button type="button" className="filter-count-link" onClick={clearFilters}>
+            {t('databaseArticlesCount', { count: fmt(activeResultTotal) })}
+          </button>
+          <span className="tvn-filter-divider" aria-hidden="true">-</span>
+          <span className="tvn-filter-status">
             <Icon icon="lucide:filter" width="12" className="me-1" />
             {t('filtersLabel')}: {activeChips.length > 0
               ? t('filtersApplied', { count: activeChips.length })
@@ -750,70 +793,101 @@ export default function TrendingVNPage() {
         {/* In Analysis, every segment reads analysis.summary (never the disabled list/light
             analytics queries); Topics/Publishers have no Analysis contract field, so they are
             hidden instead of showing stale data (FE-FIX-03). */}
-        <div className="lens-stats-bar">
-          <div className="stat-segment">
-            <div className="stat-color-bar" style={{ background: '#00acc1' }} />
-            <div className="stat-label">{t('statArticleRecords')}</div>
-            <div className="stat-value">{isAnalysisView && isAnalysisLoading ? '...' : fmt(isAnalysisView ? activeResultTotal : (stats.totalArticles || total))}</div>
-          </div>
-          <div className="stat-segment">
-            <div className="stat-color-bar" style={{ background: '#0288d1' }} />
-            <div className="stat-label">{t('openAccess')}</div>
-            <div className="stat-value">{(isAnalysisView ? isAnalysisLoading : isLoading) ? '...' : fmt(openAccessTotal)}</div>
-          </div>
-          <div className="stat-segment">
-            <div className="stat-color-bar" style={{ background: '#7b1fa2' }} />
-            <div className="stat-label">{t('statAuthors')}</div>
-            <div className="stat-value">{(isAnalysisView ? isAnalysisLoading : isAnalyticsLoading) ? '...' : fmt(authorTotal)}</div>
-          </div>
-          {isAnalysisView && (
-            <div className="stat-segment">
-              <div className="stat-color-bar" style={{ background: '#475569' }} />
-              <div className="stat-label">{t('statInstitutions')}</div>
-              <div className="stat-value">{isAnalysisLoading ? '...' : fmt(institutionTotal)}</div>
-            </div>
-          )}
-          {!isAnalysisView && (
-            <div className="stat-segment">
-              <div className="stat-color-bar" style={{ background: '#475569' }} />
-              <div className="stat-label">{t('statTopics')}</div>
-              <div className="stat-value">{isAnalyticsLoading ? '...' : fmt(topicTotal)}</div>
-            </div>
-          )}
-          {!isAnalysisView && publisherTotal > 0 && (
-            <div className="stat-segment">
-              <div className="stat-color-bar" style={{ background: '#334155' }} />
-              <div className="stat-label">{t('statPublishers')}</div>
-              <div className="stat-value">{isAnalyticsLoading ? '...' : fmt(publisherTotal)}</div>
-            </div>
-          )}
-          {journalTotal > 0 && (
-            <div className="stat-segment">
-              <div className="stat-color-bar" style={{ background: '#2e7d32' }} />
-              <div className="stat-label">{t('statJournals')}</div>
-              <div className="stat-value">{(isAnalysisView ? isAnalysisLoading : isAnalyticsLoading) ? '...' : fmt(journalTotal)}</div>
-            </div>
-          )}
-          {isAnalysisView && citationsTotal > 0 && (
-            <div className="stat-segment">
-              <div className="stat-color-bar" style={{ background: '#c62828' }} />
-              <div className="stat-label">{t('statCitations')}</div>
-              <div className="stat-value">{isAnalysisLoading ? '...' : fmt(citationsTotal)}</div>
-            </div>
-          )}
+        <div className="tvn-stats-bar">
+          {(() => {
+            const segments = [
+              {
+                key: 'articles',
+                color: '#00acc1',
+                label: t('statArticleRecords'),
+                loading: isAnalysisView && isAnalysisLoading,
+                value: fmt(isAnalysisView ? activeResultTotal : (stats.totalArticles || total)),
+              },
+              {
+                key: 'openAccess',
+                color: '#0288d1',
+                label: t('openAccess'),
+                loading: isAnalysisView ? isAnalysisLoading : isLoading,
+                value: fmt(openAccessTotal),
+              },
+              {
+                key: 'authors',
+                color: '#7b1fa2',
+                label: t('statAuthors'),
+                loading: isAnalysisView ? isAnalysisLoading : isAnalyticsLoading,
+                value: fmt(authorTotal),
+              },
+              isAnalysisView
+                ? {
+                    key: 'institutions',
+                    color: '#475569',
+                    label: t('statInstitutions'),
+                    loading: isAnalysisLoading,
+                    value: fmt(institutionTotal),
+                  }
+                : {
+                    key: 'topics',
+                    color: '#475569',
+                    label: t('statTopics'),
+                    loading: isAnalyticsLoading,
+                    value: fmt(topicTotal),
+                  },
+              !isAnalysisView && publisherTotal > 0 && {
+                key: 'publishers',
+                color: '#334155',
+                label: t('statPublishers'),
+                loading: isAnalyticsLoading,
+                value: fmt(publisherTotal),
+              },
+              journalTotal > 0 && {
+                key: 'journals',
+                color: '#2e7d32',
+                label: t('statJournals'),
+                loading: isAnalysisView ? isAnalysisLoading : isAnalyticsLoading,
+                value: fmt(journalTotal),
+              },
+              isAnalysisView && citationsTotal > 0 && {
+                key: 'citations',
+                color: '#c62828',
+                label: t('statCitations'),
+                loading: isAnalysisLoading,
+                value: fmt(citationsTotal),
+              },
+            ].filter(Boolean);
+
+            const visibleSegments = statsExpanded ? segments : segments.slice(0, 4);
+            const hiddenCount = segments.length - visibleSegments.length;
+
+            return (
+              <>
+                {visibleSegments.map((segment) => (
+                  <div className="stat-segment" key={segment.key}>
+                    <div className="stat-color-bar" style={{ background: segment.color }} />
+                    <div className="stat-label">{segment.label}</div>
+                    <div className="stat-value">{segment.loading ? '...' : segment.value}</div>
+                  </div>
+                ))}
+                {segments.length > 4 && (
+                  <button
+                    type="button"
+                    className="stat-segment-toggle"
+                    onClick={() => setStatsExpanded((prev) => !prev)}
+                  >
+                    {statsExpanded ? t('showLessStats') : t('showMoreStats', { count: hiddenCount })}
+                  </button>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* ==================== 5. STICKY TOP TOOLBAR (FULL WIDTH) ==================== */}
-        <div className="lens-sticky-results-toolbar">
+        <div className="tvn-sticky-results-toolbar">
           {/* --- Tab row --- */}
-          <div className="lens-tab-row">
+          <div className="tvn-tab-row">
             <div className="tab-group">
               <button className="tab-item active">
                 {t('articles')}
-              </button>
-              <button className="tab-item" disabled>
-                {t('exploreCitations')}
-                <Icon icon="lucide:check-check" width="13" style={{ color: '#16a34a' }} />
               </button>
             </div>
             
@@ -843,43 +917,32 @@ export default function TrendingVNPage() {
           </div>
 
           {/* --- Action toolbar: Expand, Customise, Save, Share, Export, Sort, Search --- */}
-          <div className="lens-action-toolbar">
+          <div className="tvn-action-toolbar">
             <div className="action-group">
               {!isAnalysisView && (
                 <>
-                  <button className="lens-action-btn" onClick={handleToggleAllAbstracts}>
+                  <button className="tvn-action-btn" onClick={handleToggleAllAbstracts}>
                     <Icon icon={allExpanded ? "lucide:chevron-up" : "lucide:chevron-down"} width="12" />
                     {allExpanded ? t('collapseAbstract') : t('expand')}
                   </button>
                   <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                  <button className="lens-action-btn" onClick={() => setShowCustomise(!showCustomise)}>
+                  <button className="tvn-action-btn" onClick={() => setShowCustomise(!showCustomise)}>
                     <Icon icon="lucide:list-checks" width="12" />
                     {t('customiseList')}
                   </button>
                   <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
                 </>
               )}
-              <button className="lens-action-btn" onClick={() => setShowSaveQueryModal(true)}>
-                <Icon icon="lucide:save" width="12" />
-                {t('saveAsQuery')}
-              </button>
-              <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-              <button className="lens-action-btn" onClick={() => setShowShareModal(true)}>
+              <button className="tvn-action-btn" onClick={() => setShowShareModal(true)}>
                 <Icon icon="lucide:share-2" width="12" />
                 {t('share')}
               </button>
               {!isAnalysisView && (
                 <>
                   <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                  <button className="lens-action-btn" onClick={() => setShowExportModal(true)}>
+                  <button className="tvn-action-btn" onClick={() => setShowExportModal(true)}>
                     <Icon icon="lucide:download" width="12" />
                     {t('export')}
-                  </button>
-                  <span className="action-sep" style={{ color: '#cbd5e1' }}>|</span>
-                  <button className="lens-action-btn" disabled>
-                    <Icon icon="lucide:sparkles" width="12" />
-                    {t('analysisPreviewOptions')}
-                    <Badge bg="secondary" style={{ fontSize: '0.58rem', padding: '1px 4px', marginLeft: '3px' }}>{t('badgeNew')}</Badge>
                   </button>
                 </>
               )}
@@ -892,7 +955,7 @@ export default function TrendingVNPage() {
                 <div className="d-flex align-items-center gap-2">
                   <Icon icon="lucide:arrow-up-down" width="12" className="text-muted" />
                   <select
-                    className="lens-sort-select"
+                    className="tvn-sort-select"
                     value={`${filters.sortBy}-${filters.sortOrder}`}
                     onChange={(e) => {
                       const [sortBy, sortOrder] = e.target.value.split('-');
@@ -910,8 +973,8 @@ export default function TrendingVNPage() {
               )}
 
               {/* Search Bar */}
-              <Form onSubmit={handleSearchSubmit} className="lens-search-form" style={{ width: '300px', margin: 0 }}>
-                <div className="lens-search-group" style={{ height: '32px', minHeight: '32px' }}>
+              <Form onSubmit={handleSearchSubmit} className="tvn-search-form" style={{ width: '300px', margin: 0 }}>
+                <div className="tvn-search-group" style={{ height: '32px', minHeight: '32px' }}>
                   <span className="d-flex align-items-center ps-2 pe-1" style={{ background: 'transparent' }}>
                     <Icon icon="lucide:search" width="14" className="text-muted" />
                   </span>
@@ -919,7 +982,7 @@ export default function TrendingVNPage() {
                     placeholder={t('searchPlaceholder')}
                     value={localSearchInput}
                     onChange={(e) => setLocalSearchInput(e.target.value)}
-                    className="lens-search-input py-1"
+                    className="tvn-search-input py-1"
                     style={{ fontSize: '0.8rem' }}
                   />
                   {localSearchInput && (
@@ -927,7 +990,7 @@ export default function TrendingVNPage() {
                       <Icon icon="lucide:x" width="12" />
                     </Button>
                   )}
-                  <Button type="submit" className="lens-search-btn py-1 px-3">
+                  <Button type="submit" className="tvn-search-btn py-1 px-3">
                     {t('search')}
                   </Button>
                 </div>
@@ -936,47 +999,42 @@ export default function TrendingVNPage() {
           </div>
 
           {/* --- Panel Customise Your Results View --- */}
-          <Collapse in={!isAnalysisView && showCustomise}>
-            <div className="lens-customise-panel">
+          {!isAnalysisView && showCustomise && (
+            <div className="tvn-customise-panel">
               <div className="customise-title">{t('customiseYourResultsView')}</div>
               <div className="customise-grid">
-                {[
-                  { key: 'doi', label: t('colDoi') },
-                  { key: 'authors', label: t('colAuthors') },
-                  { key: 'article', label: t('colArticle') },
-                  { key: 'journal', label: t('colJournal') },
-                ].map(col => (
+                {customiseColumns.map(col => (
                   <Form.Check
                     key={col.key}
                     type="checkbox"
                     id={`customise-col-${col.key}`}
                     label={col.label}
-                    checked={visibleColumns[col.key]}
+                    checked={Boolean(visibleColumns[col.key])}
                     onChange={() => toggleColumn(col.key)}
                     className="customise-check"
                   />
                 ))}
               </div>
             </div>
-          </Collapse>
+          )}
 
           {/* --- Active filter chips --- */}
           {activeChips.length > 0 && (
-            <div className="lens-chips-bar">
+            <div className="tvn-chips-bar">
               <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>{t('filterSearch')}:</span>
               {activeChips.map(chip => (
-                <span key={chip.key} className="lens-filter-chip">
+                <span key={chip.key} className="tvn-filter-chip">
                   {chip.label}
                   <Icon
                     icon="lucide:x"
                     width="11"
-                    className="lens-chip-close"
+                    className="tvn-chip-close"
                     onClick={() => (chip.onRemove ? chip.onRemove() : updateFilters({ [chip.key]: chip.value }))}
                   />
                 </span>
               ))}
               {hasActiveFilters && (
-                <button className="lens-clear-link" onClick={clearFilters}>
+                <button className="tvn-clear-link" onClick={clearFilters}>
                   {t('clearAll')}
                 </button>
               )}
@@ -990,7 +1048,7 @@ export default function TrendingVNPage() {
           <Col lg={showSidebar ? 8 : 12} md={12} className="transition-col">
 
             {/* ==================== ARTICLE RESULTS ==================== */}
-            <div className="lens-results-body">
+            <div className="tvn-results-body">
               {isAnalysisView ? (
                 <AnalysisDashboard
                   analysis={analysis}
@@ -999,15 +1057,16 @@ export default function TrendingVNPage() {
                   onEntityClick={handleEntityFilter}
                   onArticleClick={handleDetailClick}
                   onRetry={refetchAnalysis}
+                  onYearRangeChange={(fromYear, toYear) => updateFilters({ fromYear, toYear })}
                 />
               ) : isLoading && articles.length === 0 ? (
                 <div className="d-flex flex-column gap-0">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="lens-article-card p-3">
-                      <div className="lens-skeleton mb-2" style={{ width: '100px', height: '12px' }} />
-                      <div className="lens-skeleton mb-2" style={{ width: '80%', height: '16px' }} />
-                      <div className="lens-skeleton mb-1" style={{ width: '60%', height: '11px' }} />
-                      <div className="lens-skeleton" style={{ width: '40%', height: '11px' }} />
+                    <div key={i} className="tvn-article-card p-3">
+                      <div className="tvn-skeleton mb-2" style={{ width: '100px', height: '12px' }} />
+                      <div className="tvn-skeleton mb-2" style={{ width: '80%', height: '16px' }} />
+                      <div className="tvn-skeleton mb-1" style={{ width: '60%', height: '11px' }} />
+                      <div className="tvn-skeleton" style={{ width: '40%', height: '11px' }} />
                     </div>
                   ))}
                 </div>
@@ -1033,8 +1092,8 @@ export default function TrendingVNPage() {
                 <div className="d-flex flex-column gap-0">
                   {groupedArticles ? (
                     groupedArticles.map(([groupName, groupList]) => (
-                      <div key={groupName} className="lens-group-section mb-3 border rounded shadow-sm overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
-                        <div className="lens-group-header p-2 d-flex align-items-center justify-content-between bg-light border-bottom">
+                      <div key={groupName} className="tvn-group-section mb-3 border rounded shadow-sm overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
+                        <div className="tvn-group-header p-2 d-flex align-items-center justify-content-between bg-light border-bottom">
                           <span className="fw-bold text-xs font-sans text-main d-flex align-items-center">
                             <Icon icon="lucide:folder" className="me-2 text-primary" width="14" />
                             {groupName}
@@ -1092,7 +1151,7 @@ export default function TrendingVNPage() {
               )}
 
               {!isAnalysisView && totalPages > 1 && !isLoading && (
-                <div className="lens-pagination-row">
+                <div className="tvn-pagination-row">
                   <AdminPagination
                     totalItems={total}
                     currentPage={currentPage}
@@ -1106,35 +1165,38 @@ export default function TrendingVNPage() {
           </Col>
 
           {showSidebar && (
-            <Col lg={4} md={12} className="lens-sidebar-col">
+            <Col lg={4} md={12} className="tvn-sidebar-col">
 
-              <div className="lens-sidebar-panel">
+              <div className="tvn-sidebar-panel tvn-institutions-panel">
                 {institutionCounts.length > 0 ? (
                   <>
-                    <div className="lens-sidebar-title">Top Vietnamese Institutions</div>
-                    <div className="d-flex flex-column gap-2">
+                    <div className="tvn-sidebar-title">Top Vietnamese Institutions</div>
+                    <div className="institution-tvn-grid">
                       {institutionCounts.map((institution, index) => {
                         const institutionName = institution.display_name || institution.name || 'Unknown institution';
+                        const institutionIdValue = Number(institution.id);
+                        const canFilterInstitution = Number.isInteger(institutionIdValue) && institutionIdValue > 0;
+                        const isLastColumn = (index + 1) % 4 === 0;
+                        const remainingCells = institutionCounts.length % 4 || 4;
+                        const isLastRow = index >= institutionCounts.length - remainingCells;
                         return (
-                          <div key={institution.id || institutionName || index} className="d-flex align-items-center gap-2">
-                            <span
-                              className="d-inline-flex align-items-center justify-content-center"
-                              style={{
-                                width: '28px',
-                                height: '28px',
-                                border: '1px solid var(--border)',
-                                background: 'var(--bg-section)',
-                                fontSize: '0.62rem',
-                                fontWeight: 700,
-                              }}
-                            >
-                              {getInitials(institutionName)}
+                          <button
+                            key={institution.id || institutionName || index}
+                            type="button"
+                            className={`institution-grid-cell ${isLastColumn ? 'last-col' : ''} ${isLastRow ? 'last-row' : ''}`}
+                            onClick={() => handleInstitutionFilter(institution)}
+                            disabled={!canFilterInstitution}
+                            title={canFilterInstitution ? `Filter articles by ${institutionName}` : institutionName}
+                            aria-label={canFilterInstitution ? `Filter articles by ${institutionName}` : institutionName}
+                          >
+                            <span className="institution-logo-container">
+                              <Icon icon="lucide:building-2" className="institution-logo-icon" width="28" />
                             </span>
-                            <span className="flex-grow-1 text-truncate text-xs" title={institutionName}>
+                            <span className="institution-grid-name" title={institutionName}>
                               {institutionName}
                             </span>
-                            <span className="text-muted-custom text-xs">{fmt(institution.count)}</span>
-                          </div>
+                            <span className="institution-grid-count">{fmt(institution.count)}</span>
+                          </button>
                         );
                       })}
                     </div>
@@ -1149,167 +1211,15 @@ export default function TrendingVNPage() {
                 )}
               </div>
 
-              <div className="lens-sidebar-panel">
-                <div className="lens-sidebar-title">{t('publicationDate')}</div>
-                {articles.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {t('anyTopic')}
-                  </div>
-                ) : (
-                  <div style={{ paddingTop: '4px' }}>
-                    <svg viewBox="0 0 200 100" width="100%" height="110px">
-                      {/* Elegant background grid lines */}
-                      <line x1="8" y1="18" x2="192" y2="18" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
-                      <line x1="8" y1="38" x2="192" y2="38" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
-                      <line x1="8" y1="58" x2="192" y2="58" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
-
-                      {yearChartLayout.columns.map((item) => {
-                        const colWidth = item.width;
-                        const colHeight = maxYearCount > 0 ? (item.count / maxYearCount) * 60 : 0;
-                        const y = 78 - colHeight;
-                        return (
-                          <g key={item.year}>
-                            <rect
-                              x={item.x} y={y}
-                              width={colWidth} height={colHeight}
-                              rx="2"
-                              fill="#1976D2"
-                              opacity="0.85"
-                              className="lens-chart-bar"
-                            />
-                            <text x={item.x + colWidth / 2} y="92" textAnchor="middle" fontSize="6.5" fill="var(--text-muted)">
-                              {item.year}
-                            </text>
-                            {item.count > 0 && (
-                              <text x={item.x + colWidth / 2} y={y - 3} textAnchor="middle" fontSize="6.5" fontWeight="600" fill="var(--text-main)">
-                                {item.count}
-                              </text>
-                            )}
-                          </g>
-                        );
-                      })}
-                      <line x1="8" y1="78" x2="192" y2="78" stroke="var(--border)" strokeWidth="1" />
-                    </svg>
-                  </div>
-                )}
-                <div className="lens-chart-hint">
-                  <Icon icon="lucide:edit-2" width="10" className="me-1" />
-                  {t('chartHint')}
-                </div>
-              </div>
-
-              {/* --- Panel 2.5: Access Status chart --- */}
-              <div className="lens-sidebar-panel">
-                <div className="lens-sidebar-title">{t('accessStatus')}</div>
-                {articles.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {t('anyTopic')}
-                  </div>
-                ) : (
-                  <div style={{ paddingTop: '4px' }}>
-                    <svg viewBox="0 0 330 220" width="100%" height="200px">
-                      {/* Grid lines and Tick labels */}
-                      {(() => {
-                        const scaleLegalMax = Math.max(5, Math.ceil(maxAccessCount / 5) * 5);
-                        const legalTicks = Array.from({ length: 6 }, (_, i) => i * (scaleLegalMax / 5));
-                        return legalTicks.map((tickVal) => {
-                          const x = 90 + (tickVal / scaleLegalMax) * 220;
-                          return (
-                            <g key={tickVal}>
-                              {/* Dotted vertical grid lines */}
-                              <line
-                                x1={x}
-                                y1={15}
-                                x2={x}
-                                y2={190}
-                                stroke="var(--border)"
-                                strokeWidth="0.5"
-                                strokeDasharray="3 3"
-                                opacity="0.6"
-                              />
-                              {/* Tick marks at X-axis */}
-                              <line
-                                x1={x}
-                                y1={190}
-                                x2={x}
-                                y2={194}
-                                stroke="var(--border-dark)"
-                                strokeWidth="1"
-                              />
-                              {/* Tick numbers */}
-                              <text
-                                x={x}
-                                y={205}
-                                textAnchor="middle"
-                                fontSize="7.5"
-                                fill="var(--text-muted)"
-                              >
-                                {fmt(tickVal)}
-                              </text>
-                            </g>
-                          );
-                        });
-                      })()}
-
-                      {/* X and Y axes lines */}
-                      <line x1={90} y1={15} x2={90} y2={190} stroke="var(--border-dark)" strokeWidth="1" />
-                      <line x1={90} y1={190} x2={310} y2={190} stroke="var(--border-dark)" strokeWidth="1" />
-
-                      {/* Horizontal Bars & Y-axis labels */}
-                      {(() => {
-                        const scaleLegalMax = Math.max(5, Math.ceil(maxAccessCount / 5) * 5);
-                        const yStep = 175 / accessStatusCounts.length;
-                        const barHeight = 12;
-
-                        return accessStatusCounts.map((item, idx) => {
-                          const centerOfStep = 15 + (idx + 0.5) * yStep;
-                          const y = centerOfStep - barHeight / 2;
-                          const barWidth = scaleLegalMax > 0 ? (item.count / scaleLegalMax) * 220 : 0;
-
-                          return (
-                            <g key={item.key}>
-                              {/* Label on the left of Y-axis */}
-                              <text
-                                x={82}
-                                y={centerOfStep}
-                                textAnchor="end"
-                                dominantBaseline="middle"
-                                fontSize="7.5"
-                                fill="var(--text-muted)"
-                                fontWeight="600"
-                              >
-                                {item.label}
-                              </text>
-                              {/* Bar */}
-                              <rect
-                                x={90}
-                                y={y}
-                                width={barWidth}
-                                height={barHeight}
-                                fill={item.color}
-                                opacity="0.85"
-                                className="lens-chart-bar"
-                              >
-                                <title>{`${item.label}: ${item.count}`}</title>
-                              </rect>
-                            </g>
-                          );
-                        });
-                      })()}
-                    </svg>
-                  </div>
-                )}
-              </div>
-
-              <div className="lens-sidebar-panel">
-                <div className="lens-sidebar-title">{t('topAuthors')}</div>
+              <div className="tvn-sidebar-panel tvn-authors-panel">
+                <div className="tvn-sidebar-title">{t('topAuthors')}</div>
                 {authorCounts.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {t('anyTopic')}
                   </div>
                 ) : (
-                  <div style={{ position: 'relative', paddingTop: '4px' }}>
-                    <svg viewBox="0 0 330 260" width="100%" height="240px">
+                  <div className="tvn-chart-frame tvn-author-chart-frame">
+                    <svg className="tvn-sidebar-chart-svg tvn-author-chart-svg" viewBox="0 0 330 260" width="100%">
                       {/* Grid lines and Tick labels on Y-axis */}
                       {(() => {
                         const counts = authorCounts.map(item => item.count);
@@ -1399,7 +1309,7 @@ export default function TrendingVNPage() {
                                 height={barHeight}
                                 fill={color}
                                 opacity="0.85"
-                                className="lens-chart-bar"
+                                className="tvn-chart-bar"
                                 style={{ transition: 'opacity 0.15s ease', cursor: canFilterAuthor ? 'pointer' : 'default' }}
                                 role={canFilterAuthor ? 'button' : undefined}
                                 tabIndex={canFilterAuthor ? 0 : undefined}
@@ -1467,8 +1377,8 @@ export default function TrendingVNPage() {
                 )}
               </div>
 
-              <div className="lens-sidebar-panel">
-                <div className="lens-sidebar-title">{t('topTopics')}</div>
+              <div className="tvn-sidebar-panel tvn-topics-panel">
+                <div className="tvn-sidebar-title">{t('topKeywords')}</div>
                 {topicCounts.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {t('anyTopic')}
@@ -1508,121 +1418,89 @@ export default function TrendingVNPage() {
                 )}
               </div>
 
+              <div className="tvn-sidebar-panel tvn-daterange-panel">
+                <div className="tvn-sidebar-title">{t('publicationDate')}</div>
+                {articles.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {t('anyTopic')}
+                  </div>
+                ) : (
+                  <div className="tvn-chart-frame tvn-date-chart-frame">
+                    <svg className="tvn-sidebar-chart-svg tvn-date-chart-svg" viewBox="0 0 200 100" width="100%">
+                      {/* Elegant background grid lines */}
+                      <line x1="8" y1="18" x2="192" y2="18" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
+                      <line x1="8" y1="38" x2="192" y2="38" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
+                      <line x1="8" y1="58" x2="192" y2="58" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
+
+                      {yearChartLayout.columns.map((item) => {
+                        const colWidth = item.width;
+                        const colHeight = maxYearCount > 0 ? (item.count / maxYearCount) * 60 : 0;
+                        const y = 78 - colHeight;
+                        const canFilterYear = Boolean(item.year) && item.count > 0;
+                        const activateYear = () => {
+                          if (canFilterYear) updateFilters({ fromYear: item.year, toYear: item.year });
+                        };
+                        const handleYearKeyDown = (event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            activateYear();
+                          }
+                        };
+                        return (
+                          <g key={item.year}>
+                            <rect
+                              x={item.x} y={y}
+                              width={colWidth} height={colHeight}
+                              rx="2"
+                              fill="#1976D2"
+                              opacity="0.85"
+                              className="tvn-chart-bar"
+                              style={{ transition: 'opacity 0.15s ease', cursor: canFilterYear ? 'pointer' : 'default' }}
+                              role={canFilterYear ? 'button' : undefined}
+                              tabIndex={canFilterYear ? 0 : undefined}
+                              aria-label={canFilterYear ? `${t('publicationYear')}: ${item.year} (${item.count})` : undefined}
+                              onClick={activateYear}
+                              onKeyDown={handleYearKeyDown}
+                            />
+                            <text x={item.x + colWidth / 2} y="92" textAnchor="middle" fontSize="6.5" fill="var(--text-muted)">
+                              {item.year}
+                            </text>
+                            {item.count > 0 && (
+                              <text x={item.x + colWidth / 2} y={y - 3} textAnchor="middle" fontSize="6.5" fontWeight="600" fill="var(--text-main)">
+                                {item.count}
+                              </text>
+                            )}
+                          </g>
+                        );
+                      })}
+                      <line x1="8" y1="78" x2="192" y2="78" stroke="var(--border)" strokeWidth="1" />
+                    </svg>
+                  </div>
+                )}
+                <div className="tvn-chart-hint">
+                  <Icon icon="lucide:mouse-pointer-click" width="10" className="me-1" />
+                  {t('chartHint')}
+                </div>
+              </div>
+
             </Col>
           )}
         </Row>
       </Container>
-      </div>{/* /lens-main-content */}
-      </div>{/* /lens-layout-wrapper */}
+      </div>{/* /tvn-main-content */}
+      </div>{/* /tvn-layout-wrapper */}
 
       {/* ==================== 6. MODALS ==================== */}
-      {/* 6.1 Save Query Modal */}
-      <Modal
-        show={showSaveQueryModal}
-        onHide={() => setShowSaveQueryModal(false)}
-        centered
-        className="lens-modal"
-      >
-        <Modal.Header>
-          <Modal.Title>{t('saveQueryTitle')}</Modal.Title>
-          <button className="lens-modal-close-btn" onClick={() => setShowSaveQueryModal(false)}>x</button>
-        </Modal.Header>
-        <Form onSubmit={handleSaveQuery}>
-          <Modal.Body>
-            <Form.Group className="mb-3" controlId="saveQueryTitleInput">
-              <Form.Label>{t('queryTitleLabel')}</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder={t('queryTitleLabel')}
-                value={queryTitle}
-                onChange={(e) => setQueryTitle(e.target.value)}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="saveQueryDescInput">
-              <Form.Label>{t('queryDescLabel')}</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder={t('queryDescLabel')}
-                value={queryDesc}
-                onChange={(e) => setQueryDesc(e.target.value)}
-              />
-            </Form.Group>
-
-            <div className="lens-modal-panel-title">
-              {t('notificationsLabel')}
-              <Icon icon="lucide:info" className="info-icon" width="14" />
-            </div>
-            <div className="lens-modal-panel-box">
-              <Form.Check
-                type="checkbox"
-                id="notify-alert"
-                label={t('notificationsLabel')}
-                checked={queryNotify}
-                onChange={(e) => setQueryNotify(e.target.checked)}
-                className="mb-2 text-xs"
-              />
-              <Form.Check
-                type="checkbox"
-                id="email-alerts"
-                label={t('emailAlertsLabel')}
-                checked={queryEmailAlerts}
-                onChange={(e) => setQueryEmailAlerts(e.target.checked)}
-                className="text-xs"
-              />
-            </div>
-
-            <div className="lens-modal-panel-title">
-              {t('whoHasAccessLabel')}
-            </div>
-            <div className="lens-modal-panel-box">
-              <Form.Check
-                type="radio"
-                name="queryAccess"
-                id="access-restricted"
-                label={t('restrictedAccessLabel')}
-                checked={queryAccess === 'restricted'}
-                onChange={() => setQueryAccess('restricted')}
-                className="mb-2 text-xs"
-              />
-              <Form.Check
-                type="radio"
-                name="queryAccess"
-                id="access-public"
-                label={t('publicAccessLabel')}
-                checked={queryAccess === 'public'}
-                onChange={() => setQueryAccess('public')}
-                className="text-xs"
-              />
-            </div>
-          </Modal.Body>
-          <div className="modal-footer border-top-0 d-flex justify-content-end gap-2 p-3 pt-0">
-            <button
-              type="button"
-              className="lens-modal-btn-cancel"
-              onClick={() => setShowSaveQueryModal(false)}
-            >
-              {t('cancel')}
-            </button>
-            <button type="submit" className="lens-modal-btn-save">
-              {t('save')}
-            </button>
-          </div>
-        </Form>
-      </Modal>
-
-      {/* 6.2 Share Modal */}
+      {/* 6.1 Share Modal */}
       <Modal
         show={showShareModal}
         onHide={() => setShowShareModal(false)}
         centered
-        className="lens-modal"
+        className="tvn-modal"
       >
         <Modal.Header>
           <Modal.Title>{t('shareTitle')}</Modal.Title>
-          <button className="lens-modal-close-btn" onClick={() => setShowShareModal(false)}>x</button>
+          <button className="tvn-modal-close-btn" onClick={() => setShowShareModal(false)}>x</button>
         </Modal.Header>
         <Modal.Body>
           <div className="share-social-grid">
@@ -1656,7 +1534,7 @@ export default function TrendingVNPage() {
             </button>
           </div>
 
-          <div className="lens-modal-panel-title mb-2">
+          <div className="tvn-modal-panel-title mb-2">
             {t('copyLinkToShare')}
           </div>
           <div className="share-copy-group">
@@ -1687,11 +1565,11 @@ export default function TrendingVNPage() {
         onHide={() => setShowExportModal(false)}
         centered
         size="lg"
-        className="lens-modal"
+        className="tvn-modal"
       >
         <Modal.Header>
           <Modal.Title>{t('export')}</Modal.Title>
-          <button className="lens-modal-close-btn" onClick={() => setShowExportModal(false)}>x</button>
+          <button className="tvn-modal-close-btn" onClick={() => setShowExportModal(false)}>x</button>
         </Modal.Header>
         <Form onSubmit={handleExportSubmit}>
           <Modal.Body>
@@ -1849,12 +1727,12 @@ export default function TrendingVNPage() {
           <div className="modal-footer border-top-0 d-flex justify-content-end gap-2 p-3 pt-0">
             <button
               type="button"
-              className="lens-modal-btn-cancel"
+              className="tvn-modal-btn-cancel"
               onClick={() => setShowExportModal(false)}
             >
               {t('cancel')}
             </button>
-            <button type="submit" className="lens-modal-btn-save">
+            <button type="submit" className="tvn-modal-btn-save">
               {t('export')}
             </button>
           </div>

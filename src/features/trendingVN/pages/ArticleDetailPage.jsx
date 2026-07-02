@@ -1,4 +1,4 @@
-﻿/**
+/**
  * File source for the ResearchPulse FE system.
  * Lens-style scientific article detail page.
  *
@@ -179,7 +179,7 @@ export default function ArticleDetailPage() {
     };
 
     return (
-      <div key={itemKey} className="lens-article-card p-3 mb-3">
+      <div key={itemKey} className="tvn-article-card p-3 mb-3">
         <div className="d-flex align-items-start gap-2">
           {/* Chevron/Expand Trigger */}
           <div 
@@ -197,7 +197,7 @@ export default function ArticleDetailPage() {
           <div className="flex-grow-1 min-w-0">
             {/* Title */}
             <div
-              className="lens-article-title text-primary-hover fw-bold font-sans"
+              className="tvn-article-title text-primary-hover fw-bold font-sans"
               style={{ fontSize: '1.05rem', cursor: 'pointer', color: 'var(--text-main)' }}
               onClick={handleTitleClick}
             >
@@ -206,7 +206,7 @@ export default function ArticleDetailPage() {
               </ScientificMathText>
             </div>
 
-            <div className="lens-detail-line text-xs mt-1" style={{ color: 'var(--text-main)' }}>
+            <div className="tvn-detail-line text-xs mt-1" style={{ color: 'var(--text-main)' }}>
               {item.publication_info && <strong>{item.publication_info}</strong>}
               {item.journal_name && (
                 <>
@@ -233,7 +233,7 @@ export default function ArticleDetailPage() {
               )}
             </div>
 
-            <div className="lens-detail-line text-xs mt-1" style={{ color: 'var(--text-main)' }}>
+            <div className="tvn-detail-line text-xs mt-1" style={{ color: 'var(--text-main)' }}>
               <strong>Authors: </strong>
               {item.authors && item.authors.length > 0 ? (
                 item.authors.map(renderRelatedAuthor)
@@ -242,7 +242,7 @@ export default function ArticleDetailPage() {
               )}
             </div>
 
-            <div className="lens-detail-line text-xs mt-1" style={{ color: 'var(--text-main)' }}>
+            <div className="tvn-detail-line text-xs mt-1" style={{ color: 'var(--text-main)' }}>
               <strong>Citation Count:</strong>{' '}
               <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
                 {item.citations ?? item.citation_count ?? item.semantic_citation_count ?? 0}
@@ -257,19 +257,19 @@ export default function ArticleDetailPage() {
               )}
             </div>
 
-            <div className="lens-pill-row mt-2">
+            <div className="tvn-pill-row mt-2">
               {item.is_open_access && (
-                <span className="lens-pill lens-pill-oa">
+                <span className="tvn-pill tvn-pill-oa">
                   <Icon icon="lucide:lock-open" width="10" />
                   Open Access
                 </span>
               )}
-              <span className="lens-pill lens-pill-pending">
+              <span className="tvn-pill tvn-pill-pending">
                 <Icon icon="lucide:file-text" width="10" />
                 Published
               </span>
               <span
-                className="lens-pill lens-pill-abstract cursor-pointer"
+                className="tvn-pill tvn-pill-abstract cursor-pointer"
                 onClick={() => toggleAbstract(itemKey)}
               >
                 <Icon icon="lucide:text" width="10" />
@@ -279,7 +279,7 @@ export default function ArticleDetailPage() {
 
             {/* Detailed split-layout collapse block (Lens-style, matched with Tri's search layout) */}
             <Collapse in={isExpanded} key={itemKey}>
-              <div className="lens-expanded-box mt-3 p-3 border rounded bg-white" style={{ borderColor: 'var(--border)' }}>
+              <div className="tvn-expanded-box mt-3 p-3 border rounded bg-white" style={{ borderColor: 'var(--border)' }}>
                 <Row className="g-3">
                   {/* Left Column: Abstract, Article Notes, Publishers, Authors, Classifications */}
                   <Col md={8} className="expanded-left-col">
@@ -471,6 +471,9 @@ export default function ArticleDetailPage() {
     const params = new URLSearchParams();
     if (idValue) {
       params.set(paramName, idValue);
+      if (paramName === 'institution_id' && fallbackText) {
+        params.set('institution_name', fallbackText);
+      }
     } else if (fallbackText) {
       params.set('search', fallbackText);
     }
@@ -482,6 +485,12 @@ export default function ArticleDetailPage() {
     const keywordId = keyword.keyword_id || keyword.id;
     const label = keyword.display_name || keyword.name || keyword.keyword;
     navigateEntityFilter('keyword_id', keywordId, label);
+  };
+
+  const handleInstitutionClick = (institution) => {
+    const instId = institution.institution_id || institution.id;
+    const label = institution.display_name || institution.name || '';
+    navigateEntityFilter('institution_id', instId, label);
   };
 
   const generateBibTeX = useCallback(() => {
@@ -602,6 +611,16 @@ ER  - `;
 
 
   const articleDoiUrl = getDoiUrl(article?.doi);
+  const rawOpenAlex = article?.openalex_id || article?.work_id || article?.openalex_work_id || article?.openalex || article?.openalex_url;
+  const openAlexUrl = rawOpenAlex
+    ? rawOpenAlex.startsWith('http')
+      ? rawOpenAlex
+      : `https://openalex.org/${rawOpenAlex}`
+    : null;
+  const openAlexDisplayId = rawOpenAlex
+    ? rawOpenAlex.replace(/^https?:\/\/openalex\.org\//i, '')
+    : null;
+  const pdfUrl = article?.pdf_url || article?.pdf_link || article?.pdf || article?.url_pdf || article?.pdf_download_url || article?.oa_pdf_url || article?.best_oa_location_pdf_url;
 
   if (isLoading) {
     return (
@@ -638,8 +657,8 @@ ER  - `;
 
   const citationMetric = article.citation_count ?? article.citations ?? 0;
   const referenceMetric = article.reference_count ?? 0;
-  const citingWorksRelationTotal = citingWorksTotal ?? article.citing_works_count ?? 0;
-  const availableReferencesTotal = referencesTotal ?? article.available_references_count ?? 0;
+  const citingWorksRelationTotal = citingWorksTotal ?? article.citing_works_count ?? citingWorks?.length ?? 0;
+  const availableReferencesTotal = referencesTotal ?? article.available_references_count ?? article.reference_count ?? references?.length ?? 0;
   const publicationLabel = article.publication_date
     ? ['Published', article.publication_date]
     : article.publication_year
@@ -678,36 +697,42 @@ ER  - `;
   );
 
   return (
-    <div className="article-detail-page-wrapper grid-bg">
+    <div className="article-detail-page-wrapper">
       <Header />
 
       {/* Lens-style query search bar */}
-      <section className="lens-top-search-section">
-        <div className="lens-search-container-fluid d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <section className="tvn-top-search-section">
+        <div className="tvn-search-container-fluid d-flex align-items-center justify-content-between flex-wrap gap-3">
           {/* Left Side */}
-          <div className="lens-top-search-left d-flex align-items-center gap-2">
-          <Button 
+          <div className="tvn-top-search-left d-flex align-items-center gap-1">
+            <Button 
               variant="link" 
-              className="lens-home-btn p-1 text-muted d-flex align-items-center justify-content-center"
-              onClick={handleBackToResults}
+              className="tvn-home-btn p-1 d-flex align-items-center justify-content-center"
+              onClick={() => navigate('/')}
               title="Home"
             >
-              <Icon icon="lucide:arrow-left" width="18" height="18" />
+              <Icon icon="lucide:home" width="18" height="18" />
             </Button>
-            <div className="lens-top-search-divider" />
+            <Icon icon="lucide:chevron-left" width="14" className="text-muted" />
             <div 
-              className="lens-results-count font-sans text-xs text-muted-custom cursor-pointer"
+              className="tvn-results-count font-sans text-xs cursor-pointer d-flex align-items-center gap-1"
               onClick={handleSearchSubmit}
               title="Click to run this search query"
               style={{ cursor: 'pointer' }}
             >
-              <span className="fw-bold text-dark">{location.state?.resultCount ?? scholarlyResultsCount}</span> Scholarly Results
+              <span className="fw-semibold">{location.state?.resultCount ?? scholarlyResultsCount} Scholarly Results</span>
             </div>
+            {(article?.display_id || article?.id || id) && (
+              <div className="d-flex align-items-center ms-1 gap-1 text-muted">
+                <Icon icon="lucide:chevron-left" width="14" />
+                <span className="tvn-active-id-badge">{article?.display_id || article?.id || id}</span>
+              </div>
+            )}
           </div>
 
           {/* Right Side */}
-          <div className="lens-top-search-right d-flex align-items-center">
-            <div className="lens-search-bar-wrapper d-flex align-items-stretch">
+          <div className="tvn-top-search-right d-flex align-items-center">
+            <div className="tvn-search-bar-wrapper d-flex align-items-stretch">
               <div className="position-relative d-flex align-items-center" style={{ width: '400px' }}>
                 <Form.Control
                   type="text"
@@ -715,10 +740,10 @@ ER  - `;
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Search database..."
-                  className="lens-search-input-field"
+                  className="tvn-search-input-field"
                 />
                 <span 
-                  className="lens-search-help-trigger" 
+                  className="tvn-search-help-trigger" 
                   onClick={() => setShowHelpModal(true)}
                   title="Search query syntax help"
                   style={{ cursor: 'pointer' }}
@@ -726,9 +751,9 @@ ER  - `;
                   <Icon icon="lucide:help-circle" width="16" height="16" />
                 </span>
               </div>
-              <Dropdown as={ButtonGroup} className="lens-search-split-dropdown">
-                <Button className="lens-btn-search-submit" onClick={handleSearchSubmit}>Search</Button>
-                <Dropdown.Toggle split className="lens-btn-search-toggle" />
+              <Dropdown as={ButtonGroup} className="tvn-search-split-dropdown">
+                <Button className="tvn-btn-search-submit" onClick={handleSearchSubmit}>Search</Button>
+                <Dropdown.Toggle split className="tvn-btn-search-toggle" />
                 <Dropdown.Menu align="end" className="shadow-sm border">
                   <Dropdown.Item onClick={() => {
                     toast.info("Scholarly search is active in this edition.");
@@ -744,425 +769,176 @@ ER  - `;
         </div>
       </section>
 
-      <section className="lens-return-context">
-        <button type="button" className="lens-return-link" onClick={handleBackToResults}>
-          <Icon icon="lucide:arrow-left" width="15" />
-          Back to Trending results
-        </button>
-        <div className="lens-return-summary">
-          {returnContext.query ? (
-            <span>Query: <strong>{returnContext.query}</strong></span>
-          ) : (
-            <span>Vietnamese publication trend workspace</span>
-          )}
-          <span>{returnContext.filterCount} active filter{returnContext.filterCount === 1 ? '' : 's'}</span>
-          <span>Page {returnContext.page}</span>
-        </div>
-      </section>
+
 
       {/* Main Layout Wrapper */}
-      <div className="lens-layout-wrapper">
-        {/* Left Icon Sidebar (Lens-style) */}
-        <aside className="lens-left-sidebar">
-          {activeLeftTab ? (
-            <button className="lens-sidebar-icon-btn active" title={t('close')} onClick={() => setActiveLeftTab(null)}>
-              <Icon icon="lucide:chevron-left-circle" width="18" />
-            </button>
-          ) : (
-            <button className="lens-sidebar-icon-btn" title={t('home')} onClick={() => navigate('/')}>
-              <Icon icon="lucide:home" width="18" />
-            </button>
-          )}
-          <button className="lens-sidebar-icon-btn" title={t('articleSearch')} onClick={handleBackToResults}>
-            <Icon icon="lucide:chevron-right" width="18" />
-          </button>
-          <button className={`lens-sidebar-icon-btn ${activeLeftTab === 'filters' ? 'active' : ''}`} title={t('filtersLabel')} onClick={() => setActiveLeftTab(activeLeftTab === 'filters' ? null : 'filters')}>
-            <Icon icon="lucide:filter" width="18" />
-          </button>
-          <button className={`lens-sidebar-icon-btn ${activeLeftTab === 'profile' ? 'active' : ''}`} title={t('sbWorkArea')} onClick={() => setActiveLeftTab(activeLeftTab === 'profile' ? null : 'profile')}>
-            <Icon icon="lucide:user-cog" width="18" />
-          </button>
-          <button className={`lens-sidebar-icon-btn ${activeLeftTab === 'info' ? 'active' : ''}`} title={t('info')} onClick={() => setActiveLeftTab(activeLeftTab === 'info' ? null : 'info')}>
-            <Icon icon="lucide:info" width="18" />
-          </button>
-          <button className={`lens-sidebar-icon-btn ${activeLeftTab === 'more' ? 'active' : ''}`} title={t('more')} onClick={() => setActiveLeftTab(activeLeftTab === 'more' ? null : 'more')}>
-            <Icon icon="lucide:more-horizontal" width="18" />
-          </button>
-        </aside>
-
-        {/* Expanded Sidebar Drawer (Lens-style) */}
-        {activeLeftTab && (
-          <aside className="lens-expanded-sidebar">
-            {/* 1. FILTERS TAB VIEW */}
-            {activeLeftTab === 'filters' && (
-              <div className="lens-drawer-content">
-                <div className="lens-drawer-header">
-                  <span className="lens-drawer-title">{t('sbFilters') || 'Filters'}</span>
-                  <Icon icon="lucide:info" className="info-icon" width="14" style={{ color: 'var(--primary-hover)', cursor: 'pointer' }} />
-                </div>
-                <div className="lens-drawer-scrollable">
-                  {[
-                    { key: 'dateRange', label: t('sbDateRange') || 'Date Range', icon: 'lucide:calendar', action: () => navigate('/articles') },
-                    { key: 'flags', label: t('sbFlags') || 'Flags', icon: 'lucide:flag', action: () => navigate('/articles?access=open') },
-                    { key: 'jurisdiction', label: t('sbJurisdiction') || 'Jurisdiction', icon: 'lucide:map-pin', action: () => navigate('/geography') },
-                    { key: 'applicants', label: t('sbPublishers') || 'Publishers', icon: 'lucide:user-check', action: () => navigate('/journals') },
-                    { key: 'inventors', label: t('sbAuthors') || 'Authors', icon: 'lucide:users', action: () => navigate('/authors') },
-                    { key: 'topics', label: 'Topics', icon: 'lucide:tags', action: () => navigate('/articles') },
-                    { key: 'legalStatus', label: t('sbLegalStatus') || 'Access Status', icon: 'lucide:scale', action: () => navigate('/articles') },
-                    { key: 'docType', label: t('sbDocType') || 'Document Type', icon: 'lucide:file-text', action: () => navigate('/articles') },
-                    { key: 'citedWorks', label: t('sbCitedWorks') || 'Cited Works', icon: 'lucide:book-open', action: () => navigate('/articles') },
-                    { key: 'classifications', label: t('sbClassifications') || 'Classifications', icon: 'lucide:list', action: () => navigate('/keywords') },
-                    { key: 'newSearch', label: t('sbNewSearch') || 'New Search', icon: 'lucide:search', action: () => navigate('/articles') }
-                  ].map(item => (
-                    <div
-                      key={item.key}
-                      className="lens-drawer-item"
-                      onClick={() => {
-                        setActiveLeftTab(null);
-                        item.action();
-                      }}
-                    >
-                      <Icon icon={item.icon} width="16" className="item-icon" />
-                      <span className="item-label">{item.label}</span>
-                      <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 2. PROFILE / WORK AREA TAB VIEW */}
-            {activeLeftTab === 'profile' && (
-              <div className="lens-drawer-content">
-                <div className="lens-profile-block">
-                  <div className="lens-profile-avatar">
-                    {currentUser?.name ? currentUser.name.substring(0, 2).toUpperCase() : 'GU'}
-                  </div>
-                  <div className="lens-profile-info">
-                    <div className="profile-name">{currentUser?.name || currentUser?.username || 'Guest User'}</div>
-                    <div className="profile-subtitle">
-                      Personal Account
-                    </div>
-                  </div>
-                </div>
-
-                <div className="lens-profile-actions">
-                  <Dropdown className="flex-fill">
-                    <Dropdown.Toggle variant="outline-primary" size="sm" className="w-100 font-sans text-xs d-flex align-items-center justify-content-between">
-                      New Item
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="text-xs">
-                      <Dropdown.Item onClick={() => navigate('/projects/create')}>Create Project</Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </div>
-
-                <div className="lens-drawer-section-title">Work Area</div>
-                <div className="lens-drawer-scrollable">
-                  {[
-                    { key: 'savedQueries', label: 'Saved Queries', icon: 'lucide:save', action: () => navigate('/dashboard') },
-                    { key: 'searchHistory', label: 'Search History', icon: 'lucide:search', action: () => navigate('/dashboard') },
-                    { key: 'collections', label: 'Collections', icon: 'lucide:folder', action: () => navigate('/projects') },
-                    { key: 'settings', label: 'Settings', icon: 'lucide:settings', action: () => navigate('/profile') }
-                  ].map(item => (
-                    <div
-                      key={item.key}
-                      className="lens-drawer-item"
-                      onClick={() => {
-                        setActiveLeftTab(null);
-                        item.action();
-                      }}
-                    >
-                      <Icon icon={item.icon} width="16" className="item-icon" />
-                      <span className="item-label">{item.label}</span>
-                      <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 3. INFO / SUPPORT / SUGGESTIONS VIEW */}
-            {activeLeftTab === 'info' && (
-              <div className="lens-drawer-content">
-                <div className="lens-drawer-header">
-                  <span className="lens-drawer-title">Support</span>
-                </div>
-                
-                <div className="px-3 py-2">
-                  <p className="text-muted" style={{ fontSize: '0.72rem', lineHeight: '1.4', margin: '0 0 10px 0' }}>
-                    Access Lens documentation, FAQs, and submit feedback.
-                  </p>
-                </div>
-
-                <hr className="my-2 text-muted opacity-20" />
-
-                <div className="lens-drawer-header pt-1">
-                  <span className="lens-drawer-title">Suggestions</span>
-                </div>
-
-                <div className="lens-drawer-scrollable">
-                  <div className="lens-suggestion-item" onClick={() => navigate('/projects/create')}>
-                    <div className="suggestion-icon-wrapper">
-                      <Icon icon="lucide:folder-plus" width="18" className="text-primary" />
-                    </div>
-                    <div className="suggestion-info">
-                      <div className="suggestion-title">Create Collection</div>
-                      <div className="suggestion-desc">Organize research into dynamic folders.</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 4. MORE MENU VIEW */}
-            {activeLeftTab === 'more' && (
-              <div className="lens-drawer-content">
-                <div className="lens-drawer-header">
-                  <span className="lens-drawer-title">More</span>
-                </div>
-                <div className="lens-drawer-scrollable">
-                  <div className="lens-drawer-item" onClick={() => navigate('/')}>
-                    <Icon icon="lucide:home" width="16" className="item-icon" />
-                    <span className="item-label">Home</span>
-                  </div>
-                  <div className="lens-drawer-item" onClick={() => navigate('/articles')}>
-                    <Icon icon="lucide:file-text" width="16" className="item-icon" />
-                    <span className="item-label">Scholarly Search</span>
-                  </div>
-                  <div className="lens-drawer-item" onClick={() => navigate('/geography')}>
-                    <Icon icon="lucide:globe" width="16" className="item-icon" />
-                    <span className="item-label">Geography</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </aside>
-        )}
-
+      <div className="tvn-layout-wrapper">
         {/* ==================== MAIN CONTENT AREA ==================== */}
-        <main className="lens-main-content w-100 p-0">
+        <main className="tvn-main-content w-100 p-4">
             
-            {/* Breadcrumb */}
-            <div className="lens-breadcrumb">
-              <span className="lens-breadcrumb-link" onClick={() => navigate('/articles')}>Articles</span>
-              <Icon icon="lucide:chevron-right" width="12" />
-              <span className="lens-breadcrumb-current">Article Details</span>
-            </div>
+            {/* Title and core metadata card */}
+            <section className="tvn-article-header-section">
+              <div className="d-flex justify-content-between align-items-start gap-4 flex-wrap flex-md-nowrap">
+                {/* Left Column: Details */}
+                <div className="flex-grow-1 min-w-0">
+                  <h1 className="tvn-article-title">
+                    <ScientificMathText title={toScientificPlainText(article.title)}>
+                      {article.title}
+                    </ScientificMathText>
+                  </h1>
 
-            {/* Title and core metadata */}
-            <section className="lens-article-header-section">
-              <h1 className="lens-article-title">
-                <ScientificMathText title={toScientificPlainText(article.title)}>
-                  {article.title}
-                </ScientificMathText>
-              </h1>
-
-              {/* Secondary metadata */}
-              <div className="lens-meta-line flex-wrap gap-2">
-                {article.publication_info && (
-                  <span className="lens-badge-type">
-                    <Icon icon="lucide:file-text" className="me-1" />
-                    {article.publication_info}
-                  </span>
-                )}
-                <span className={`lens-badge-access ${article.is_open_access ? 'open' : 'restricted'}`}>
-                  <Icon icon={article.is_open_access ? 'lucide:lock-keyhole-open' : 'lucide:lock-keyhole'} className="me-1" />
-                  {article.is_open_access ? 'Open Access' : 'Restricted Access'}
-                </span>
-                <span className="lens-meta-source text-muted-custom font-sans">
-                  {article.publication_info === 'Preprint' ? (
-                    <>
-                      <span 
-                        className="text-primary-hover cursor-pointer font-semibold" 
-                        onClick={() => {
-                          if (article.journal_id) {
-                            navigateEntityFilter('journal_id', article.journal_id, article.journal_name || 'ArXiv.org');
-                          } else {
-                            navigateEntityFilter('journal_id', null, article.journal_name || 'ArXiv.org');
-                          }
-                        }}
-                      >
-                        {article.journal_name || 'ArXiv.org'}
+                  {/* Secondary / Journal metadata */}
+                  <div className="tvn-meta-line d-flex flex-wrap align-items-center gap-2 mb-2 text-xs">
+                    <strong className="text-dark">Journal Article</strong>
+                    <span 
+                      className="text-primary-hover font-semibold"
+                      style={{ color: '#2b54b2' }}
+                      onClick={() => {
+                        if (article.journal_id) {
+                          navigateEntityFilter('journal_id', article.journal_id, article.journal_name || 'ArXiv.org');
+                        } else {
+                          navigateEntityFilter('journal_id', null, article.journal_name || 'ArXiv.org');
+                        }
+                      }}
+                    >
+                      {article.journal_name || 'ArXiv.org'}
+                    </span>
+                    {(article.volume_number || article.issue_number || article.page_range || article.page_start) && (
+                      <span className="text-muted">
+                        {article.volume_number ? `, Volume: ${article.volume_number}` : ''}
+                        {article.issue_number ? `, Issue: ${article.issue_number}` : ''}
+                        {article.page_range || article.page_start ? `, Pages: ${article.page_range || article.page_start}` : ''}
                       </span>
-                      {publicationLabel ? `, ${publicationLabel[1]}` : ''}
-                    </>
-                  ) : (
-                    <>
-                      <strong>Journal:</strong>{' '}
-                      <span 
-                        className="text-primary-hover cursor-pointer font-semibold" 
-                        onClick={() => {
-                          if (article.journal_id) {
-                            navigateEntityFilter('journal_id', article.journal_id, article.journal_name);
-                          } else {
-                            navigateEntityFilter('journal_id', null, article.journal_name || 'Updating');
-                          }
-                        }}
-                      >
-                        {article.journal_name || 'Updating'}
-                      </span>
-                      {article.volume_number ? <><strong>, Vol:</strong> {article.volume_number}</> : null}
-                      {article.issue_number ? <><strong>, Issue:</strong> {article.issue_number}</> : null}
-                      {publicationLabel ? <><strong>, {publicationLabel[0]}:</strong> {publicationLabel[1]}</> : null}
-                    </>
-                  )}
-                </span>
-              </div>
+                    )}
+                    {article.publication_date && (
+                      <span className="text-muted ms-2">{article.publication_date}</span>
+                    )}
+                  </div>
 
-              {/* Authors */}
-              <div className="lens-authors-line">
-                <strong>Authors:</strong>{' '}
-                {visibleAuthors.length > 0 ? (
-                  visibleAuthors.map((author, index) => {
-                    const name = author.display_name || author.name || 'Author';
-                    const affiliations = (author.institutions || [])
-                      .map((institution) => institutionIndexById.get(String(institution.institution_id || institution.id || institution.display_name)))
-                      .filter(Boolean);
-                    return (
-                      <span key={index}>
-                        {author.author_id || author.id ? (
-                          <Link
-                            to={buildAuthorDetailPath(author.author_id || author.id)}
-                            className="lens-author-link p-0"
-                            title={`View ${name} profile`}
-                          >
-                            {name}
-                            {affiliations.length > 0 && (
-                              <sup className="ms-1">{affiliations.join(',')}</sup>
+                  {/* Authors */}
+                  <div className="tvn-authors-line text-xs mb-2">
+                    <strong className="text-dark me-1">Authors:</strong>
+                    {visibleAuthors.length > 0 ? (
+                      visibleAuthors.map((author, index) => {
+                        const name = author.display_name || author.name || 'Author';
+                        const affiliations = (author.institutions || [])
+                          .map((institution) => institutionIndexById.get(String(institution.institution_id || institution.id || institution.display_name)))
+                          .filter(Boolean);
+                        return (
+                          <span key={index}>
+                            {author.author_id || author.id ? (
+                              <Link
+                                to={buildAuthorDetailPath(author.author_id || author.id)}
+                                className="tvn-author-link p-0"
+                                style={{ color: '#2b54b2' }}
+                                title={`View ${name} profile`}
+                              >
+                                {name}
+                                {affiliations.length > 0 && (
+                                  <sup className="ms-0.5">{affiliations.join(',')}</sup>
+                                )}
+                              </Link>
+                            ) : (
+                              <span className="tvn-author-link p-0" style={{ color: '#2b54b2' }}>
+                                {name}
+                                {affiliations.length > 0 && (
+                                  <sup className="ms-0.5">{affiliations.join(',')}</sup>
+                                )}
+                              </span>
                             )}
-                          </Link>
-                        ) : (
-                          <span className="lens-author-link p-0">
-                            {name}
-                            {affiliations.length > 0 && (
-                              <sup className="ms-1">{affiliations.join(',')}</sup>
-                            )}
+                            {index < visibleAuthors.length - 1 ? ', ' : ''}
                           </span>
-                        )}
-                        {index < visibleAuthors.length - 1 ? ', ' : ''}
+                        );
+                      })
+                    ) : (
+                      <span className="text-muted">Authors are being updated</span>
+                    )}
+
+                    {hiddenAuthorCount > 0 && !showAllAuthors && (
+                      <Button variant="link" className="tvn-show-more-btn ms-1" onClick={() => setShowAllAuthors(true)}>
+                        +{hiddenAuthorCount} more
+                      </Button>
+                    )}
+                    {showAllAuthors && (article?.authors?.length || 0) > 3 && (
+                      <Button variant="link" className="tvn-show-more-btn ms-1" onClick={() => setShowAllAuthors(false)}>
+                        Show less
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Count metrics */}
+                  <div className="tvn-stats-plain-line text-xs mb-2 d-flex flex-wrap gap-4 text-muted">
+                    <span>Citing Patents: <strong className="text-dark">0</strong></span>
+                    <span className="pointer" onClick={() => setShowCitationsModal(true)}>
+                      Citing Scholarly Works: <strong className="text-dark">{citationMetric || 0}</strong>
+                    </span>
+                    <span>
+                      Reference Count: <strong style={{ color: '#2b54b2', fontWeight: 700 }}>{referenceMetric || 0}</strong>
+                    </span>
+                  </div>
+
+                  {/* Additional info badges */}
+                  <div className="tvn-additional-info-badges d-flex align-items-center gap-2 text-xs mt-2 flex-wrap">
+                    <span className="text-muted fw-semibold me-1">Additional Info:</span>
+                    {article.is_open_access && (
+                      <span className="badge-pill-gray" onClick={() => scrollToSection('open-access-section')}>
+                        Open Access
                       </span>
-                    );
-                  })
-                ) : (
-                  <span className="text-muted-custom">Authors are being updated</span>
-                )}
-
-                {hiddenAuthorCount > 0 && !showAllAuthors && (
-                  <Button variant="link" className="lens-show-more-btn" onClick={() => setShowAllAuthors(true)}>
-                    +{hiddenAuthorCount} more
-                  </Button>
-                )}
-                {showAllAuthors && (article?.authors?.length || 0) > 3 && (
-                  <Button variant="link" className="lens-show-more-btn" onClick={() => setShowAllAuthors(false)}>
-                    Show less
-                  </Button>
-                )}
-              </div>
-
-              {visibleAuthors.some((author) => author.author_id || author.id) && (
-                <div className="d-flex flex-wrap gap-2 mt-2">
-                  {visibleAuthors.map((author, index) => {
-                    const authorId = author.author_id || author.id;
-                    if (!authorId) return null;
-                    const name = author.display_name || author.name || 'Author';
-                    return (
-                      <Link
-                        key={`author-filter-${authorId}-${index}`}
-                        to={buildArticleAuthorFilterPath(authorId)}
-                        className="lens-pill lens-pill-abstract"
-                        title={`Filter articles by ${name}`}
-                      >
-                        <Icon icon="lucide:filter" width="10" />
-                        View articles by {name}
-                      </Link>
-                    );
-                  })}
+                    )}
+                    {article.abstract && (
+                      <span className="badge-pill-gray" onClick={() => scrollToSection('abstract-section')}>
+                        Abstract
+                      </span>
+                    )}
+                    <span className="badge-pill-gray" onClick={() => scrollToSection('affiliation-section')}>
+                      Affiliation
+                    </span>
+                    <span className="badge-pill-gray">
+                      Collection
+                    </span>
+                  </div>
                 </div>
-              )}
 
-              {/* Count metrics */}
-              <div className="lens-stats-plain-line text-xs font-sans mt-2 mb-2 d-flex flex-wrap gap-4">
-                <span className="pointer" onClick={() => setShowCitationsModal(true)}>
-                  Citation Count: <strong className="text-dark">{citationMetric}</strong>
-                </span>
-                <span>
-                  Reference Count: <strong className="text-dark">{referenceMetric}</strong>
-                </span>
-              </div>
-
-              {/* Additional information badges */}
-              <div className="lens-additional-info-badges d-flex align-items-center gap-2 mt-2 mb-3">
-                <span className="text-xs fw-bold text-muted-custom">Additional Info:</span>
-                {article.is_open_access && (
-                  <span 
-                    className="badge-info-green text-xs fw-semibold px-2 py-0.5 rounded cursor-pointer text-primary-hover"
-                    onClick={() => scrollToSection('open-access-section')}
-                  >
-                    Open Access
-                  </span>
-                )}
-                {article.abstract && (
-                  <span 
-                    className="badge-info-blue text-xs fw-semibold px-2 py-0.5 rounded cursor-pointer text-primary-hover"
-                    onClick={() => scrollToSection('abstract-section')}
-                  >
-                    Abstract
-                  </span>
-                )}
-                {(article.topics?.length > 0 || article.keywords?.length > 0) && (
-                  <span 
-                    className="badge-info-yellow text-xs fw-semibold px-2 py-0.5 rounded cursor-pointer text-primary-hover"
-                    onClick={() => scrollToSection('field-of-study-section')}
-                  >
-                    Keyword
-                  </span>
-                )}
-              </div>
-
-              {/* Identifiers and links */}
-              <div className="lens-external-links-badges gap-3 flex-wrap mt-2">
-                {article.publication_info && (
-                  <span className="lens-ext-badge text-uppercase gray">
-                    <Icon icon="lucide:file-text" className="me-1 text-dark" />
-                    {article.publication_info}
-                  </span>
-                )}
-                {article.is_open_access && (
-                  <span className="lens-ext-badge text-uppercase" style={{ color: '#d97706', borderColor: '#fcd34d', backgroundColor: '#fef3c7' }}>
-                    <Icon icon="lucide:lock-keyhole-open" className="me-1" />
-                    Open Access
-                  </span>
-                )}
+                {/* Right Column: Record ID Box */}
+                <div className="tvn-scholarly-registry-box ms-md-auto shrink-0">
+                  <span className="registry-label">Record ID</span>
+                  <div className="registry-id-value">
+                    {article?.display_id || article?.id || id || 'N/A'}
+                  </div>
+                  {article.doi && (
+                    <div className="registry-actions d-flex gap-2 justify-content-center">
+                      <button
+                        className="registry-btn"
+                        onClick={() => window.open(`https://doi.org/${article.doi}`, '_blank')}
+                        title="Open article via DOI"
+                      >
+                        View DOI
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </section>
 
             {/* Main tabs */}
-            <div className="lens-tab-bar">
+            <div className="tvn-tab-bar">
               <Button 
                 variant="link" 
-                className={`lens-tab-btn ${activeTab === 'summary' ? 'active' : ''}`}
+                className={`tvn-tab-btn ${activeTab === 'summary' ? 'active' : ''}`}
                 onClick={() => setActiveTab('summary')}
               >
                 Summary
               </Button>
               <Button 
                 variant="link" 
-                className={`lens-tab-btn ${activeTab === 'citations' ? 'active' : ''}`}
-                onClick={() => setActiveTab('citations')}
-              >
-                Citing Works ({citingWorksRelationTotal})
-              </Button>
-              <Button 
-                variant="link" 
-                className={`lens-tab-btn ${activeTab === 'references' ? 'active' : ''}`}
+                className={`tvn-tab-btn ${activeTab === 'references' ? 'active' : ''}`}
                 onClick={() => setActiveTab('references')}
               >
-                Available References ({availableReferencesTotal})
+                {availableReferencesTotal} References
               </Button>
               <Button 
                 variant="link" 
-                className={`lens-tab-btn ${activeTab === 'recommended' ? 'active' : ''}`}
+                className={`tvn-tab-btn ${activeTab === 'recommended' ? 'active' : ''}`}
                 onClick={() => setActiveTab('recommended')}
               >
                 Recommended
@@ -1171,330 +947,294 @@ ER  - `;
 
             {/* Tab content */}
             {activeTab === 'summary' ? (
-              <div className="lens-summary-tab-content">
+              <div className="tvn-summary-tab-content">
                 
-                {/* Action bar */}
-                <div className="lens-actions-bar">
-                  <Button variant="link" className="lens-action-btn" onClick={handleShareArticle}>
+                {/* Action bar - Share only */}
+                <div className="tvn-actions-bar">
+                  <Button variant="link" className="tvn-action-btn" onClick={handleShareArticle}>
                     <Icon icon="lucide:share-2" />
                     <span>Share Article</span>
                   </Button>
-                  <Button 
-                    variant="link" 
-                    className={`lens-action-btn ${isBookmarked ? 'active' : ''}`} 
-                    onClick={handleBookmarkToggleClick}
-                    disabled={isBookmarkLoading}
-                  >
-                    <Icon icon={isBookmarked ? 'lucide:bookmark-check' : 'lucide:bookmark-plus'} />
-                    <span>{isBookmarked ? 'Added to Project' : 'Add to Collection'}</span>
-                  </Button>
-                  <Button variant="link" className="lens-action-btn" onClick={() => setShowCitationsModal(true)}>
-                    <Icon icon="lucide:quote" />
-                    <span>Download Citation</span>
-                  </Button>
                 </div>
 
-                {/* Summary grid */}
-                <div className="lens-summary-grid">
+                {/* Summary grid (2-Column Layout matching Image 1) */}
+                <div className="tvn-summary-grid-2col">
                   
-                  {/* Summary left pane */}
-                  <div className="lens-summary-left-pane">
-                    
-                    {/* TL;DR (AI summary) if available */}
-                    {article.semantic_tldr && (
-                      <div className="lens-section-block mb-4 p-3 rounded" style={{ backgroundColor: 'var(--primary-light)', borderLeft: '4px solid var(--primary)' }}>
-                        <div className="d-flex align-items-center gap-2 mb-2 font-weight-bold" style={{ color: 'var(--primary)', fontSize: '0.9rem', letterSpacing: '0.5px' }}>
-                          <Icon icon="lucide:sparkles" width="16" />
-                          <strong className="text-uppercase">TL;DR</strong>
-                        </div>
-                        <p className="lens-section-text mb-0" style={{ fontSize: '0.88rem', fontWeight: 500, color: 'var(--text-main)' }}>
-                          {article.semantic_tldr}
-                        </p>
+                  {/* COLUMN 1 (LEFT MAIN PANE) */}
+                  <div className="tvn-summary-col">
+                    <div className="tvn-summary-card">
+                      <div className="tvn-summary-card-header">
+                        <Icon icon="lucide:file-text" />
+                        <span>Abstract</span>
                       </div>
-                    )}
+                      
+                      {article.semantic_tldr && (
+                        <div className="mb-3 p-3 rounded" style={{ backgroundColor: '#f0f4ff', borderLeft: '4px solid #2b54b2' }}>
+                          <div className="d-flex align-items-center gap-2 mb-1 font-weight-bold" style={{ color: '#2b54b2', fontSize: '0.82rem' }}>
+                            <Icon icon="lucide:sparkles" width="15" />
+                            <strong className="text-uppercase">TL;DR</strong>
+                          </div>
+                          <p className="mb-0 text-xs" style={{ fontWeight: 500, color: '#334155', lineHeight: '1.5' }}>
+                            {article.semantic_tldr}
+                          </p>
+                        </div>
+                      )}
 
-                    {/* Abstract */}
-                    <div id="abstract-section" className="lens-section-block">
-                      <h3 className="lens-section-title">Abstract</h3>
-                      <p className="lens-section-text">
+                      <p className="text-xs mb-4" style={{ lineHeight: '1.7', color: '#475569', textAlign: 'justify' }}>
                         {article.abstract || 'No abstract is available for this article.'}
                       </p>
-                    </div>
 
-                    {/* Authors List & Affiliations */}
-                    <div className="lens-section-block">
-                      <h3 className="lens-section-title">Authors</h3>
-                      <div className="lens-authors-detail-inline text-xs font-sans" style={{ lineHeight: '1.6' }}>
-                        {article.authors && article.authors.length > 0 ? (
-                          article.authors.map((author, index) => {
-                            const name = author.display_name || author.name || 'Author';
-                            const affiliations = (author.institutions || [])
-                              .map((institution) => institutionIndexById.get(String(institution.institution_id || institution.id || institution.display_name)))
-                              .filter(Boolean);
-                            return (
-                              <span key={index}>
-                                {author.author_id || author.id ? (
-                                  <Link
-                                    to={buildAuthorDetailPath(author.author_id || author.id)}
-                                    className="text-primary-hover"
-                                    style={{ color: 'var(--primary)', fontWeight: 600 }}
-                                    title={`View ${name} profile`}
-                                  >
-                                    {name}
-                                    {affiliations.length > 0 && (
-                                      <sup className="ms-1">{affiliations.join(',')}</sup>
-                                    )}
-                                  </Link>
-                                ) : (
-                                  <span style={{ fontWeight: 600 }}>
-                                    {name}
-                                    {affiliations.length > 0 && (
-                                      <sup className="ms-1">{affiliations.join(',')}</sup>
-                                    )}
-                                  </span>
-                                )}
-                                {author.orcid && (
-                                  <a href={author.orcid} target="_blank" rel="noreferrer" className="ms-1 align-middle">
-                                    <Icon icon="simple-icons:orcid" className="text-success" width="13" />
-                                  </a>
-                                )}
-                                {index < article.authors.length - 1 ? ' , ' : ''}
-                              </span>
-                            );
-                          })
-                        ) : (
-                          <span className="text-muted-custom">Author list is being updated...</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {articleInstitutions.length > 0 && (
-                      <div className="lens-section-block">
-                        <h3 className="lens-section-title">Institutions</h3>
-                        <ol className="text-xs mb-0 ps-3" style={{ lineHeight: '1.7' }}>
-                          {articleInstitutions.map((institution, index) => (
-                            <li key={institution.institution_id || institution.id || institution.display_name || index}>
-                              {institution.display_name || institution.name}
-                              {institution.country_code ? (
-                                <span className="text-muted-custom"> ({institution.country_code})</span>
-                              ) : null}
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
-                    )}
-
-                    {/* Keyword */}
-                    <div id="field-of-study-section" className="lens-section-block">
-                      <h3 className="lens-section-title">Keyword</h3>
-                      <div className="lens-field-of-study-list text-xs" style={{ lineHeight: '1.8' }}>
-                        {article.keywords?.length > 0 ? (
-                          article.keywords.map((kw, index) => (
-                            <span key={index}>
-                              <span 
-                                className="text-primary-hover cursor-pointer" 
-                                style={{ color: 'var(--primary)', fontWeight: 500 }}
-                                onClick={() => handleKeywordClick(kw)}
-                              >
-                                {kw.display_name}
-                              </span>
-                              {index < article.keywords.length - 1 ? ' , ' : ''}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-muted-custom">Keywords are being updated...</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Topic */}
-                    <div className="lens-section-block">
-                      <h3 className="lens-section-title">Topic</h3>
-                      <div className="lens-field-of-study-list text-xs" style={{ lineHeight: '1.8' }}>
-                        {article.topics?.length > 0 ? (
-                          article.topics.map((topic, index) => (
-                            <span key={index}>
-                              <span 
-                                className="text-primary-hover cursor-pointer" 
-                                style={{ color: 'var(--primary)', fontWeight: 500 }}
-                                onClick={() => handleTopicClick(topic)}
-                              >
-                                {topic.display_name}
-                              </span>
-                              {index < article.topics.length - 1 ? ' , ' : ''}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-muted-custom">Topics are being updated...</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Identifiers */}
-                    <div className="lens-section-block">
-                      <h3 className="lens-section-title">Identifiers</h3>
-                      <div className="d-flex flex-wrap gap-2 text-xs">
-
-                        {article.doi && (
-                          <a 
-                            href={articleDoiUrl} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            className="lens-ext-badge" 
-                            style={{ color: '#d97706', borderColor: '#fcd34d', backgroundColor: '#fef3c7' }}
-                          >
-                            <Icon icon="lucide:award" className="me-1 text-warning" />
-                            {article.doi}
-                          </a>
-                        )}
-                        <span className="lens-ext-badge gray">
-                          <Icon icon="lucide:database" className="me-1 text-dark" />
-                          ResearchPulse ID: {article.article_id}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Links to other sources */}
-                    {articleDoiUrl && (
-                      <div className="lens-section-block">
-                        <h3 className="lens-section-title">Links to other sources</h3>
-                        <div className="d-flex flex-wrap gap-2 text-xs">
-                          <a 
-                            href={articleDoiUrl} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            className="lens-ext-badge gray"
-                            style={{ textDecoration: 'none' }}
-                          >
-                            <Icon icon="lucide:help-circle" className="me-1 text-muted" />
-                            {(() => {
-                              try {
-                                return new URL(articleDoiUrl).hostname.replace('www.', '');
-                              } catch {
-                                return 'doi.org';
-                              }
-                            })()}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-
-                  </div>
-
-                  {/* Summary right pane */}
-                  <div className="lens-summary-right-pane">
-                    {citingYearDistribution.length > 0 && (
-                      <div className="lens-meta-card">
-                        <div className="lens-section-title mb-3">Citing Scholarly Works</div>
-                        <div className="d-flex align-items-end gap-2" style={{ minHeight: '130px' }}>
-                          {citingYearDistribution.map((item) => {
-                            const count = Number(item.count || 0);
-                            const height = Math.max(8, Math.round((count / maxCitingYearCount) * 100));
-                            const yearLabel = item.year ?? 'Unknown';
-                            return (
-                              <button
-                                key={yearLabel}
-                                type="button"
-                                className="p-0 border-0 bg-transparent d-flex flex-column align-items-center flex-fill"
-                                title={`${yearLabel}: ${count} citing works`}
-                              >
-                                <span
-                                  style={{
-                                    width: '100%',
-                                    maxWidth: '28px',
-                                    height: `${height}px`,
-                                    background: 'var(--primary)',
-                                    display: 'block',
-                                  }}
-                                />
-                                <span className="text-muted-custom mt-1" style={{ fontSize: '0.62rem' }}>
-                                  {yearLabel}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <div className="text-xs text-muted-custom mt-2">
-                          Total citing works: {citingWorksAnalytics?.total ?? citingWorksRelationTotal}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Metadata Card 1 */}
-                    <div className="lens-meta-card">
-                      <table className="lens-meta-table">
-                        <tbody>
-                          {publicationMetadataRows.map(([label, value, entityType]) => (
-                            <tr key={label}>
-                              <th>{label}:</th>
-                              <td className={label === 'DOI' || label === 'ISSN' ? 'font-monospace text-muted-custom' : undefined}>
-                                {entityType === 'journal' ? (
-                                  <Button
-                                    variant="link"
-                                    className="p-0 text-start"
-                                    disabled={!article.journal_id && !article.journal_name}
-                                    onClick={() => navigateEntityFilter('journal_id', article.journal_id, article.journal_name)}
-                                  >
-                                    {value}
-                                  </Button>
-                                ) : entityType === 'publisher' ? (
-                                  <Button
-                                    variant="link"
-                                    className="p-0 text-start"
-                                    disabled={!article.publisher_id && !article.publisher_name}
-                                    onClick={() => navigateEntityFilter('publisher_id', article.publisher_id, article.publisher_name)}
-                                  >
-                                    {value}
-                                  </Button>
-                                ) : value}
-                              </td>
-                            </tr>
-                          ))}
-                          <tr>
-                            <th>Open Access:</th>
-                            <td className="text-uppercase text-muted-custom fw-semibold">
-                              {article.is_open_access ? 'true' : 'false'}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Metadata Card 2 (Open Access Badge info) */}
-                    {article.is_open_access && (
-                      <div id="open-access-section" className="lens-meta-card border-orange">
-                        <div className="lens-oa-card-header text-dark">
-                          <Icon icon="lucide:lock-keyhole-open" className="me-2" />
-                          <span>Open Access</span>
-                          <Icon icon="lucide:info" className="ms-auto text-muted-custom cursor-pointer" />
-                        </div>
-                        <div className="lens-oa-card-body">
-                          <div className="mb-2 text-xs text-muted-custom">
-                            This record is marked as open access by the source data.
+                      {/* Sub-grid: 2 columns below Abstract */}
+                      <div className="row g-3 pt-3 border-top">
+                        {/* Sub-column 1: Authors, Keywords, Topics */}
+                        <div className="col-md-6 d-flex flex-column gap-3">
+                          {/* Authors */}
+                          <div>
+                            <div className="tvn-meta-heading">AUTHORS</div>
+                            <div className="d-flex flex-column gap-1 text-xs" style={{ lineHeight: '1.6' }}>
+                              {article.authors && article.authors.length > 0 ? (
+                                article.authors.map((author, index) => {
+                                  const name = author.display_name || author.name || 'Author';
+                                  const affiliations = (author.institutions || [])
+                                    .map((institution) => institutionIndexById.get(String(institution.institution_id || institution.id || institution.display_name)))
+                                    .filter(Boolean);
+                                  return (
+                                    <div key={index} className="d-flex align-items-center gap-1">
+                                      {author.author_id || author.id ? (
+                                        <Link
+                                          to={buildAuthorDetailPath(author.author_id || author.id)}
+                                          className="text-primary-hover"
+                                          style={{ color: '#2b54b2', fontWeight: 500 }}
+                                          title={`View ${name} profile`}
+                                        >
+                                          {name}
+                                          {affiliations.length > 0 && (
+                                            <sup className="ms-1 text-primary">{affiliations.join(',')}</sup>
+                                          )}
+                                        </Link>
+                                      ) : (
+                                        <span style={{ fontWeight: 500, color: '#334155' }}>
+                                          {name}
+                                          {affiliations.length > 0 && (
+                                            <sup className="ms-1 text-primary">{affiliations.join(',')}</sup>
+                                          )}
+                                        </span>
+                                      )}
+                                      {author.orcid && (
+                                        <a href={author.orcid} target="_blank" rel="noreferrer" className="ms-1 align-middle">
+                                          <Icon icon="simple-icons:orcid" className="text-success" width="12" />
+                                        </a>
+                                      )}
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <span className="text-muted-custom">Author list is being updated...</span>
+                              )}
+                            </div>
                           </div>
-                          {(article.source_url || article.doi_url) && (
-                            <a
-                              className="d-flex align-items-center gap-1 text-dark text-xs fw-semibold"
-                              href={article.source_url || article.doi_url}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <Icon icon="lucide:external-link" />
-                              <span>Open sourced link</span>
-                            </a>
+
+                          {/* Keywords */}
+                          {article.keywords?.length > 0 && (
+                            <div>
+                              <div className="tvn-meta-heading">KEYWORDS</div>
+                              <div className="text-xs" style={{ lineHeight: '1.6' }}>
+                                {article.keywords.map((kw, index) => (
+                                  <span key={index}>
+                                    <span 
+                                      className="text-primary-hover cursor-pointer" 
+                                      style={{ color: '#2b54b2', fontWeight: 500 }}
+                                      onClick={() => handleKeywordClick(kw)}
+                                    >
+                                      {kw.display_name}
+                                    </span>
+                                    {index < article.keywords.length - 1 ? ' , ' : ''}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Topics / Field of Study */}
+                          {article.topics?.length > 0 && (
+                            <div>
+                              <div className="tvn-meta-heading">TOPICS</div>
+                              <div className="text-xs" style={{ lineHeight: '1.6' }}>
+                                {article.topics.map((topic, index) => (
+                                  <span key={index}>
+                                    <span 
+                                      className="text-primary-hover cursor-pointer" 
+                                      style={{ color: '#2b54b2', fontWeight: 500 }}
+                                      onClick={() => handleTopicClick(topic)}
+                                    >
+                                      {topic.display_name}
+                                    </span>
+                                    {index < article.topics.length - 1 ? ' , ' : ''}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
                           )}
                         </div>
+
+                        {/* Sub-column 2: Identifiers, Institutions */}
+                        <div className="col-md-6 d-flex flex-column gap-3">
+                          {/* Identifiers */}
+                          <div>
+                            <div className="tvn-meta-heading">IDENTIFIERS</div>
+                            <div className="d-flex flex-wrap gap-2 align-items-center mt-1">
+                              {article.doi && (
+                                <a
+                                  href={articleDoiUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="tvn-identifier-pill text-decoration-none"
+                                  title="Digital Object Identifier"
+                                >
+                                  <span className="tvn-doi-icon">doi</span>
+                                  <span style={{ color: '#2b54b2' }}>{article.doi}</span>
+                                </a>
+                              )}
+                              {openAlexUrl && (
+                                <a
+                                  href={openAlexUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="tvn-identifier-pill text-decoration-none"
+                                  title="OpenAlex Record"
+                                >
+                                  <Icon icon="lucide:globe" style={{ color: '#0284c7' }} width="14" />
+                                  <span style={{ color: '#0284c7' }}>{openAlexDisplayId}</span>
+                                </a>
+                              )}
+                              {pdfUrl && (
+                                <a
+                                  href={pdfUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="tvn-identifier-pill text-decoration-none"
+                                  title="View / Download Full PDF"
+                                >
+                                  <Icon icon="lucide:file-text" style={{ color: '#dc2626' }} width="14" />
+                                  <span style={{ color: '#dc2626', fontWeight: 600 }}>PDF</span>
+                                </a>
+                              )}
+                              {article.pmid && (
+                                <div className="tvn-identifier-pill" title="PubMed ID">
+                                  <Icon icon="lucide:file-code" className="text-info" width="14" />
+                                  <span>{article.pmid}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Institutions */}
+                          <div>
+                            <div className="tvn-meta-heading">INSTITUTIONS</div>
+                            {articleInstitutions.length > 0 ? (
+                              <ol className="text-xs mb-0 ps-0 list-unstyled" style={{ lineHeight: '1.7', color: '#334155' }}>
+                                {articleInstitutions.map((institution, index) => {
+                                  const instName = institution.display_name || institution.name;
+                                  const instId = institution.institution_id || institution.id;
+                                  return (
+                                    <li key={instId || instName || index} className="fw-medium">
+                                      <span
+                                        className="text-primary-hover cursor-pointer"
+                                        style={{ color: '#2b54b2', fontWeight: 500 }}
+                                        onClick={() => handleInstitutionClick(institution)}
+                                        title={`Filter articles by ${instName}`}
+                                      >
+                                        {instName}
+                                      </span>
+                                      {institution.country_code ? (
+                                        <span className="text-muted"> ({institution.country_code})</span>
+                                      ) : null}
+                                    </li>
+                                  );
+                                })}
+                              </ol>
+                            ) : (
+                              <span className="text-xs text-muted">No institution records available.</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* COLUMN 2 (RIGHT SIDEBAR PANE) */}
+                  <div className="tvn-summary-col">
+                    {/* Publication Location & Dates Card */}
+                    <div className="tvn-summary-card">
+                      {/* PUBLICATION LOCATION */}
+                      <div className="tvn-meta-heading">PUBLICATION LOCATION</div>
+                      <div className="tvn-meta-subtext">
+                        In:{' '}
+                        {article.journal_name || article.journal || article.publisher_name ? (
+                          <Button
+                            variant="link"
+                            className="p-0 text-start font-weight-bold"
+                            style={{ color: '#2b54b2', fontSize: '0.82rem', textDecoration: 'none' }}
+                            disabled={!article.journal_id && !article.journal_name}
+                            onClick={() => navigateEntityFilter('journal_id', article.journal_id, article.journal_name)}
+                          >
+                            {article.journal_name || article.journal || article.publisher_name}
+                          </Button>
+                        ) : (
+                          'Unknown Journal'
+                        )}
+                        {article.issue_number && `, Issue: ${article.issue_number}`}
+                        {article.volume_number && `, Volume: ${article.volume_number}`}
+                        {(article.first_page || article.page_range) && `, Page: ${article.first_page ? `${article.first_page}${article.last_page ? `-${article.last_page}` : ''}` : article.page_range}`}
+                      </div>
+
+                      {/* DATES */}
+                      <div className="tvn-meta-heading">DATES</div>
+                      <div className="tvn-meta-subtext">
+                        <div>Published: {article.publication_date || article.publication_year || 'N/A'}</div>
+                        {article.publication_date && <div>E-Published: {article.publication_date}</div>}
+                      </div>
+
+                      {/* PUBLICATION INFO */}
+                      <div className="tvn-meta-heading">PUBLICATION INFO</div>
+                      <div className="tvn-meta-subtext mb-0">
+                        {article.publication_type || article.publication_info || 'Journal Article'}
+                      </div>
+                    </div>
+
+                    {/* Open Access Badge info card */}
+                    {article.is_open_access && (
+                      <div className="tvn-summary-card border-orange">
+                        <div className="d-flex align-items-center text-dark font-weight-bold text-xs mb-2">
+                          <Icon icon="lucide:lock-keyhole-open" className="me-2 text-warning" />
+                          <span>Open Access</span>
+                          <Icon icon="lucide:info" className="ms-auto text-muted cursor-pointer" />
+                        </div>
+                        <div className="text-xs text-muted mb-2">
+                          This record is marked as open access by the source data.
+                        </div>
+                        {(article.source_url || article.doi_url) && (
+                          <a
+                            className="d-flex align-items-center gap-1 text-primary text-xs fw-semibold"
+                            href={article.source_url || article.doi_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: '#2b54b2', textDecoration: 'none' }}
+                          >
+                            <Icon icon="lucide:external-link" />
+                            <span>Open sourced link</span>
+                          </a>
+                        )}
                       </div>
                     )}
-
                   </div>
 
                 </div>
 
               </div>
             ) : activeTab === 'citations' ? (
-              <div className="lens-citations-tab-content py-4">
-                <div className="lens-modal-stat-box text-start p-3 mb-4 d-flex align-items-start gap-3" style={{ background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary)' }}>
+              <div className="tvn-citations-tab-content py-4">
+                <div className="tvn-modal-stat-box text-start p-3 mb-4 d-flex align-items-start gap-3" style={{ background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary)' }}>
                   <Icon icon="lucide:quote" width="32" className="text-primary mt-1" />
                   <div>
                     <h5 className="font-display fw-bold mb-1" style={{ color: 'var(--text-main)' }}>
@@ -1504,7 +1244,7 @@ ER  - `;
                       Scientific articles that cite this work. Select a title to open the source article.
                       {isCitingWorksError ? ' The relation list could not be refreshed, so the detail count is shown.' : ''}
                     </p>
-                    <Button variant="outline-primary" size="sm" className="lens-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(toScientificPlainText(article.title))}`)}>
+                    <Button variant="outline-primary" size="sm" className="tvn-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(toScientificPlainText(article.title))}`)}>
                       Find related works
                     </Button>
                   </div>
@@ -1530,8 +1270,8 @@ ER  - `;
                 )}
               </div>
             ) : activeTab === 'references' ? (
-              <div className="lens-references-tab-content py-4">
-                <div className="lens-modal-stat-box text-start p-3 mb-4 d-flex align-items-start gap-3" style={{ background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary)' }}>
+              <div className="tvn-references-tab-content py-4">
+                <div className="tvn-modal-stat-box text-start p-3 mb-4 d-flex align-items-start gap-3" style={{ background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary)' }}>
                   <Icon icon="lucide:book-open" width="32" className="text-primary mt-1" />
                   <div>
                     <h5 className="font-display fw-bold mb-1" style={{ color: 'var(--text-main)' }}>
@@ -1541,7 +1281,7 @@ ER  - `;
                       Research works cited by this article. Select a title to open the source record.
                       {isReferencesError ? ' The reference list could not be refreshed, so the detail count is shown.' : ''}
                     </p>
-                    <Button variant="outline-primary" size="sm" className="lens-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(toScientificPlainText(article.title))}`)}>
+                    <Button variant="outline-primary" size="sm" className="tvn-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(toScientificPlainText(article.title))}`)}>
                       Find related works
                     </Button>
                   </div>
@@ -1567,8 +1307,8 @@ ER  - `;
                 )}
               </div>
             ) : activeTab === 'recommended' ? (
-              <div className="lens-recommended-tab-content py-4">
-                <div className="lens-modal-stat-box text-start p-3 mb-4 d-flex align-items-start gap-3" style={{ background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary)' }}>
+              <div className="tvn-recommended-tab-content py-4">
+                <div className="tvn-modal-stat-box text-start p-3 mb-4 d-flex align-items-start gap-3" style={{ background: 'var(--primary-light)', borderRadius: '8px', border: '1px solid var(--primary)' }}>
                   <Icon icon="lucide:lightbulb" width="32" className="text-primary mt-1" />
                   <div>
                     <h5 className="font-display fw-bold mb-1" style={{ color: 'var(--text-main)' }}>
@@ -1577,7 +1317,7 @@ ER  - `;
                     <p className="text-muted-custom mb-2 text-xs">
                       Related research works you may be interested in, based on this article's topic and field.
                     </p>
-                    <Button variant="outline-primary" size="sm" className="lens-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(article.primary_topic || '')}`)}>
+                    <Button variant="outline-primary" size="sm" className="tvn-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(article.primary_topic || '')}`)}>
                       View more in Scholar Search
                     </Button>
                   </div>
@@ -1598,17 +1338,7 @@ ER  - `;
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="lens-collections-tab-content py-4">
-                <h4 className="font-display fw-bold mb-4">Related / Recommended Articles</h4>
-                <ArticlesTabContent
-                  recentArticles={recommendedArticles}
-                  loading={isRecommendedLoading}
-                  emptyMessage="This article does not have any related recommendations in the system yet."
-                  onArticleClick={(articleId) => navigate(`/trending/articles/${articleId}`)}
-                />
-              </div>
-            )}
+            ) : null}
 
           </main>
       </div>
@@ -1622,7 +1352,7 @@ ER  - `;
           <div className="row g-4">
             {/* Citation information */}
             <div className="col-12 col-md-5 border-end">
-              <div className="lens-modal-stat-box">
+              <div className="tvn-modal-stat-box">
                 <div className="text-muted-custom text-xs fw-bold text-uppercase mb-1">Citation Count</div>
                 <div className="font-display fw-bold text-dark mb-2" style={{ fontSize: '2.5rem' }}>
                   {Number(article?.citation_count ?? article?.citations ?? 0).toLocaleString('en-US')}

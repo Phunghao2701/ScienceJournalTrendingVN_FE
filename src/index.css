@@ -1,12 +1,24 @@
 /* Import Google Fonts */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&display=swap");
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --color-lens-dark-blue: #1F2F40;
+  --color-lens-light-blue: #293B4D;
+  --color-lens-link-blue: #2B54B2;
+  --color-lens-card-bg: #F8FAFD;
+  --color-lens-border-blue: #D8E7F4;
+  --color-lens-badge-blue: #0094D3;
+  --color-lens-badge-orange: #FFA200;
+  --color-lens-badge-green: #2EA751;
+  --color-lens-slate-gray: #414E59;
+}
 
 :root {
   --font-sans: "Inter", sans-serif;
   --font-display: "Source Serif 4", serif;
   --font-serif: "Source Serif 4", serif;
-
-  /* ─── SCImago-style Palette ─── */
   --bg-main: #ffffff; /* Background chính */
   --bg-section: #ececec; /* Section / card background */
   --bg-chip: #f2f2f2; /* Chip / filter background */
@@ -16,10 +28,13 @@
   --text-main: #0d1b1c; /* Text chính */
   --text-muted: #6b6b6b; /* Text phụ */
 
-  --primary: #ff7a33; /* Accent / link cam */
-  --primary-light: #fff0e8; /* Light tint của cam */
+  --primary: #1976d2; /* Accent / link xanh dương (Lens Blue) */
+  --primary-hover: #1565c0; /* Hover/active state của primary */
+  --primary-light: #eaf4ff; /* Light tint của xanh dương */
+  --teal: #00acc1; /* Action accent thứ hai (search, active tab) */
+  --teal-dark: #00838f; /* Hover state của teal */
   --btn-dark: #071a1c; /* Button đen đậm */
-  --q1-color: #ff7a33; /* Q1 badge dùng accent cam */
+  --q1-color: #1976d2; /* Q1 badge dùng accent xanh dương */
 
   /* Compatibility aliases */
   --dark-bg: var(--bg-main);
@@ -27,7 +42,7 @@
   --dark-border: var(--border);
   --brand-accent: var(--primary);
 
-  --glow-accent: rgba(255, 122, 51, 0.08);
+  --glow-accent: rgba(25, 118, 210, 0.08);
 
   /* ─── Header Navigation Theme ─── */
   --header-bg: #132B40;
@@ -39,6 +54,13 @@
   --header-nav-inactive-border: transparent;
   --header-brand-primary: #1976D2;
   --header-brand-primary-shadow: rgba(25, 118, 210, 0.3);
+
+  --motion-duration-fast: 140ms;
+  --motion-duration-base: 180ms;
+  --motion-duration-slow: 240ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 html,
@@ -53,6 +75,129 @@ body {
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Global motion system: low-specificity defaults for app-wide polish */
+:where(
+  a[href],
+  button,
+  [role="button"],
+  .btn,
+  .nav-link,
+  .dropdown-item,
+  .page-link,
+  .form-control,
+  .form-select,
+  .form-check-input,
+  .card,
+  .list-group-item,
+  .badge,
+  .alert,
+  .modal-content,
+  .dropdown-menu,
+  .toast
+) {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity, filter;
+  transition-duration: var(--motion-duration-fast);
+  transition-timing-function: var(--motion-ease-standard);
+}
+
+:where(button, .btn, [role="button"], .page-link):not(:disabled):not(.disabled):hover {
+  transform: translateY(-1px);
+}
+
+:where(button, .btn, [role="button"], .page-link):not(:disabled):not(.disabled):active {
+  transform: translateY(0);
+  transition-duration: 80ms;
+}
+
+:where(a[href], button, .btn, [role="button"], .nav-link, .dropdown-item, .page-link):focus-visible,
+:where(.form-control, .form-select, .form-check-input):focus-visible {
+  outline: 2px solid rgba(25, 118, 210, 0.28);
+  outline-offset: 2px;
+}
+
+:where(.form-control, .form-select, input, select, textarea):focus {
+  transition-duration: var(--motion-duration-base);
+}
+
+:where(.dropdown-menu.show) {
+  animation: app-fade-in var(--motion-duration-base) var(--motion-ease-standard) both;
+}
+
+:where(.toast.show) {
+  animation: app-popover-enter var(--motion-duration-base) var(--motion-ease-out) both;
+}
+
+:where(.modal.show .modal-dialog) {
+  animation: app-modal-enter var(--motion-duration-slow) var(--motion-ease-out) both;
+}
+
+:where(
+  .trending-vn-page,
+  .article-detail-page-wrapper,
+  .admin-content > .container,
+  .admin-content > .container-fluid,
+  main > .container,
+  main > .container-fluid,
+  .profile-page,
+  .author-list-page,
+  .journal-list-page,
+  .topic-detail-page,
+  .geography-page,
+  .catalog-search-page
+) {
+  animation: app-content-enter var(--motion-duration-slow) var(--motion-ease-out) both;
+}
+
+@keyframes app-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes app-popover-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes app-modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Custom background grid pattern for light mode */
@@ -542,3 +687,18 @@ select.account-form-input {
   color: #ffffff !important;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}

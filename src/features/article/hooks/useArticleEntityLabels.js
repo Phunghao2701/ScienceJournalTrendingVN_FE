@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { getArticleEntityLabelApi } from '../api/articleApi';
+import { resolveInstitutionDisplayName } from '../../trendingVN/utils/trendingViewParams';
 
 const extractPayload = (response) => response?.data?.data || response?.data || {};
 
@@ -13,7 +14,10 @@ const getEntityDisplayName = (entityType, payload) => {
     || '';
 };
 
-export default function useArticleEntityLabels(filters = {}) {
+// Institution has no `/institutions/:id` lookup endpoint, so its label is resolved
+// purely (URL institution_name metadata, then a matching analytics row) instead of
+// going through the network-backed useQueries below like every other entity type.
+export default function useArticleEntityLabels(filters = {}, { institutionNameParam, institutionList = [] } = {}) {
   const requests = useMemo(() => [
     ['journal', filters.selectedJournal],
     ['publisher', filters.selectedPublisher],
@@ -54,6 +58,7 @@ export default function useArticleEntityLabels(filters = {}) {
       labels[`${entityType}Error`] = Boolean(queries[index]?.isError);
       labels[`${entityType}Id`] = String(id);
     });
+    labels.institution = resolveInstitutionDisplayName(filters.selectedInstitution, institutionNameParam, institutionList);
     return labels;
-  }, [queries, requests]);
+  }, [queries, requests, filters.selectedInstitution, institutionNameParam, institutionList]);
 }

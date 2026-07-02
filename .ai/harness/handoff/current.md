@@ -1,6 +1,6 @@
 # Harness Handoff
 
-> **Generated**: 2026-06-30 16:04:19
+> **Generated**: 2026-07-02 19:56:27
 > **Reason**: session-stop
 
 ## Goal
@@ -14,96 +14,62 @@ No active plan. Continue from the latest user request and filesystem state.
 ## Files Touched
 
 ```
---repo
-.agents/skills/repo-harness-chatgpt-bridge/SKILL.md
-.agents/skills/repo-harness-chatgpt-bridge/references/chatgpt-connector-manual.md
-.agents/skills/repo-harness-chatgpt-bridge/references/workflow.md
-.ai/context/capabilities.json
-.ai/context/capability-source-map.json
-.ai/context/context-map.json
-.ai/harness/architecture/.gitkeep
-.ai/harness/brain-manifest.json
-.ai/harness/checks/latest.json
-.ai/harness/handoff/codex-goal.md
 .ai/harness/handoff/current.md
-.ai/harness/planning/.gitkeep
-.ai/harness/policy.json
-.ai/harness/scripts/.gitkeep
-.ai/harness/security/.gitkeep
-.ai/harness/triage/.gitkeep
-.ai/harness/workflow-contract.json
-.ai/hooks/README.md
-.ai/hooks/lib/minimal-change.sh
-.ai/hooks/lib/session-state.sh
-.ai/hooks/lib/workflow-state.sh
-.claude/.skill-version
-.claude/templates/contract.template.md
-.claude/templates/implementation-notes.template.md
-.claude/templates/plan.template.md
-.claude/templates/prd.template.md
-.claude/templates/research.template.md
-.claude/templates/review.template.md
-.claude/templates/spec.template.md
-.claude/templates/sprint.template.md
-.fk-skills/live/config.json
-.gitignore
-.repo-harness/mcp.local.json.20260629-013423.bak
-.repo-harness/mcp.oauth-tokens.json.20260629-013423.bak
-.repo-harness/mcp.oauth.json.20260629-013423.bak
-.repo-harness/mcp.oauth.json.old
-CLAUDE.md
-PRODUCT.md
-deploy/README.md
-deploy/env/.gitkeep
-deploy/release-checklists/.gitkeep
-deploy/runbooks/.gitkeep
-deploy/scripts/.gitkeep
-deploy/sql/.gitkeep
-deploy/submissions/.gitkeep
-docs/architecture/diagrams/.gitkeep
-docs/architecture/domains/.gitkeep
-docs/architecture/index.md
-docs/architecture/modules/.gitkeep
-docs/architecture/requests/.gitkeep
-docs/architecture/snapshots/.gitkeep
-docs/reference-configs/agentic-development-flow.md
-docs/reference-configs/document-generation.md
-docs/reference-configs/external-tooling.md
-docs/reference-configs/global-working-rules.md
-docs/reference-configs/handoff-protocol.md
-docs/reference-configs/harness-overview.md
-docs/reference-configs/heartbeat-triage.md
-docs/reference-configs/minimal-change-hooks.md
-docs/reference-configs/sprint-contracts.md
-docs/repo-harness-chatgpt-mcp-setup.md
-docs/researches/README.md
-docs/researches/paper-vn-discovery-api-contract.md
-docs/spec.md
+.fk-skills/critique/2026-07-02T12-21-39Z__src-features-trendingvn-pages-trendingvnpage-jsx.md
 package-lock.json
 package.json
-plans/plan-implement-lens-style-detail-sidebar-mathjax.md
-plans/plan-implement-paper-vn-discovery-frontend.md
-plans/plan-implement-paper-vn-english-ui-click-filter.md
-plans/plan-implement-paper-vn-lens-detail-ui-mathjax.md
-plans/prds/20260629-1246-paper-vn-discovery-frontend.prd.md
-plans/prds/20260629-1418-paper-vn-english-ui-click-filter.prd.md
-plans/prds/20260629-2040-lens-style-detail-sidebar-mathjax.prd.md
-plans/prds/20260629-2047-paper-vn-lens-detail-ui-mathjax.prd.md
-plans/prds/20260629-2144-paper-vn-detail-review-author-profile-navigation.prd.md
-plans/prds/20260630-1337-paper-vn-url-synced-list-table-analysis-views.prd.md
-plans/prds/20260630-1414-paper-vn-analysis-view-consistency-corrective.prd.md
-plans/sprints/20260629-1248-paper-vn-discovery-frontend.sprint.md
-plans/sprints/20260629-1419-paper-vn-english-ui-click-filter.sprint.md
-... (120 total changed/untracked paths; inspect git status --short)
+scripts/paperVnAnalysis.test.mjs
+src/app/routes/AppRoutes.jsx
+src/features/article/hooks/useArticleEntityLabels.js
+src/features/article/utils/articleFormatters.js
+src/features/institution/api/institution.api.js
+src/features/landing/components/Header.jsx
+src/features/trendingVN/components/PublisherGrid.jsx
+src/features/trendingVN/components/TrendingArticleCard.jsx
+src/features/trendingVN/components/analysis/AnalysisDashboard.jsx
+src/features/trendingVN/components/analysis/AnalysisSummary.jsx
+src/features/trendingVN/hooks/useTrendingFilters.js
+src/features/trendingVN/pages/ArticleDetailPage.jsx
+src/features/trendingVN/pages/TrendingVNPage.jsx
+src/features/trendingVN/trendingVN.css
+src/features/trendingVN/utils/trendingViewParams.js
+src/features/trendingvnclone/components/AnalysisPreview.jsx
+src/features/trendingvnclone/components/ArticleDetailHeader.jsx
+src/features/trendingvnclone/components/ArticleSummaryTab.jsx
+src/features/trendingvnclone/components/AuthorCardPopup.jsx
+src/features/trendingvnclone/components/FilterSidebar.jsx
+src/features/trendingvnclone/components/Footer.jsx
+src/features/trendingvnclone/components/Header.jsx
+src/features/trendingvnclone/components/ResultsList.jsx
+src/features/trendingvnclone/components/ResultsTable.jsx
+src/features/trendingvnclone/components/ScholarlyWorkCard.jsx
+src/features/trendingvnclone/components/SearchToolbar.jsx
+src/features/trendingvnclone/components/analysis/AnalysisEntityRankings.jsx
+src/features/trendingvnclone/components/analysis/AnalysisSummaryCards.jsx
+src/features/trendingvnclone/components/analysis/AnalysisTimeSeriesChart.jsx
+src/features/trendingvnclone/components/analysis/AnalysisTrendingArticles.jsx
+src/features/trendingvnclone/components/analysis/AnalysisView.jsx
+src/features/trendingvnclone/hooks/useScholarAnalysis.js
+src/features/trendingvnclone/hooks/useScholarAnalytics.js
+src/features/trendingvnclone/hooks/useScholarArticleDetail.js
+src/features/trendingvnclone/hooks/useScholarFilters.js
+src/features/trendingvnclone/hooks/useScholarSearch.js
+src/features/trendingvnclone/pages/ArticleDetailPage.jsx
+src/features/trendingvnclone/pages/SearchPage.jsx
+src/index.css
+src/shared/components/Select/SearchableSelect.jsx
+src/shared/i18n/locales/en.json
+src/shared/i18n/locales/vi.json
+vite.config.js
 ```
 
 ## Commands Run
 
-- {"ts":"2026-06-30T16:03:21+0700","event_type":"PostToolUse","tool_name":"Read","file_path":"e:\\Science_Journal_Trending_VN\\ScienceJournalTrendingVN_FE\\.ai\\harness\\checks\\latest.json","exit_code":0,"duration_ms":1,"session_key":"8e5535d2-5590-4d98-9a0f-90223527fe35","run_id":"run-session-8e5535d2-5590-4d98-9a0f-90223527fe35","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-06-30T16:03:34+0700","event_type":"PostToolUse","tool_name":"Write","file_path":"e:\\Science_Journal_Trending_VN\\ScienceJournalTrendingVN_FE\\.ai\\harness\\checks\\latest.json","exit_code":0,"duration_ms":20,"session_key":"8e5535d2-5590-4d98-9a0f-90223527fe35","run_id":"run-session-8e5535d2-5590-4d98-9a0f-90223527fe35","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-06-30T16:03:46+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":3915,"session_key":"8e5535d2-5590-4d98-9a0f-90223527fe35","run_id":"run-session-8e5535d2-5590-4d98-9a0f-90223527fe35","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-06-30T16:03:57+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":3794,"session_key":"8e5535d2-5590-4d98-9a0f-90223527fe35","run_id":"run-session-8e5535d2-5590-4d98-9a0f-90223527fe35","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-06-30T16:04:06+0700","event_type":"PostToolUse","tool_name":"TodoWrite","file_path":"","exit_code":0,"duration_ms":1,"session_key":"8e5535d2-5590-4d98-9a0f-90223527fe35","run_id":"run-session-8e5535d2-5590-4d98-9a0f-90223527fe35","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-02T19:54:33+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":4075,"session_key":"18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","run_id":"run-session-18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-02T19:54:40+0700","event_type":"PostToolUse","tool_name":"TaskStop","file_path":"","exit_code":0,"duration_ms":6,"session_key":"18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","run_id":"run-session-18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-02T19:54:55+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":3933,"session_key":"18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","run_id":"run-session-18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-02T19:55:53+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":7872,"session_key":"18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","run_id":"run-session-18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-02T19:56:08+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":4310,"session_key":"18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","run_id":"run-session-18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","host":"unknown","agent_name":"unknown","session_source":"unknown"}
 
 ## Checks
 
@@ -149,94 +115,60 @@ plans/sprints/20260629-1419-paper-vn-english-ui-click-filter.sprint.md
 
 - Next action stage: none
 - Next recommended action: (none)
-- Working tree:  47 files changed, 4919 insertions(+), 1165 deletions(-); 73 untracked files
-- Parent Run ID: run-20260630T160418-5617
+- Working tree:  34 files changed, 5524 insertions(+), 2057 deletions(-); 13 untracked files
+- Parent Run ID: run-20260702T195626-168227
 - Supersedes: (none)
 
 ## Changed Files
 
 ```
---repo
-.agents/skills/repo-harness-chatgpt-bridge/SKILL.md
-.agents/skills/repo-harness-chatgpt-bridge/references/chatgpt-connector-manual.md
-.agents/skills/repo-harness-chatgpt-bridge/references/workflow.md
-.ai/context/capabilities.json
-.ai/context/capability-source-map.json
-.ai/context/context-map.json
-.ai/harness/architecture/.gitkeep
-.ai/harness/brain-manifest.json
-.ai/harness/checks/latest.json
-.ai/harness/handoff/codex-goal.md
 .ai/harness/handoff/current.md
-.ai/harness/planning/.gitkeep
-.ai/harness/policy.json
-.ai/harness/scripts/.gitkeep
-.ai/harness/security/.gitkeep
-.ai/harness/triage/.gitkeep
-.ai/harness/workflow-contract.json
-.ai/hooks/README.md
-.ai/hooks/lib/minimal-change.sh
-.ai/hooks/lib/session-state.sh
-.ai/hooks/lib/workflow-state.sh
-.claude/.skill-version
-.claude/templates/contract.template.md
-.claude/templates/implementation-notes.template.md
-.claude/templates/plan.template.md
-.claude/templates/prd.template.md
-.claude/templates/research.template.md
-.claude/templates/review.template.md
-.claude/templates/spec.template.md
-.claude/templates/sprint.template.md
-.fk-skills/live/config.json
-.gitignore
-.repo-harness/mcp.local.json.20260629-013423.bak
-.repo-harness/mcp.oauth-tokens.json.20260629-013423.bak
-.repo-harness/mcp.oauth.json.20260629-013423.bak
-.repo-harness/mcp.oauth.json.old
-CLAUDE.md
-PRODUCT.md
-deploy/README.md
-deploy/env/.gitkeep
-deploy/release-checklists/.gitkeep
-deploy/runbooks/.gitkeep
-deploy/scripts/.gitkeep
-deploy/sql/.gitkeep
-deploy/submissions/.gitkeep
-docs/architecture/diagrams/.gitkeep
-docs/architecture/domains/.gitkeep
-docs/architecture/index.md
-docs/architecture/modules/.gitkeep
-docs/architecture/requests/.gitkeep
-docs/architecture/snapshots/.gitkeep
-docs/reference-configs/agentic-development-flow.md
-docs/reference-configs/document-generation.md
-docs/reference-configs/external-tooling.md
-docs/reference-configs/global-working-rules.md
-docs/reference-configs/handoff-protocol.md
-docs/reference-configs/harness-overview.md
-docs/reference-configs/heartbeat-triage.md
-docs/reference-configs/minimal-change-hooks.md
-docs/reference-configs/sprint-contracts.md
-docs/repo-harness-chatgpt-mcp-setup.md
-docs/researches/README.md
-docs/researches/paper-vn-discovery-api-contract.md
-docs/spec.md
+.fk-skills/critique/2026-07-02T12-21-39Z__src-features-trendingvn-pages-trendingvnpage-jsx.md
 package-lock.json
 package.json
-plans/plan-implement-lens-style-detail-sidebar-mathjax.md
-plans/plan-implement-paper-vn-discovery-frontend.md
-plans/plan-implement-paper-vn-english-ui-click-filter.md
-plans/plan-implement-paper-vn-lens-detail-ui-mathjax.md
-plans/prds/20260629-1246-paper-vn-discovery-frontend.prd.md
-plans/prds/20260629-1418-paper-vn-english-ui-click-filter.prd.md
-plans/prds/20260629-2040-lens-style-detail-sidebar-mathjax.prd.md
-plans/prds/20260629-2047-paper-vn-lens-detail-ui-mathjax.prd.md
-plans/prds/20260629-2144-paper-vn-detail-review-author-profile-navigation.prd.md
-plans/prds/20260630-1337-paper-vn-url-synced-list-table-analysis-views.prd.md
-plans/prds/20260630-1414-paper-vn-analysis-view-consistency-corrective.prd.md
-plans/sprints/20260629-1248-paper-vn-discovery-frontend.sprint.md
-plans/sprints/20260629-1419-paper-vn-english-ui-click-filter.sprint.md
-... (120 total changed/untracked paths; inspect git status --short)
+scripts/paperVnAnalysis.test.mjs
+src/app/routes/AppRoutes.jsx
+src/features/article/hooks/useArticleEntityLabels.js
+src/features/article/utils/articleFormatters.js
+src/features/institution/api/institution.api.js
+src/features/landing/components/Header.jsx
+src/features/trendingVN/components/PublisherGrid.jsx
+src/features/trendingVN/components/TrendingArticleCard.jsx
+src/features/trendingVN/components/analysis/AnalysisDashboard.jsx
+src/features/trendingVN/components/analysis/AnalysisSummary.jsx
+src/features/trendingVN/hooks/useTrendingFilters.js
+src/features/trendingVN/pages/ArticleDetailPage.jsx
+src/features/trendingVN/pages/TrendingVNPage.jsx
+src/features/trendingVN/trendingVN.css
+src/features/trendingVN/utils/trendingViewParams.js
+src/features/trendingvnclone/components/AnalysisPreview.jsx
+src/features/trendingvnclone/components/ArticleDetailHeader.jsx
+src/features/trendingvnclone/components/ArticleSummaryTab.jsx
+src/features/trendingvnclone/components/AuthorCardPopup.jsx
+src/features/trendingvnclone/components/FilterSidebar.jsx
+src/features/trendingvnclone/components/Footer.jsx
+src/features/trendingvnclone/components/Header.jsx
+src/features/trendingvnclone/components/ResultsList.jsx
+src/features/trendingvnclone/components/ResultsTable.jsx
+src/features/trendingvnclone/components/ScholarlyWorkCard.jsx
+src/features/trendingvnclone/components/SearchToolbar.jsx
+src/features/trendingvnclone/components/analysis/AnalysisEntityRankings.jsx
+src/features/trendingvnclone/components/analysis/AnalysisSummaryCards.jsx
+src/features/trendingvnclone/components/analysis/AnalysisTimeSeriesChart.jsx
+src/features/trendingvnclone/components/analysis/AnalysisTrendingArticles.jsx
+src/features/trendingvnclone/components/analysis/AnalysisView.jsx
+src/features/trendingvnclone/hooks/useScholarAnalysis.js
+src/features/trendingvnclone/hooks/useScholarAnalytics.js
+src/features/trendingvnclone/hooks/useScholarArticleDetail.js
+src/features/trendingvnclone/hooks/useScholarFilters.js
+src/features/trendingvnclone/hooks/useScholarSearch.js
+src/features/trendingvnclone/pages/ArticleDetailPage.jsx
+src/features/trendingvnclone/pages/SearchPage.jsx
+src/index.css
+src/shared/components/Select/SearchableSelect.jsx
+src/shared/i18n/locales/en.json
+src/shared/i18n/locales/vi.json
+vite.config.js
 ```
 
 <!-- repo-harness:minimal-change-review begin -->

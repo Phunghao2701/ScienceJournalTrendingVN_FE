@@ -20,7 +20,7 @@ export const Header = () => {
       </div>
 
       {/* Middle/Right: Nav items on Desktop */}
-      <nav className="hidden md:flex items-center space-x-6">
+      <nav className="hidden lg:flex items-center space-x-6">
         {/* Language Select */}
         <div className="flex items-center text-gray-300 hover:text-white cursor-pointer py-1 text-[13px]">
           <Globe className="w-3.5 h-3.5 mr-1" />
@@ -70,7 +70,7 @@ export const Header = () => {
       {/* Mobile Burger Toggle */}
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="md:hidden text-white hover:text-gray-300 p-1"
+        className="lg:hidden text-white hover:text-gray-300 p-1"
         aria-label="Toggle Menu"
       >
         <Menu className="w-5 h-5" />
@@ -78,7 +78,7 @@ export const Header = () => {
 
       {/* Mobile Menu Panel */}
       {mobileMenuOpen && (
-        <div className="absolute top-14 left-0 w-full bg-lens-dark-blue border-t border-gray-700 flex flex-col p-4 space-y-3 z-50 md:hidden shadow-lg animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute top-14 left-0 w-full bg-lens-dark-blue border-t border-gray-700 flex flex-col p-4 space-y-3 z-50 lg:hidden shadow-lg animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="flex items-center text-gray-300 cursor-pointer text-[13px] justify-between border-b border-gray-800 pb-2">
             <span className="flex items-center"><Globe className="w-4 h-4 mr-2" /> Language</span>
             <span className="text-white">English - EN</span>

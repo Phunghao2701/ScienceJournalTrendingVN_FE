@@ -354,7 +354,7 @@ ER  - `;
         <div className="space-y-0 select-text">
           {/* Tab navigation header */}
           <div className="border-b border-[#D8E7F4] flex flex-wrap items-center justify-between bg-white px-4 rounded-t select-none shadow-xs">
-            <div className="flex space-x-1 pt-2">
+            <div className="flex space-x-1 pt-2 overflow-x-auto">
               {[
                 { key: 'summary', label: 'Summary' },
                 { key: 'citing', label: `${citingWorksTotal ?? citingWorks.length} Citing Works` },
@@ -366,7 +366,7 @@ ER  - `;
                 <button
                   key={key}
                   onClick={() => setActiveTab(key)}
-                  className={`px-4 py-2.5 text-[13.6px] font-bold border-t-2 border-x transition-colors cursor-pointer ${
+                  className={`shrink-0 px-4 py-2.5 text-[13.6px] font-bold border-t-2 border-x transition-colors cursor-pointer ${
                     activeTab === key
                       ? 'border-t-lens-link-blue border-x-[#D8E7F4] bg-[#F8FAFD] text-lens-link-blue'
                       : 'border-t-transparent border-x-transparent text-gray-500 hover:text-gray-800'

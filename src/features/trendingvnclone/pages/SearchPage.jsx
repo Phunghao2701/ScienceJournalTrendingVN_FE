@@ -204,7 +204,7 @@ export default function SearchPage() {
       />
 
       {/* 3. Main Workspace Container */}
-      <div className="flex-grow flex relative w-full max-w-[1440px] mx-auto items-stretch">
+      <div className="flex-grow flex relative w-full max-w-[1440px] mx-auto items-stretch overflow-x-auto">
         {/* Left Sidebars: Tab rail & Accordion Filters */}
         <FilterSidebar
           selectedFilters={filters}

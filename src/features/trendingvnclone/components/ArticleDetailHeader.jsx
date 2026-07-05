@@ -18,9 +18,9 @@ export default function ArticleDetailHeader({
   const navigate = useNavigate();
 
   return (
-    <div className="bg-[#F1F5F9] border-b border-[#D8E7F4] select-none font-sans w-full py-2.5 px-4 flex items-center justify-between">
+    <div className="bg-[#F1F5F9] border-b border-[#D8E7F4] select-none font-sans w-full py-2.5 px-4 flex items-center justify-between overflow-x-auto">
       {/* Left breadcrumb */}
-      <div className="flex items-center space-x-2 text-[13px] text-gray-700">
+      <div className="flex items-center space-x-2 text-[13px] text-gray-700 shrink-0">
         <button
           onClick={() => navigate(backTo)}
           className="text-[#2B54B2] hover:underline flex items-center space-x-1 cursor-pointer"
@@ -40,7 +40,7 @@ export default function ArticleDetailHeader({
       </div>
 
       {/* Right inline search */}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 shrink-0">
         <div className="flex items-center bg-white border border-gray-300 rounded shadow-xs focus-within:ring-1 focus-within:ring-lens-link-blue focus-within:border-lens-link-blue overflow-hidden w-[280px] sm:w-[350px]">
           <input
             type="text"

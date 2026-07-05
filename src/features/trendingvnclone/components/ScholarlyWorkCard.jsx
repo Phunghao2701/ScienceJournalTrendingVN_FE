@@ -168,21 +168,21 @@ export const ScholarlyWorkCard = ({
           </li>
 
           {/* 5. Lens ID Badge */}
-          <li className="inline-flex items-center text-[12px] bg-gray-200/70 border border-gray-300/80 px-1.5 py-0.5 rounded text-gray-800 select-text">
-            <span className="font-semibold text-[10px] mr-1 text-gray-500">LENS ID</span>
-            <span>{item.lensId}</span>
+          <li className="inline-flex items-center max-w-full text-[12px] bg-gray-200/70 border border-gray-300/80 px-1.5 py-0.5 rounded text-gray-800 select-text">
+            <span className="font-semibold text-[10px] mr-1 text-gray-500 shrink-0">LENS ID</span>
+            <span className="break-all">{item.lensId}</span>
           </li>
 
           {/* 6. DOI Link */}
           {visibleFields.doi && item.doi && (
-          <li className="inline-flex items-center space-x-2 w-full mt-0.5 select-text">
+          <li className="flex flex-wrap items-center gap-x-2 w-full mt-0.5 select-text">
             <a
               href={item.doiUrl || `https://doi.org/${item.doi}`}
               target="_blank"
               rel="noreferrer"
-              className="text-lens-link-blue hover:underline cursor-pointer flex items-center select-text"
+              className="text-lens-link-blue hover:underline cursor-pointer flex items-center break-all select-text"
             >
-              <ExternalLink className="w-3.5 h-3.5 mr-1" />
+              <ExternalLink className="w-3.5 h-3.5 mr-1 shrink-0" />
               {item.doi}
             </a>
             <span className="text-gray-300">|</span>

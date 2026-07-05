@@ -140,7 +140,7 @@ export const ResultsList = ({
       {/* 1. Results View Tabs Header */}
       <div className="border-b border-[#D8E7F4] flex items-center justify-between px-4 bg-gray-50/50">
         {/* Left Tabs */}
-        <div className="flex space-x-1 pt-2">
+        <div className="flex space-x-1 pt-2 overflow-x-auto">
           <button
             onClick={() => setActiveTab('works')}
             className={`px-4 py-2 text-[13.6px] font-bold border-t-2 border-x transition-colors relative cursor-pointer ${
@@ -165,7 +165,7 @@ export const ResultsList = ({
         </div>
 
         {/* Right View Modes */}
-        <div className="flex items-center space-x-1.5 border border-[#D8E7F4] rounded-sm bg-white overflow-hidden p-0.5 shadow-sm text-gray-600">
+        <div className="shrink-0 flex items-center space-x-1.5 border border-[#D8E7F4] rounded-sm bg-white overflow-hidden p-0.5 shadow-sm text-gray-600">
           <button
             onClick={() => onViewChange('table')}
             className={`p-1.5 rounded-xs flex items-center cursor-pointer hover:bg-gray-100 ${
@@ -339,7 +339,7 @@ export const ResultsList = ({
 
       {/* 4. Pagination Footer Bar */}
       {totalItems > 0 && (
-        <div className="border-t border-[#D8E7F4] bg-white py-3 px-4 flex items-center justify-between select-none">
+        <div className="border-t border-[#D8E7F4] bg-white py-3 px-4 flex flex-wrap items-center justify-between gap-y-2 select-none">
           {/* Results count limit */}
           <div className="flex items-center space-x-1 text-[12.8px] text-lens-slate-gray cursor-pointer">
             <select
@@ -355,7 +355,7 @@ export const ResultsList = ({
           </div>
 
           {/* Numeric pagination links */}
-          <div className="flex items-center space-x-1 text-[13.6px] text-lens-slate-gray font-sans">
+          <div className="flex flex-wrap items-center gap-1 text-[13.6px] text-lens-slate-gray font-sans">
             <button
               onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
               disabled={currentPage === 1}

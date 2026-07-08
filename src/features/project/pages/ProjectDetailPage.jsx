@@ -28,7 +28,7 @@ const ProjectDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="container-fluid py-4 grid-bg min-vh-100 d-flex justify-content-center align-items-center">
+      <div className="project-detail-page container-fluid py-4 grid-bg min-vh-100 d-flex justify-content-center align-items-center">
         <div className="spinner-border text-primary" role="status"></div>
       </div>
     );
@@ -36,7 +36,7 @@ const ProjectDetailPage = () => {
 
   if (error || !project) {
     return (
-      <div className="container-fluid py-4 grid-bg min-vh-100">
+      <div className="project-detail-page container-fluid py-4 grid-bg min-vh-100">
         <div className="container mx-auto" style={{ maxWidth: '1000px', marginTop: '20px' }}>
           <div className="alert alert-danger border-0 rounded-4 shadow-sm p-4 d-flex align-items-center gap-3">
             <Icon icon="lucide:alert-triangle" width="24" className="text-danger flex-shrink-0" />
@@ -58,7 +58,7 @@ const ProjectDetailPage = () => {
   const articleCount = watchArticles?.length || 0;
 
   return (
-    <div className="container-fluid py-4 grid-bg min-vh-100">
+    <div className="project-detail-page container-fluid py-4 grid-bg min-vh-100">
       <div className="container mx-auto" style={{ maxWidth: '1200px' }}>
         {/* Breadcrumb */}
         <nav aria-label="breadcrumb" className="mb-4">

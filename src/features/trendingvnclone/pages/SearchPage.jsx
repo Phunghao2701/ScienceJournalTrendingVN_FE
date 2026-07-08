@@ -191,7 +191,7 @@ export default function SearchPage() {
   const errorMessage = searchError || analyticsError || '';
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans select-none antialiased">
+    <div className="trendingvnclone-page min-h-screen bg-white flex flex-col font-sans select-none antialiased">
       {/* 1. Global Navigation Header */}
       <Header />
 

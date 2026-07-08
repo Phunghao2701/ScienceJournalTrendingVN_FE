@@ -101,3 +101,59 @@
 .author-leaderboard-field-chip { display: inline-flex; padding: .3rem .58rem; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-chip); color: var(--text-muted); font-size: .68rem; font-weight: 700; }
 .author-leaderboard-cell { color: var(--text-main); font-size: .83rem; font-variant-numeric: tabular-nums; }
 .author-leaderboard-citations { color: var(--q1-color); font-weight: 750; }
+
+@media (max-width: 767.98px) {
+  .author-leaderboard-page {
+    padding-top: 76px;
+    padding-bottom: 44px;
+    overflow-x: clip;
+  }
+
+  .author-leaderboard-hero,
+  .author-leaderboard-filter-card,
+  .author-leaderboard-table-shell {
+    border-radius: 12px !important;
+  }
+
+  .author-leaderboard-hero {
+    padding: 1.1rem;
+  }
+
+  .author-leaderboard-title {
+    font-size: clamp(1.8rem, 10vw, 2.4rem);
+    letter-spacing: -0.025em;
+  }
+
+  .author-leaderboard-filter-card .row {
+    row-gap: 0.75rem;
+  }
+
+  .author-leaderboard-select {
+    min-height: 42px;
+  }
+
+  .author-leaderboard-table-shell {
+    overflow-x: auto;
+  }
+
+  .author-leaderboard-table {
+    min-width: 680px;
+  }
+
+  .author-leaderboard-author {
+    align-items: flex-start;
+  }
+
+  .author-leaderboard-name,
+  .author-leaderboard-orcid,
+  .author-leaderboard-field-chip {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 390px) {
+  .author-leaderboard-hero,
+  .author-leaderboard-filter-card {
+    padding: 0.9rem;
+  }
+}

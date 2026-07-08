@@ -235,7 +235,7 @@ ER  - `;
 
   // ── Success state ──────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#F8FAFD] flex flex-col font-sans select-none antialiased">
+    <div className="trendingvnclone-page min-h-screen bg-[#F8FAFD] flex flex-col font-sans select-none antialiased">
       {/* 1. Global header */}
       <Header />
 

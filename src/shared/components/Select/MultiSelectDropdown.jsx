@@ -49,7 +49,7 @@ export default function MultiSelectDropdown({
   const selectedOptions = options.filter(opt => value.includes(opt.value));
 
   return (
-    <div className="position-relative" ref={wrapperRef}>
+    <div className="app-multiselect position-relative" ref={wrapperRef}>
       <div 
         className={`form-control d-flex flex-wrap align-items-center gap-1 ${disabled ? 'bg-light text-muted' : 'bg-white'}`}
         style={{ minHeight: '48px', cursor: disabled ? 'not-allowed' : 'pointer', borderColor: 'var(--border)' }}
@@ -84,7 +84,7 @@ export default function MultiSelectDropdown({
       </div>
 
       {isOpen && (
-        <div className="position-absolute w-100 bg-white border rounded-3 shadow-sm mt-1 z-3" style={{ maxHeight: '300px', display: 'flex', flexDirection: 'column' }}>
+        <div className="app-multiselect-menu position-absolute w-100 bg-white border rounded-3 shadow-sm mt-1 z-3" style={{ maxHeight: '300px', display: 'flex', flexDirection: 'column' }}>
           {searchable && (
             <div className="p-2 border-bottom">
               <input 

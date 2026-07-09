@@ -8,7 +8,7 @@ import { Row, Col } from 'react-bootstrap';
 export default function AuthLayout({ banner, children }) {
   return (
     <div 
-      className="min-vh-100 w-100 overflow-x-hidden d-flex"
+      className="auth-layout min-vh-100 w-100 overflow-x-hidden d-flex"
       style={{ 
         backgroundColor: 'var(--bg-main)',
         color: 'var(--text-main)',
@@ -28,11 +28,11 @@ export default function AuthLayout({ banner, children }) {
         <Col 
           xs={12} 
           md={6} 
-          className="d-flex align-items-center justify-content-center py-5 px-3 px-sm-4 px-md-5 min-vh-100 overflow-y-auto"
+          className="auth-form-panel d-flex align-items-center justify-content-center py-5 px-3 px-sm-4 px-md-5 min-vh-100 overflow-y-auto"
           style={{ backgroundColor: 'var(--bg-main)' }}
         >
           <div 
-            className="w-100" 
+            className="auth-form-shell w-100"
             style={{ 
               maxWidth: '440px',
               animation: 'slide-up 0.4s ease-out'

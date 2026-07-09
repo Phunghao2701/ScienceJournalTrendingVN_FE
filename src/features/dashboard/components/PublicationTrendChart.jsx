@@ -32,6 +32,7 @@ function SimpleSvgChart({ years, series }) {
 
   const xScale = (i) => PAD.left + (i / (years.length - 1 || 1)) * chartW;
   const yScale = (v) => PAD.top + chartH - ((v - minVal) / (maxVal - minVal || 1)) * chartH;
+  const labelStep = years.length > 14 ? 4 : years.length > 10 ? 3 : years.length > 7 ? 2 : 1;
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ overflow: 'visible' }}>
@@ -45,12 +46,17 @@ function SimpleSvgChart({ years, series }) {
       })}
 
       {/* X axis labels */}
-      {years.map((yr, i) => (
-        <text key={yr} x={xScale(i)} y={H - 4} textAnchor="middle"
-          style={{ fontSize: 9, fill: 'var(--text-muted)', fontFamily: 'Inter' }}>
-          {yr}
-        </text>
-      ))}
+      {years.map((yr, i) => {
+        const showLabel = i === 0 || i === years.length - 1 || i % labelStep === 0;
+        if (!showLabel) return null;
+
+        return (
+          <text key={yr} x={xScale(i)} y={H - 4} textAnchor="middle"
+            style={{ fontSize: 9, fill: 'var(--text-muted)', fontFamily: 'Inter' }}>
+            {yr}
+          </text>
+        );
+      })}
 
       {/* Series lines */}
       {series.map((s, si) => {

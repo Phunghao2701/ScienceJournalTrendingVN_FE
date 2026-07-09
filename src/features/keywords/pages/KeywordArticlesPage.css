@@ -253,8 +253,65 @@
 }
 
 @media (max-width: 767.98px) {
+  .keyword-articles-page {
+    padding-top: 76px;
+    padding-bottom: 44px;
+    overflow-x: clip;
+  }
+
+  .keyword-articles-hero,
+  .keyword-article-card,
+  .keyword-article-skeleton,
+  .keyword-article-state {
+    border-radius: 12px;
+  }
+
+  .keyword-articles-hero {
+    padding: 1.1rem;
+  }
+
+  .keyword-articles-title {
+    font-size: clamp(1.8rem, 10vw, 2.45rem);
+    letter-spacing: -0.025em;
+  }
+
   .keyword-articles-heading {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .keyword-article-card {
+    padding: 1rem;
+  }
+
+  .keyword-article-meta {
+    gap: 0.5rem;
+  }
+
+  .keyword-article-item__title,
+  .keyword-article-doi,
+  .keyword-article-journal {
+    overflow-wrap: anywhere;
+  }
+
+  .keyword-article-action,
+  .keyword-article-retry {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .keyword-article-pagination {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .keyword-articles-hero,
+  .keyword-article-card,
+  .keyword-article-state {
+    padding: 0.9rem;
   }
 }

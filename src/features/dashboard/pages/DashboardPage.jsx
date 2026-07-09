@@ -92,7 +92,7 @@ export default function DashboardPage() {
 
   return (
     <div
-      className="min-vh-100"
+      className="dashboard-page min-vh-100"
       style={{
         backgroundColor: "var(--bg-main)",
         color: "var(--text-main)",

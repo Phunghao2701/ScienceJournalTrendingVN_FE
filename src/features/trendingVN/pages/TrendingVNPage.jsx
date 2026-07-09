@@ -949,7 +949,7 @@ export default function TrendingVNPage() {
             </div>
 
             {/* Right side of Action toolbar: Sort + Search */}
-            <div className="d-flex align-items-center gap-3">
+            <div className="tvn-toolbar-controls">
               {/* Sort dropdown */}
               {!isAnalysisView && (
                 <div className="d-flex align-items-center gap-2">
@@ -973,7 +973,7 @@ export default function TrendingVNPage() {
               )}
 
               {/* Search Bar */}
-              <Form onSubmit={handleSearchSubmit} className="tvn-search-form" style={{ width: '300px', margin: 0 }}>
+              <Form onSubmit={handleSearchSubmit} className="tvn-search-form">
                 <div className="tvn-search-group" style={{ height: '32px', minHeight: '32px' }}>
                   <span className="d-flex align-items-center ps-2 pe-1" style={{ background: 'transparent' }}>
                     <Icon icon="lucide:search" width="14" className="text-muted" />
@@ -1219,44 +1219,36 @@ export default function TrendingVNPage() {
                   </div>
                 ) : (
                   <div className="tvn-chart-frame tvn-author-chart-frame">
-                    <svg className="tvn-sidebar-chart-svg tvn-author-chart-svg" viewBox="0 0 330 260" width="100%">
-                      {/* Grid lines and Tick labels on Y-axis */}
+                    <svg className="tvn-sidebar-chart-svg tvn-author-chart-svg" viewBox="0 0 330 230" width="100%">
+                      {/* Vertical grid lines and scale labels */}
                       {(() => {
                         const counts = authorCounts.map(item => item.count);
                         const maxVal = Math.max(...counts, 0);
                         const scaleMax = Math.max(5, Math.ceil(maxVal / 5) * 5);
-                        const yTicks = Array.from({ length: 6 }, (_, i) => i * (scaleMax / 5));
+                        const xTicks = Array.from({ length: 6 }, (_, i) => i * (scaleMax / 5));
+                        const chartLeft = 118;
+                        const chartRight = 296;
+                        const chartTop = 12;
+                        const chartBottom = 204;
 
-                        return yTicks.map((tickVal) => {
-                          const y = 175 - (tickVal / scaleMax) * 160;
+                        return xTicks.map((tickVal) => {
+                          const x = chartLeft + (tickVal / scaleMax) * (chartRight - chartLeft);
                           return (
                             <g key={tickVal}>
-                              {/* Horizontal dotted grid lines */}
                               <line
-                                x1={45}
-                                y1={y}
-                                x2={315}
-                                y2={y}
+                                x1={x}
+                                y1={chartTop}
+                                x2={x}
+                                y2={chartBottom}
                                 stroke="var(--border)"
                                 strokeWidth="0.5"
                                 strokeDasharray="3 3"
                                 opacity="0.6"
                               />
-                              {/* Y-axis tick mark line */}
-                              <line
-                                x1={41}
-                                y1={y}
-                                x2={45}
-                                y2={y}
-                                stroke="var(--border-dark)"
-                                strokeWidth="1"
-                              />
-                              {/* Y-axis tick labels */}
                               <text
-                                x={37}
-                                y={y}
-                                textAnchor="end"
-                                dominantBaseline="middle"
+                                x={x}
+                                y={220}
+                                textAnchor="middle"
                                 fontSize="7.5"
                                 fill="var(--text-muted)"
                               >
@@ -1267,28 +1259,28 @@ export default function TrendingVNPage() {
                         });
                       })()}
 
-                      {/* X and Y axes lines */}
-                      <line x1={45} y1={15} x2={45} y2={175} stroke="var(--border-dark)" strokeWidth="1" />
-                      <line x1={45} y1={175} x2={315} y2={175} stroke="var(--border-dark)" strokeWidth="1" />
+                      <line x1={118} y1={12} x2={118} y2={204} stroke="var(--border-dark)" strokeWidth="1" />
+                      <line x1={118} y1={204} x2={296} y2={204} stroke="var(--border-dark)" strokeWidth="1" />
 
-                      {/* Bars & X-axis rotated labels */}
+                      {/* Horizontal bars with readable author labels */}
                       {(() => {
                         const counts = authorCounts.map(item => item.count);
                         const maxVal = Math.max(...counts, 0);
                         const scaleMax = Math.max(5, Math.ceil(maxVal / 5) * 5);
                         const greenShades = ['#09542c', '#23884f', '#4fae6f', '#78c68e', '#9fd9ae', '#c2ebcc', '#dbf2e3', '#e8f8ed'];
-                        
-                        const n = authorCounts.length;
-                        const colWidth = 270 / n;
-                        const gap = colWidth * 0.25;
-                        const barWidth = colWidth - gap;
+                        const chartLeft = 118;
+                        const chartRight = 296;
+                        const rowHeight = 22;
+                        const barHeight = 12;
+                        const chartTop = 18;
 
                         return authorCounts.map((item, idx) => {
-                          const x = 45 + idx * colWidth + gap / 2;
-                          const barHeight = scaleMax > 0 ? (item.count / scaleMax) * 160 : 0;
-                          const y = 175 - barHeight;
+                          const rowY = chartTop + idx * rowHeight;
+                          const barWidth = scaleMax > 0 ? (item.count / scaleMax) * (chartRight - chartLeft) : 0;
+                          const barY = rowY + 4;
                           const color = greenShades[Math.min(idx, greenShades.length - 1)];
                           const canFilterAuthor = Boolean(item.id) && item.name && item.name !== 'Unknown';
+                          const authorLabel = item.name && item.name.length > 18 ? `${item.name.slice(0, 17)}...` : item.name;
                           const activateAuthor = () => {
                             if (canFilterAuthor) handleEntityFilter('author_id', item.id);
                           };
@@ -1301,12 +1293,26 @@ export default function TrendingVNPage() {
 
                           return (
                             <g key={item.name}>
-                              {/* Bar */}
+                              <text
+                                x={110}
+                                y={barY + barHeight / 2}
+                                textAnchor="end"
+                                dominantBaseline="middle"
+                                fontSize="8"
+                                fill="var(--text-main)"
+                                fontWeight="600"
+                                style={{ cursor: canFilterAuthor ? 'pointer' : 'default' }}
+                                onClick={activateAuthor}
+                              >
+                                <title>{item.name}</title>
+                                {authorLabel}
+                              </text>
                               <rect
-                                x={x}
-                                y={y}
+                                x={chartLeft}
+                                y={barY}
                                 width={barWidth}
                                 height={barHeight}
+                                rx="3"
                                 fill={color}
                                 opacity="0.85"
                                 className="tvn-chart-bar"
@@ -1319,23 +1325,21 @@ export default function TrendingVNPage() {
                                 onMouseEnter={() => setActiveTooltip({
                                   name: item.name,
                                   count: item.count,
-                                  x: x + barWidth / 2,
-                                  y: y
+                                  x: chartLeft + barWidth,
+                                  y: barY
                                 })}
                                 onMouseLeave={() => setActiveTooltip(null)}
                               />
-                              {/* Rotated text label */}
                               <text
-                                transform={`translate(${x + barWidth / 2}, 183) rotate(90)`}
+                                x={Math.min(chartRight + 4, chartLeft + barWidth + 4)}
+                                y={barY + barHeight / 2}
                                 textAnchor="start"
                                 dominantBaseline="middle"
-                                fontSize="7"
-                                fill="var(--text-muted)"
-                                fontWeight="600"
-                                style={{ cursor: canFilterAuthor ? 'pointer' : 'default' }}
-                                onClick={activateAuthor}
+                                fontSize="8"
+                                fill="var(--text-main)"
+                                fontWeight="700"
                               >
-                                {item.name}
+                                {fmt(item.count)}
                               </text>
                             </g>
                           );
@@ -1350,7 +1354,7 @@ export default function TrendingVNPage() {
                         style={{
                           position: 'absolute',
                           left: `${(activeTooltip.x / 330) * 100}%`,
-                          top: `${(activeTooltip.y / 260) * 100}%`,
+                          top: `${(activeTooltip.y / 230) * 100}%`,
                           transform: 'translate(-50%, -100%)',
                           marginTop: '-8px',
                           backgroundColor: '#ffffff',
@@ -1432,10 +1436,18 @@ export default function TrendingVNPage() {
                       <line x1="8" y1="38" x2="192" y2="38" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
                       <line x1="8" y1="58" x2="192" y2="58" stroke="var(--border)" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.6" />
 
-                      {yearChartLayout.columns.map((item) => {
+                      {yearChartLayout.columns.map((item, idx) => {
                         const colWidth = item.width;
                         const colHeight = maxYearCount > 0 ? (item.count / maxYearCount) * 60 : 0;
                         const y = 78 - colHeight;
+                        const yearLabelStep = yearChartLayout.columns.length > 12 ? 3 : (yearChartLayout.columns.length > 8 ? 2 : 1);
+                        const lastYearIndex = yearChartLayout.columns.length - 1;
+                        const showYearLabel = idx === 0
+                          || idx === lastYearIndex
+                          || (idx % yearLabelStep === 0 && idx <= lastYearIndex - yearLabelStep);
+                        const isMaxYearCount = item.count === maxYearCount;
+                        const showValueLabel = item.count > 0 && (isMaxYearCount || idx === lastYearIndex);
+                        const valueLabelY = Math.max(8, y - 4);
                         const canFilterYear = Boolean(item.year) && item.count > 0;
                         const activateYear = () => {
                           if (canFilterYear) updateFilters({ fromYear: item.year, toYear: item.year });
@@ -1461,12 +1473,30 @@ export default function TrendingVNPage() {
                               aria-label={canFilterYear ? `${t('publicationYear')}: ${item.year} (${item.count})` : undefined}
                               onClick={activateYear}
                               onKeyDown={handleYearKeyDown}
-                            />
-                            <text x={item.x + colWidth / 2} y="92" textAnchor="middle" fontSize="6.5" fill="var(--text-muted)">
-                              {item.year}
-                            </text>
-                            {item.count > 0 && (
-                              <text x={item.x + colWidth / 2} y={y - 3} textAnchor="middle" fontSize="6.5" fontWeight="600" fill="var(--text-main)">
+                            >
+                              <title>{`${item.year}: ${fmt(item.count)}`}</title>
+                            </rect>
+                            {showYearLabel && (
+                              <text
+                                x={item.x + colWidth / 2}
+                                y="92"
+                                textAnchor="middle"
+                                fontSize={yearChartLayout.columns.length > 12 ? '5.8' : '6.5'}
+                                fill="var(--text-muted)"
+                                fontWeight="600"
+                              >
+                                {item.year}
+                              </text>
+                            )}
+                            {showValueLabel && (
+                              <text
+                                x={item.x + colWidth / 2}
+                                y={valueLabelY}
+                                textAnchor="middle"
+                                fontSize="6.5"
+                                fontWeight="700"
+                                fill="var(--text-main)"
+                              >
                                 {item.count}
                               </text>
                             )}

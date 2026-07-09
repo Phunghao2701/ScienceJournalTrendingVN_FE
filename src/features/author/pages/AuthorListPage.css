@@ -142,3 +142,98 @@
 .author-grid-skeleton { min-height: 200px; padding: 1.25rem; }
 .author-mobile-skeleton { padding: 1rem; }
 .author-pagination { --bs-pagination-bg: var(--bg-card); --bs-pagination-border-color: var(--border); --bs-pagination-color: var(--text-muted); --bs-pagination-hover-color: var(--primary); --bs-pagination-hover-bg: var(--primary-light); --bs-pagination-hover-border-color: var(--primary); --bs-pagination-active-bg: var(--primary); --bs-pagination-active-border-color: var(--primary); --bs-pagination-active-color: var(--bg-card); --bs-pagination-disabled-bg: var(--bg-main); --bs-pagination-disabled-color: var(--text-muted); --bs-pagination-disabled-border-color: var(--border); }
+
+@media (max-width: 767.98px) {
+  .author-list-page {
+    padding-top: 76px;
+    padding-bottom: 44px;
+    overflow-x: clip;
+  }
+
+  .author-list-hero,
+  .author-filter-card,
+  .author-card {
+    border-radius: 12px !important;
+  }
+
+  .author-list-hero {
+    padding: 1.1rem;
+  }
+
+  .author-list-title {
+    font-size: clamp(1.8rem, 10vw, 2.45rem);
+    letter-spacing: -0.025em;
+  }
+
+  .author-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: none;
+  }
+
+  .author-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .author-tabs .nav-link {
+    min-height: 40px;
+    white-space: nowrap;
+  }
+
+  .author-input-group {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .author-input-addon {
+    display: none;
+  }
+
+  .author-dropdown-toggle {
+    border-left: 0 !important;
+    border-top: 1px solid var(--border) !important;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .author-filter-submit {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .author-card-metrics {
+    gap: 0.85rem;
+    justify-content: space-between;
+  }
+
+  .author-table-shell {
+    overflow-x: auto;
+  }
+
+  .author-table {
+    min-width: 720px;
+  }
+
+  .author-table-name,
+  .author-table-org,
+  .author-card-title,
+  .author-card-institution {
+    overflow-wrap: anywhere;
+  }
+
+  .author-pagination {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .author-list-hero,
+  .author-filter-card,
+  .author-card {
+    padding: 0.9rem;
+  }
+}

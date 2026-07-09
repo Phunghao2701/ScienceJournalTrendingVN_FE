@@ -532,12 +532,31 @@
 }
 
 @media (max-width: 576px) {
+  .landing-page {
+    overflow-x: clip;
+  }
+
   .landing-hero {
-    padding-top: 5.25rem;
+    min-height: auto;
+    padding-top: 5rem;
+    padding-bottom: 2.5rem;
   }
 
   .landing-title {
-    font-size: clamp(2.35rem, 13vw, 3.4rem);
+    font-size: clamp(2rem, 11vw, 2.85rem);
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
+  }
+
+  .landing-eyebrow,
+  .landing-subtitle,
+  .landing-feature-title,
+  .landing-feature-text,
+  .landing-step__title,
+  .landing-step__text,
+  .landing-cta__title,
+  .landing-cta__text {
+    overflow-wrap: anywhere;
   }
 
   .landing-actions,
@@ -568,5 +587,38 @@
   .landing-feature-card:nth-child(1),
   .landing-feature-card:nth-child(4) {
     grid-column: span 1;
+    min-height: auto;
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .landing-cta {
+    padding-block: 3rem;
+  }
+
+  .landing-cta__inner {
+    padding: 1.25rem;
+    border-radius: 14px;
+    box-shadow: none;
+  }
+
+  .landing-footer .container,
+  .landing-footer .row {
+    row-gap: 1rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .landing-hero {
+    padding-top: 4.75rem;
+  }
+
+  .landing-title {
+    font-size: clamp(1.85rem, 11vw, 2.45rem);
+  }
+
+  .landing-feature-card,
+  .landing-cta__inner {
+    padding: 0.95rem;
   }
 }

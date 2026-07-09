@@ -31,11 +31,18 @@ pnpm-debug.log*
 *.sln
 *.sw?
 scratch
+scratch_*.cjs
+scratch_*.js
 tasks
 query_users.js
 skills-lock.json
 test_api_call.js
 update_password_and_login.js
+
+# accidental root artifacts (leaked secrets / CLI typos)
+/env
+/--repo
+git_diff_full.txt
 
 # coverage
 coverage

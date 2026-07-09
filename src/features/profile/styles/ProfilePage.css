@@ -298,22 +298,68 @@
 /* Mobile */
 @media (max-width: 768px) {
   .profile-page {
-    padding: 100px 20px 20px;
+    padding: 84px 12px 20px;
+    overflow-x: clip;
   }
 
   .profile-content {
     flex-direction: column;
+    gap: 14px;
   }
 
   .profile-sidebar {
     width: 100%;
+    padding: 22px 16px;
+    border-radius: 14px;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
+    gap: 0;
   }
 
   .profile-card {
-    padding: 24px;
+    padding: 20px 16px;
+    border-radius: 14px;
+  }
+
+  .button-area,
+  .modal-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .save-btn,
+  .delete-btn,
+  .cancel-btn,
+  .delete-confirm-btn {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .modal-content {
+    width: 100%;
+    max-width: 420px;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    padding: 22px 18px;
+    border-radius: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .profile-page {
+    padding-inline: 8px;
+  }
+
+  .profile-sidebar,
+  .profile-card,
+  .error-box {
+    padding: 16px 12px;
   }
 }

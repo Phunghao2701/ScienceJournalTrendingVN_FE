@@ -24,7 +24,7 @@ const ProjectListPage = () => {
   };
 
   return (
-    <div className="container-fluid py-4 grid-bg min-vh-100">
+    <div className="project-list-page container-fluid py-4 grid-bg min-vh-100">
       <div className="container mx-auto" style={{ maxWidth: '1200px', marginTop: '20px' }}>
         {/* Breadcrumb */}
         <nav aria-label="breadcrumb" className="mb-4">

@@ -298,12 +298,86 @@
 }
 
 @media (max-width: 767.98px) {
+  .keyword-list-page {
+    padding-top: 76px;
+    padding-bottom: 44px;
+    overflow-x: clip;
+  }
+
+  .keyword-list-hero,
+  .keyword-toolbar,
+  .keyword-card,
+  .keyword-state-card,
+  .keyword-skeleton-card {
+    border-radius: 12px;
+  }
+
+  .keyword-list-hero {
+    padding: 1.1rem;
+  }
+
+  .keyword-list-title {
+    font-size: clamp(1.8rem, 10vw, 2.45rem);
+    letter-spacing: -0.025em;
+  }
+
   .keyword-toolbar {
     display: block;
+    padding: 0.85rem;
+  }
+
+  .keyword-search-group {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .keyword-search-addon {
+    display: none;
+  }
+
+  .keyword-search-clear {
+    align-self: flex-end;
+  }
+
+  .keyword-search-submit,
+  .keyword-sort-toggle,
+  .keyword-card-action {
+    width: 100%;
+    min-height: 42px;
   }
 
   .keyword-sort-toggle {
-    width: 100%;
     margin-top: 0.75rem;
+  }
+
+  .keyword-active-filter {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .keyword-card {
+    padding: 1rem;
+  }
+
+  .keyword-card-title,
+  .keyword-active-filter__term,
+  .keyword-topic-badge {
+    overflow-wrap: anywhere;
+  }
+
+  .keyword-pagination {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .keyword-list-hero,
+  .keyword-toolbar,
+  .keyword-card,
+  .keyword-state-card {
+    padding: 0.9rem;
   }
 }

@@ -1,6 +1,6 @@
 .article-detail-page {
   min-height: 100vh;
-  padding-top: 82px;
+  padding-top: 0;
   padding-bottom: 60px;
   background-color: var(--bg-main);
   color: var(--text-main);
@@ -481,7 +481,7 @@
 
 @media (max-width: 767.98px) {
   .article-detail-page {
-    padding-top: 72px;
+    padding-top: 0;
     padding-bottom: 32px;
     overflow-x: clip;
   }

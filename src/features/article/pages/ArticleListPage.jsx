@@ -38,7 +38,7 @@ export default function ArticleListPage() {
     <div className="article-list-page grid-bg">
       <Header />
 
-      <Container className="article-list-shell">
+      <Container className="article-list-shell pt-4">
         {/* Breadcrumb */}
         <nav aria-label="breadcrumb" className="article-list-breadcrumb mb-4">
           <Breadcrumb className="mb-0 d-flex align-items-center">

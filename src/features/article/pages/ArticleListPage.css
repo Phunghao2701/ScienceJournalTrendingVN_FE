@@ -1,6 +1,6 @@
 .article-list-page {
   min-height: 100vh;
-  padding-top: 90px;
+  padding-top: 0;
   padding-bottom: 60px;
   background: var(--bg-main);
   color: var(--text-main);
@@ -314,7 +314,7 @@
 
 @media (max-width: 767.98px) {
   .article-list-page {
-    padding-top: 76px;
+    padding-top: 0;
     padding-bottom: 44px;
     overflow-x: clip;
   }

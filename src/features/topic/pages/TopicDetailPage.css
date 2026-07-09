@@ -2,7 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-top: 96px;
+  padding-top: 0;
   padding-bottom: 72px;
   background: var(--bg-main);
   color: var(--text-main);
@@ -129,7 +129,7 @@
 
 @media (max-width: 767.98px) {
   .topic-detail-page {
-    padding-top: 76px;
+    padding-top: 0;
     padding-bottom: 44px;
     overflow-x: clip;
   }

@@ -46,7 +46,7 @@ export default function KeywordListPage() {
     <div className="grid-bg keyword-list-page d-flex flex-column">
       <Header />
 
-      <Container className="pb-5 flex-grow-1">
+      <Container className="pb-5 pt-4 flex-grow-1">
         <nav aria-label="breadcrumb" className="keyword-list-breadcrumb mb-4">
           <ol className="breadcrumb">
             <li className="breadcrumb-item active text-main fw-semibold" aria-current="page">Keywords</li>

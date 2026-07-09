@@ -1,6 +1,6 @@
 .keyword-list-page {
   min-height: 100vh;
-  padding-top: 88px;
+  padding-top: 0;
   padding-bottom: 60px;
   background: var(--bg-main);
   color: var(--text-main);
@@ -299,7 +299,7 @@
 
 @media (max-width: 767.98px) {
   .keyword-list-page {
-    padding-top: 76px;
+    padding-top: 0;
     padding-bottom: 44px;
     overflow-x: clip;
   }

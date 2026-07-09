@@ -1215,7 +1215,7 @@ export default function TrendingVNPage() {
                 <div className="tvn-sidebar-title">{t('topAuthors')}</div>
                 {authorCounts.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {t('anyTopic')}
+                    {t('noDataAvailable')}
                   </div>
                 ) : (
                   <div className="tvn-chart-frame tvn-author-chart-frame">
@@ -1385,7 +1385,7 @@ export default function TrendingVNPage() {
                 <div className="tvn-sidebar-title">{t('topKeywords')}</div>
                 {topicCounts.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {t('anyTopic')}
+                    {t('noDataAvailable')}
                   </div>
                 ) : (
                   <div className="d-flex flex-column gap-2">
@@ -1426,7 +1426,7 @@ export default function TrendingVNPage() {
                 <div className="tvn-sidebar-title">{t('publicationDate')}</div>
                 {articles.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {t('anyTopic')}
+                    {t('noDataAvailable')}
                   </div>
                 ) : (
                   <div className="tvn-chart-frame tvn-date-chart-frame">

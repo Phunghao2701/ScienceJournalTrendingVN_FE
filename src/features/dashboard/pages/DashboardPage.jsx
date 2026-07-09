@@ -96,7 +96,6 @@ export default function DashboardPage() {
       style={{
         backgroundColor: "var(--bg-main)",
         color: "var(--text-main)",
-        paddingTop: "80px",
       }}
     >
       {/* Sticky Navbar */}

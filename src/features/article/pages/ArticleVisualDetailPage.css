@@ -5,7 +5,7 @@
 
 .article-detail-page {
   min-height: 100vh;
-  padding-top: 80px; /* Space for Header */
+  padding-top: 0;
   padding-bottom: 0;
   background-color: var(--bg-main);
   color: var(--text-main);
@@ -16,7 +16,7 @@
 .article-connected-shell {
   display: grid;
   grid-template-columns: 320px 1fr 380px;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 57px);
   overflow: hidden;
   background-color: var(--bg-main);
   border-top: 1px solid var(--border);
@@ -520,7 +520,7 @@
 
 @media (max-width: 767.98px) {
   .article-detail-page {
-    padding-top: 72px;
+    padding-top: 0;
     overflow-x: clip;
   }
 

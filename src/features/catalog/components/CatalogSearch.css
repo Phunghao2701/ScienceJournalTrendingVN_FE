@@ -1,6 +1,6 @@
 .catalog-search-page {
   background: var(--bg-main);
-  padding-top: 100px;
+  padding-top: 0;
   padding-bottom: 80px;
 }
 
@@ -366,7 +366,7 @@
 
 @media (max-width: 768px) {
   .catalog-search-page {
-    padding-top: 72px;
+    padding-top: 0;
     padding-bottom: 44px;
     overflow-x: clip;
   }

@@ -7,7 +7,7 @@
 .geography-page-wrapper {
   background-color: var(--bg-main);
   min-height: 100vh;
-  padding-top: 80px;
+  padding-top: 0;
   padding-bottom: 80px;
   position: relative;
 }
@@ -329,7 +329,7 @@
 
 @media (max-width: 767.98px) {
   .geography-page-wrapper {
-    padding-top: 76px;
+    padding-top: 0;
     padding-bottom: 44px;
     overflow-x: clip;
   }

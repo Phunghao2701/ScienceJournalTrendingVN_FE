@@ -120,6 +120,7 @@
   "anyYear": "All years",
   "anyJournal": "All journals",
   "anyTopic": "All topics",
+  "noDataAvailable": "No data available",
   "errorOccurred": "An error occurred",
   "tryAgain": "Try Again",
   "articleSearch": "Article Search",

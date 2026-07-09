@@ -67,7 +67,7 @@ export default function CatalogSearchPage() {
       {/* Navbar Header */}
       <Header />
 
-      <Container className="catalog-shell">
+      <Container className="catalog-shell pt-4">
         {/* Breadcrumbs */}
         <div aria-label="breadcrumb" className="catalog-breadcrumb">
           <Breadcrumb className="mb-0 custom-breadcrumb d-flex align-items-center">

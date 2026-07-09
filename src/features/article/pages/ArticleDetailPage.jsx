@@ -218,7 +218,7 @@ export default function ArticleDetailPage() {
     <div className="article-detail-page grid-bg">
       <Header />
 
-      <Container fluid className="position-relative z-1 px-3 px-xl-5">
+      <Container fluid className="position-relative z-1 px-3 px-xl-5 pt-4">
         {isLoading ? (
           <ArticleDetailSkeleton />
         ) : error ? (

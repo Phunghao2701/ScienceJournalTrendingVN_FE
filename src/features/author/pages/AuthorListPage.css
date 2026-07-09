@@ -1,6 +1,6 @@
 .author-list-page {
   min-height: 100vh;
-  padding-top: 96px;
+  padding-top: 0;
   padding-bottom: 72px;
   background: var(--bg-main);
   color: var(--text-main);
@@ -145,7 +145,7 @@
 
 @media (max-width: 767.98px) {
   .author-list-page {
-    padding-top: 76px;
+    padding-top: 0;
     padding-bottom: 44px;
     overflow-x: clip;
   }

@@ -46,7 +46,7 @@ export default function JournalListPage() {
     <div className="journal-list-page text-main">
       <Header />
 
-      <Container>
+      <Container className="pt-4">
         <nav aria-label="breadcrumb" className="journal-list-breadcrumb mb-4">
           <ol className="breadcrumb">
             <li className="breadcrumb-item">

@@ -105,7 +105,7 @@ export default function TopicDetailPage() {
     <div className="topic-detail-page grid-bg">
       <Header />
 
-      <Container className="flex-grow-1">
+      <Container className="flex-grow-1 pt-4">
         <nav aria-label="breadcrumb" className="topic-detail-breadcrumb mb-4">
           <ol className="breadcrumb">
             <li className="breadcrumb-item">

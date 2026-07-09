@@ -1,6 +1,6 @@
 # Harness Handoff
 
-> **Generated**: 2026-07-02 19:56:27
+> **Generated**: 2026-07-09 13:39:50
 > **Reason**: session-stop
 
 ## Goal
@@ -14,25 +14,13 @@ No active plan. Continue from the latest user request and filesystem state.
 ## Files Touched
 
 ```
+--repo
 .ai/harness/handoff/current.md
-.fk-skills/critique/2026-07-02T12-21-39Z__src-features-trendingvn-pages-trendingvnpage-jsx.md
-package-lock.json
-package.json
-scripts/paperVnAnalysis.test.mjs
+.gitignore
+env
+git_diff_full.txt
+scratch_db.cjs
 src/app/routes/AppRoutes.jsx
-src/features/article/hooks/useArticleEntityLabels.js
-src/features/article/utils/articleFormatters.js
-src/features/institution/api/institution.api.js
-src/features/landing/components/Header.jsx
-src/features/trendingVN/components/PublisherGrid.jsx
-src/features/trendingVN/components/TrendingArticleCard.jsx
-src/features/trendingVN/components/analysis/AnalysisDashboard.jsx
-src/features/trendingVN/components/analysis/AnalysisSummary.jsx
-src/features/trendingVN/hooks/useTrendingFilters.js
-src/features/trendingVN/pages/ArticleDetailPage.jsx
-src/features/trendingVN/pages/TrendingVNPage.jsx
-src/features/trendingVN/trendingVN.css
-src/features/trendingVN/utils/trendingViewParams.js
 src/features/trendingvnclone/components/AnalysisPreview.jsx
 src/features/trendingvnclone/components/ArticleDetailHeader.jsx
 src/features/trendingvnclone/components/ArticleSummaryTab.jsx
@@ -57,19 +45,15 @@ src/features/trendingvnclone/hooks/useScholarSearch.js
 src/features/trendingvnclone/pages/ArticleDetailPage.jsx
 src/features/trendingvnclone/pages/SearchPage.jsx
 src/index.css
-src/shared/components/Select/SearchableSelect.jsx
-src/shared/i18n/locales/en.json
-src/shared/i18n/locales/vi.json
-vite.config.js
 ```
 
 ## Commands Run
 
-- {"ts":"2026-07-02T19:54:33+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":4075,"session_key":"18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","run_id":"run-session-18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-07-02T19:54:40+0700","event_type":"PostToolUse","tool_name":"TaskStop","file_path":"","exit_code":0,"duration_ms":6,"session_key":"18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","run_id":"run-session-18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-07-02T19:54:55+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":3933,"session_key":"18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","run_id":"run-session-18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-07-02T19:55:53+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":7872,"session_key":"18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","run_id":"run-session-18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-07-02T19:56:08+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":4310,"session_key":"18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","run_id":"run-session-18daa7ea-a1ce-4aec-94d0-8eb37d9fc587","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-09T13:35:53+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":4065,"session_key":"4061d58c-148f-4ecf-8cbe-469edce24c0a","run_id":"run-session-4061d58c-148f-4ecf-8cbe-469edce24c0a","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-09T13:38:06+0700","event_type":"PostToolUse","tool_name":"AskUserQuestion","file_path":"","exit_code":0,"duration_ms":0,"session_key":"4061d58c-148f-4ecf-8cbe-469edce24c0a","run_id":"run-session-4061d58c-148f-4ecf-8cbe-469edce24c0a","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-09T13:38:27+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":3752,"session_key":"4061d58c-148f-4ecf-8cbe-469edce24c0a","run_id":"run-session-4061d58c-148f-4ecf-8cbe-469edce24c0a","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-09T13:38:36+0700","event_type":"PostToolUse","tool_name":"Edit","file_path":"e:\\Science_Journal_Trending_VN\\ScienceJournalTrendingVN_FE\\.gitignore","exit_code":0,"duration_ms":20,"session_key":"4061d58c-148f-4ecf-8cbe-469edce24c0a","run_id":"run-session-4061d58c-148f-4ecf-8cbe-469edce24c0a","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-09T13:39:35+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":4027,"session_key":"4061d58c-148f-4ecf-8cbe-469edce24c0a","run_id":"run-session-4061d58c-148f-4ecf-8cbe-469edce24c0a","host":"unknown","agent_name":"unknown","session_source":"unknown"}
 
 ## Checks
 
@@ -115,32 +99,20 @@ vite.config.js
 
 - Next action stage: none
 - Next recommended action: (none)
-- Working tree:  34 files changed, 5524 insertions(+), 2057 deletions(-); 13 untracked files
-- Parent Run ID: run-20260702T195626-168227
+- Working tree:  31 files changed, 15 insertions(+), 4594 deletions(-)
+- Parent Run ID: run-20260709T133950-16336
 - Supersedes: (none)
 
 ## Changed Files
 
 ```
+--repo
 .ai/harness/handoff/current.md
-.fk-skills/critique/2026-07-02T12-21-39Z__src-features-trendingvn-pages-trendingvnpage-jsx.md
-package-lock.json
-package.json
-scripts/paperVnAnalysis.test.mjs
+.gitignore
+env
+git_diff_full.txt
+scratch_db.cjs
 src/app/routes/AppRoutes.jsx
-src/features/article/hooks/useArticleEntityLabels.js
-src/features/article/utils/articleFormatters.js
-src/features/institution/api/institution.api.js
-src/features/landing/components/Header.jsx
-src/features/trendingVN/components/PublisherGrid.jsx
-src/features/trendingVN/components/TrendingArticleCard.jsx
-src/features/trendingVN/components/analysis/AnalysisDashboard.jsx
-src/features/trendingVN/components/analysis/AnalysisSummary.jsx
-src/features/trendingVN/hooks/useTrendingFilters.js
-src/features/trendingVN/pages/ArticleDetailPage.jsx
-src/features/trendingVN/pages/TrendingVNPage.jsx
-src/features/trendingVN/trendingVN.css
-src/features/trendingVN/utils/trendingViewParams.js
 src/features/trendingvnclone/components/AnalysisPreview.jsx
 src/features/trendingvnclone/components/ArticleDetailHeader.jsx
 src/features/trendingvnclone/components/ArticleSummaryTab.jsx
@@ -165,10 +137,6 @@ src/features/trendingvnclone/hooks/useScholarSearch.js
 src/features/trendingvnclone/pages/ArticleDetailPage.jsx
 src/features/trendingvnclone/pages/SearchPage.jsx
 src/index.css
-src/shared/components/Select/SearchableSelect.jsx
-src/shared/i18n/locales/en.json
-src/shared/i18n/locales/vi.json
-vite.config.js
 ```
 
 <!-- repo-harness:minimal-change-review begin -->

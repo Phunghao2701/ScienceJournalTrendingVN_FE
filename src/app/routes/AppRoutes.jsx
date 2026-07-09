@@ -24,10 +24,6 @@ import AuthorListPage from '../../features/author/pages/AuthorListPage';
 
 import TopicDetailPage from '../../features/topic/pages/TopicDetailPage';
 
-// Lens.org-style clone feature — search + article detail
-import TrendingVNCloneSearchPage from '../../features/trendingvnclone/pages/SearchPage';
-import TrendingVNCloneArticleDetailPage from '../../features/trendingvnclone/pages/ArticleDetailPage';
-
 /**
  * Nơi khai báo route chính của ứng dụng.
  *
@@ -39,10 +35,6 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<TrendingVNPage />} />
-
-      {/* Cloned Lens-style search + article detail — no auth required */}
-      <Route path="/trendingvnclone" element={<TrendingVNCloneSearchPage />} />
-      <Route path="/trendingvnclone/article/:id" element={<TrendingVNCloneArticleDetailPage />} />
 
       <Route element={<PublicRoute />}>
         <Route path="/login" element={<LoginPage />} />

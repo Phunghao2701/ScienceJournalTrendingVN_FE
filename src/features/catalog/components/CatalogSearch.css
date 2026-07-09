@@ -366,18 +366,43 @@
 
 @media (max-width: 768px) {
   .catalog-search-page {
-    padding-top: 86px;
+    padding-top: 72px;
+    padding-bottom: 44px;
+    overflow-x: clip;
+  }
+
+  .catalog-hero {
+    margin-bottom: 1rem;
+  }
+
+  .catalog-search-panel,
+  .catalog-filter-surface {
+    padding: 0.85rem;
+    border-radius: 12px;
   }
 
   .catalog-search-group {
     border-radius: 18px;
     align-items: stretch;
+    flex-direction: column;
+    min-height: auto;
+    padding: 0.4rem;
+  }
+
+  .catalog-search-group .input-group-text {
+    display: none;
+  }
+
+  .catalog-search-input {
+    width: 100%;
+    min-height: 44px;
+    padding-inline: 0.85rem !important;
   }
 
   .catalog-search-btn {
     width: 100%;
     justify-content: center;
-    margin: 0.25rem;
+    margin: 0;
   }
 
   .catalog-filter-select {
@@ -387,5 +412,37 @@
   .catalog-toggle-chip {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .catalog-toolbar,
+  .catalog-filter-panel .d-flex,
+  .catalog-pagination {
+    align-items: stretch !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  .catalog-table-card {
+    border-radius: 12px;
+  }
+
+  .catalog-table {
+    min-width: 720px;
+  }
+
+  .catalog-journal-name,
+  .catalog-badge,
+  .catalog-follow-btn {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 390px) {
+  .catalog-title {
+    letter-spacing: -0.02em;
+  }
+
+  .catalog-state-card {
+    padding: 2rem 1rem;
   }
 }

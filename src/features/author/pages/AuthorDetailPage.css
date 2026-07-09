@@ -301,4 +301,62 @@
   .lens-stat-box-large {
     width: 100%;
   }
+
+  .author-detail-page {
+    padding-top: 76px;
+    overflow-x: clip;
+  }
+
+  .lens-author-profile-header-card,
+  .lens-detail-card,
+  .lens-coauthor-card {
+    border-radius: 10px !important;
+  }
+
+  .lens-author-name {
+    overflow-wrap: anywhere;
+    font-size: clamp(1.45rem, 8vw, 2rem);
+  }
+
+  .lens-author-affiliation,
+  .lens-article-card-title,
+  .lens-article-card-detail-line {
+    overflow-wrap: anywhere;
+  }
+
+  .lens-author-follow-btn,
+  .lens-author-sort-select {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .lens-detail-card-tabs-header .nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .lens-detail-card-tabs-header .nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lens-nav-link {
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .lens-article-card-item {
+    padding: 1rem 0;
+  }
+
+  .lens-article-card-action-btn {
+    min-height: 38px;
+  }
+}
+
+@media (max-width: 390px) {
+  .lens-detail-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

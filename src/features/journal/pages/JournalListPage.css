@@ -128,3 +128,78 @@
 .journal-empty-state { padding: 3rem 1.5rem; text-align: center; }
 .journal-empty-title { color: var(--text-main); font-family: var(--font-display); font-weight: 700; }
 .journal-pagination { --bs-pagination-bg: var(--bg-card); --bs-pagination-border-color: var(--border); --bs-pagination-color: var(--text-muted); --bs-pagination-hover-color: var(--primary); --bs-pagination-hover-bg: var(--primary-light); --bs-pagination-hover-border-color: var(--primary); --bs-pagination-active-bg: var(--primary); --bs-pagination-active-border-color: var(--primary); --bs-pagination-active-color: var(--bg-card); }
+
+@media (max-width: 767.98px) {
+  .journal-list-page {
+    padding-top: 76px;
+    padding-bottom: 44px;
+    overflow-x: clip;
+  }
+
+  .journal-list-hero,
+  .journal-search-panel,
+  .journal-table-shell,
+  .journal-empty-state,
+  .journal-loading-panel {
+    border-radius: 12px !important;
+  }
+
+  .journal-list-hero {
+    padding: 1.1rem;
+  }
+
+  .journal-list-title {
+    font-size: clamp(1.8rem, 10vw, 2.45rem);
+    letter-spacing: -0.025em;
+  }
+
+  .journal-search-panel .row {
+    row-gap: 0.75rem;
+  }
+
+  .journal-search-group {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .journal-search-addon {
+    display: none;
+  }
+
+  .journal-search-clear {
+    align-self: flex-end;
+    min-height: 38px;
+  }
+
+  .journal-search-submit,
+  .journal-filter-select,
+  .journal-reset-btn {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .journal-table-shell {
+    overflow-x: auto;
+  }
+
+  .journal-name,
+  .journal-issn,
+  .journal-cell-muted {
+    overflow-wrap: anywhere;
+  }
+
+  .journal-pagination {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .journal-list-hero,
+  .journal-search-panel,
+  .journal-empty-state {
+    padding: 0.9rem;
+  }
+}

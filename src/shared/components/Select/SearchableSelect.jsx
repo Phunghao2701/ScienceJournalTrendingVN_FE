@@ -52,7 +52,7 @@ export default function SearchableSelect({
   };
 
   return (
-    <div className="position-relative" ref={wrapperRef}>
+    <div className="app-searchable-select position-relative" ref={wrapperRef}>
       <div className="d-flex align-items-center" style={{ position: 'relative' }}>
         <input
           type="text"
@@ -79,7 +79,7 @@ export default function SearchableSelect({
 
       {isOpen && (
         <div
-          className="position-absolute w-100 bg-white border rounded shadow-sm mt-1"
+          className="app-searchable-select-menu position-absolute w-100 bg-white border rounded shadow-sm mt-1"
           style={{ maxHeight: '220px', overflowY: 'auto', zIndex: 20 }}
         >
           {filteredOptions.length === 0 ? (

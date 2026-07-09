@@ -111,7 +111,7 @@ const CreateProjectPage = () => {
   };
 
   return (
-    <div className="container-fluid py-4 grid-bg min-vh-100">
+    <div className="project-form-page container-fluid py-4 grid-bg min-vh-100">
       <div className="container mx-auto" style={{ maxWidth: '650px', marginTop: '20px' }}>
         <nav aria-label="breadcrumb" className="mb-4">
           <ol className="breadcrumb mb-2 text-muted-custom small">

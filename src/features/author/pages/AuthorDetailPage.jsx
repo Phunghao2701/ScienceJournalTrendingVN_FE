@@ -338,7 +338,7 @@ export default function AuthorDetailPage() {
   }, [authorArticles, sortKey]);
 
   return (
-    <div className="author-detail-page grid-bg">
+    <div className="author-detail-page">
       <Header />
 
       <Container fluid className="position-relative z-1 px-3 px-xl-5 pt-4">

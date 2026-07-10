@@ -25,6 +25,7 @@ export default function ProfilePage() {
     fetchProfile,
     handleSave,
     handleDeleteAccount,
+    handleLogout,
   } = useProfileForm();
 
   const onSave = async () => {
@@ -85,13 +86,14 @@ export default function ProfilePage() {
             )}
 
             <div className="profile-content">
-              <ProfileSidebar formData={formData} user={user} />
+              <ProfileSidebar formData={formData} user={user} onLogout={handleLogout} />
               <ProfileFormCard
                 formData={formData}
                 setField={setField}
                 onSave={onSave}
                 isSaving={isSaving}
                 onRequestDelete={() => setShowDeleteModal(true)}
+                onLogout={handleLogout}
               />
             </div>
           </div>

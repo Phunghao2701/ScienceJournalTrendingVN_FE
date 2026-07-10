@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Container, Button, Modal } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
+import { useTranslation } from 'react-i18next';
 
 // Layout
 import Header from '../../landing/components/Header';
@@ -15,7 +16,8 @@ import Header from '../../landing/components/Header';
 import useAuth from '../../auth/hooks/useAuth';
 
 // API
-import { getArticleDetailApi, bookmarkArticleApi } from '../api/articleApi';
+import { getArticleDetailApi } from '../api/articleApi';
+import useBookmark from '../../bookmark/hooks/useBookmark';
 import useResolveRelatedArticle from '../hooks/useResolveRelatedArticle';
 
 // Subcomponents
@@ -24,6 +26,7 @@ import ArticleDetailEmpty from '../components/ArticleDetailEmpty';
 import ArticleDetailError from '../components/ArticleDetailError';
 import ArticlesTabContent from '../../journal/components/ArticlesTabContent';
 import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
+import ArticleComments from '../../comment/components/ArticleComments';
 import ScientificMathText from '../../../shared/components/ScientificMathText';
 import { toast } from '../../../shared/utils/toast';
 import { toScientificPlainText } from '../../../shared/utils/scientificMath';
@@ -58,14 +61,13 @@ const smoothScrollTo = (targetId) => {
 export default function ArticleDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const auth = useAuth();
-  const currentUser = auth?.user;
+  const isLoggedIn = Boolean(auth?.user || auth?.token || auth?.isAuthenticated);
 
   const [article, setArticle] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [activeTab, setActiveTab] = useState('preview');
   const [showAllAuthors, setShowAllAuthors] = useState(false);
@@ -75,6 +77,11 @@ export default function ArticleDetailPage() {
     isRecommendedLoading,
     fetchRecommendedArticles,
   } = useResolveRelatedArticle();
+  const {
+    isBookmarked,
+    isBookmarkLoading,
+    toggleBookmark,
+  } = useBookmark(id);
 
   const visibleAuthors = useMemo(() => {
     const authors = article?.authors || [];
@@ -106,9 +113,6 @@ export default function ArticleDetailPage() {
         setArticle(parsedArticle);
         fetchRecommendedArticles(parsedArticle);
 
-        const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${id}`;
-        const isLocallyBookmarked = localStorage.getItem(localBookmarkKey) === 'true';
-        setIsBookmarked(apiData.is_bookmarked || isLocallyBookmarked);
       } else {
         throw new Error('Unable to load article details.');
       }
@@ -118,34 +122,26 @@ export default function ArticleDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [id, currentUser, fetchRecommendedArticles]);
+  }, [id, fetchRecommendedArticles]);
 
   useEffect(() => {
     fetchArticleDetail();
   }, [fetchArticleDetail]);
 
   const handleBookmarkToggle = async () => {
-    if (!currentUser) {
+    if (!isLoggedIn) {
       setShowLoginModal(true);
       return;
     }
 
-    setIsBookmarkLoading(true);
-    const localBookmarkKey = `bookmark_${currentUser.username}_${id}`;
-    const nextState = !isBookmarked;
-
     try {
-      await bookmarkArticleApi(id);
-      setIsBookmarked(nextState);
-      localStorage.setItem(localBookmarkKey, String(nextState));
-      toast.success(nextState ? 'Article added to project.' : 'Article removed from project.');
+      const result = await toggleBookmark();
+      if (result.ok) {
+        toast.success(result.isBookmarked ? t('bookmarkAdded') : t('bookmarkRemoved'));
+      }
     } catch (err) {
-      console.warn('Bookmark API error, toggling state locally:', err);
-      setIsBookmarked(nextState);
-      localStorage.setItem(localBookmarkKey, String(nextState));
-      toast.warning('Unable to sync with the server, so the browser state was updated locally.');
-    } finally {
-      setIsBookmarkLoading(false);
+      console.warn('Bookmark API error:', err);
+      toast.error(t('bookmarkUpdateError'));
     }
   };
 
@@ -630,6 +626,10 @@ export default function ArticleDetailPage() {
                     onArticleClick={(articleId) => navigate(`/articles/${articleId}/visual`)}
                   />
                 )}
+                <ArticleComments
+                  articleId={article?.article_id || id}
+                  articleIds={[article?.id, article?.display_id, id]}
+                />
               </section>
             </div>
 

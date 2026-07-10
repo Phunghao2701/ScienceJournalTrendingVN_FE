@@ -72,15 +72,20 @@ export const getArticleReferencesApi = (id, params = {}) => {
  * @param {number|string} id - ID bài báo
  * @returns {Promise} Axios promise
  */
-export const bookmarkArticleApi = (id) => {
-  return Promise.resolve({
-    data: {
-      success: true,
-      localOnly: true,
-      message: 'Bookmark is stored locally only for this frontend session.',
-      data: { article_id: id },
-    },
-  });
+export const getBookmarksApi = () => {
+  return api.get('/bookmarks');
+};
+
+export const createBookmarkApi = (articleId) => {
+  return api.post('/bookmarks', { article_id: articleId });
+};
+
+export const deleteBookmarkApi = (articleId) => {
+  return api.delete(`/bookmarks/${articleId}`);
+};
+
+export const bookmarkArticleApi = (id, shouldBookmark = true) => {
+  return shouldBookmark ? createBookmarkApi(id) : deleteBookmarkApi(id);
 };
 
 /**

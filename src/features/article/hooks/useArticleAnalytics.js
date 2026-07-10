@@ -39,6 +39,7 @@ export default function useArticleAnalytics(filters, { enabled = true } = {}) {
         topInstitutions: normalizeList(data.topInstitutions || data.top_institutions || data.institutions, 'institution_name'),
         topAuthors: normalizeList(data.topAuthors || data.top_authors || data.authors, 'display_name'),
         topTopics: normalizeList(data.topTopics || data.top_topics || data.topics, 'topic_name'),
+        topKeywords: normalizeList(data.topKeywords || data.top_keywords || data.keywords, 'display_name'),
         accessDistribution: normalizeList(data.accessDistribution || data.access_distribution || data.access),
       };
     },

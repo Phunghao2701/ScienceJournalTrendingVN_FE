@@ -23,6 +23,14 @@ import AuthorDetailPage from '../../features/author/pages/AuthorDetailPage';
 import AuthorListPage from '../../features/author/pages/AuthorListPage';
 
 import TopicDetailPage from '../../features/topic/pages/TopicDetailPage';
+import BookmarksPage from '../../features/bookmark/pages/BookmarksPage';
+
+// Dashboard & Projects features
+import DashboardPage from '../../features/dashboard/pages/DashboardPage';
+import ProjectListPage from '../../features/project/pages/ProjectListPage';
+import CreateProjectPage from '../../features/project/pages/CreateProjectPage';
+import EditProjectPage from '../../features/project/pages/EditProjectPage';
+import ProjectDetailPage from '../../features/project/pages/ProjectDetailPage';
 
 /**
  * Nơi khai báo route chính của ứng dụng.
@@ -47,9 +55,15 @@ export default function AppRoutes() {
         {/* 🔐 Tuyến đường yêu cầu bảo mật (Đã đăng nhập) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/authors/leaderboard" element={<AuthorLeaderboardPage />} />
+          <Route path="/bookmarks" element={<BookmarksPage />} />
+          <Route path="/projects" element={<ProjectListPage />} />
+          <Route path="/projects/create" element={<CreateProjectPage />} />
+          <Route path="/projects/:id/edit" element={<EditProjectPage />} />
+          <Route path="/projects/:id" element={<ProjectDetailPage />} />
         </Route>
 
         {/* Public pages inside layout */}
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/articles" element={<TrendingVNPage />} />
         <Route path="/trending-vn" element={<TrendingVNPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />

@@ -37,7 +37,7 @@ export default function AuthorLeaderboardPage() {
     <div className="author-leaderboard-page">
       <Header />
 
-      <Container>
+      <Container className="pt-4">
         <nav className="author-leaderboard-breadcrumb mb-4" aria-label="breadcrumb">
           <ol className="breadcrumb">
             <li className="breadcrumb-item">

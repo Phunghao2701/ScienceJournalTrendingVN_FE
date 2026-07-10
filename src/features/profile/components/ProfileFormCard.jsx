@@ -7,6 +7,7 @@ export default function ProfileFormCard({
   onSave,
   isSaving,
   onRequestDelete,
+  onLogout,
 }) {
   return (
     <div className="profile-card">
@@ -77,7 +78,10 @@ export default function ProfileFormCard({
         />
       </div>
 
-      <div className="button-area">
+      <div className="button-area" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+        <button type="button" className="logout-card-btn" onClick={onLogout}>
+          Đăng xuất
+        </button>
         <button className="save-btn" onClick={onSave} disabled={isSaving}>
           {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
         </button>

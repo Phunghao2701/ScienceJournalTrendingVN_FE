@@ -269,6 +269,7 @@
   "sbNewItem": "New Item",
   "sbSearch": "Search",
   "personalAccount": "Personal Account",
+  "clickToLogin": "Click to sign in",
   "notCommercialUse": "Not for Commercial Use",
   "sbSupportDesc": "Quickly look up support topics from our knowledge base and documentation.",
   "sbCreateCollection": "Create Collection",
@@ -285,5 +286,10 @@
   "history": "History",
   "publication": "Publication",
   "application": "Application",
-  "priority": "Priority"
+  "priority": "Priority",
+  "profile": "Profile",
+  "viewList": "List",
+  "viewAnalysis": "Analysis",
+  "bookmarkSave": "Save",
+  "bookmarked": "Saved"
 }

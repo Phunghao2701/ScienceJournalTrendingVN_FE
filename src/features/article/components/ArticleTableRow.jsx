@@ -6,11 +6,20 @@
 import { Button } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ScientificMathText from '../../../shared/components/ScientificMathText';
 import { toScientificPlainText } from '../../../shared/utils/scientificMath';
+import useBookmark from '../../bookmark/hooks/useBookmark';
+import { toast } from '../../../shared/utils/toast';
 
 export default function ArticleTableRow({ article, index, onDetailClick }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const {
+    isBookmarked,
+    isBookmarkLoading,
+    toggleBookmark,
+  } = useBookmark(article.article_id);
 
   // Helper to assign colors to topics
   const getTopicClassName = (topic) => {
@@ -45,6 +54,23 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
     e.stopPropagation();
     if (journalId) {
       navigate(`/journals/${journalId}`);
+    }
+  };
+
+  const handleBookmarkClick = async (e) => {
+    e.stopPropagation();
+    if (isBookmarkLoading) return;
+    try {
+      const result = await toggleBookmark();
+      if (result.needsAuth) {
+        toast.info(t('loginToBookmark'));
+        navigate('/login');
+        return;
+      }
+      toast.success(result.isBookmarked ? t('bookmarkAdded') : t('bookmarkRemoved'));
+    } catch (err) {
+      console.warn('Unable to update bookmark:', err);
+      toast.error(t('bookmarkUpdateError'));
     }
   };
 
@@ -157,7 +183,16 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
       </td>
 
       {/* Actions */}
-      <td className="text-end pe-3" style={{ width: '80px' }}>
+      <td className="text-end pe-3" style={{ width: '120px' }}>
+        <Button
+          variant="link"
+          className={`p-0 me-2 article-action-link ${isBookmarked ? 'text-primary' : ''}`}
+          disabled={isBookmarkLoading}
+          onClick={handleBookmarkClick}
+          title={isBookmarked ? t('bookmarkRemove') : t('bookmarkSave')}
+        >
+          <Icon icon={isBookmarked ? 'lucide:bookmark-check' : 'lucide:bookmark-plus'} width="14" />
+        </Button>
         <span
           className="article-action-link d-flex align-items-center justify-content-end gap-0.5"
         >

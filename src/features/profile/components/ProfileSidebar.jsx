@@ -1,10 +1,12 @@
+import Icon from '../../../shared/components/Icon';
+
 /**
  * Sidebar hồ sơ: avatar, tên, vai trò, trạng thái và khối hoạt động.
  *
  * Lưu ý: các chỉ số hoạt động (dự án/từ khóa) hiện chưa có API thật,
  * nên hiển thị placeholder trung tính thay vì số liệu giả.
  */
-export default function ProfileSidebar({ formData, user }) {
+export default function ProfileSidebar({ formData, user, onLogout }) {
   const isActive = user?.is_active ?? true;
 
   return (
@@ -59,6 +61,13 @@ export default function ProfileSidebar({ formData, user }) {
         <span>Từ khóa đã lưu</span>
         <strong>—</strong>
       </div>
+
+      <hr />
+
+      <button className="sidebar-logout-btn" onClick={onLogout} type="button">
+        <Icon icon="lucide:log-out" width="16" />
+        Đăng xuất
+      </button>
     </div>
   );
 }

@@ -8,6 +8,8 @@ const toNumber = (value, fallback = 0) => {
   return Number.isFinite(numeric) ? numeric : fallback;
 };
 
+const normalizeNullableNumber = (value) => (value === null || value === undefined ? null : toNumber(value));
+
 const normalizeEntityRows = (value) => {
   if (!Array.isArray(value)) return [];
   return value.map((item, index) => ({
@@ -18,7 +20,9 @@ const normalizeEntityRows = (value) => {
     current_count: toNumber(item.current_count),
     previous_count: toNumber(item.previous_count),
     absolute_growth: toNumber(item.absolute_growth),
-    growth_rate: item.growth_rate === null || item.growth_rate === undefined ? null : toNumber(item.growth_rate),
+    growth_rate: normalizeNullableNumber(item.growth_rate),
+    smoothed_growth_rate: normalizeNullableNumber(item.smoothed_growth_rate),
+    trending_score: normalizeNullableNumber(item.trending_score),
   }));
 };
 
@@ -86,7 +90,9 @@ const normalizeTrendingArticles = (value) => {
     current_citations: toNumber(item.current_citations),
     previous_citations: toNumber(item.previous_citations),
     absolute_growth: toNumber(item.absolute_growth),
-    growth_rate: item.growth_rate === null || item.growth_rate === undefined ? null : toNumber(item.growth_rate),
+    growth_rate: normalizeNullableNumber(item.growth_rate),
+    smoothed_growth_rate: normalizeNullableNumber(item.smoothed_growth_rate),
+    trending_score: normalizeNullableNumber(item.trending_score),
   }));
 };
 
@@ -145,6 +151,14 @@ export const formatGrowthRate = (value) => {
   const percent = Number(value) * 100;
   if (!Number.isFinite(percent)) return 'N/A';
   return `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(percent)}%`;
+};
+
+// trending_score is a z-score blend (see docs/trending-score-formula-spec.md) — not a
+// percentage, so it is formatted as a signed decimal rather than reused with formatGrowthRate.
+export const formatTrendingScore = (value) => {
+  if (value === null || value === undefined) return '—';
+  if (!Number.isFinite(Number(value))) return 'N/A';
+  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2, signDisplay: 'exceptZero' }).format(Number(value));
 };
 
 export const mapPaperVnAnalysisResponse = (payload = {}) => ({

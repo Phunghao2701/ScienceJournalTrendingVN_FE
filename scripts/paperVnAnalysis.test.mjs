@@ -13,6 +13,7 @@ import {
 import {
   buildPaperVnAnalysisParams,
   formatGrowthRate,
+  formatTrendingScore,
   mapPaperVnAnalysisResponse,
   computeYearChartLayout,
   isAnalysisCohortEmpty,
@@ -84,6 +85,39 @@ test('analysis mapper normalizes missing arrays and numeric strings', () => {
   assert.equal(mapped.summary.scholarly_works, 12);
   assert.deepEqual(mapped.growth.authors, []);
   assert.equal(mapped.top.institutions[0].current_count, 8);
+});
+
+test('analysis mapper normalizes smoothed_growth_rate and trending_score on entity rows', () => {
+  const mapped = mapPaperVnAnalysisResponse({
+    growth: {
+      institutions: [
+        { entity_id: '1', display_name: 'Real Grower', absolute_growth: 20, growth_rate: 0.4, smoothed_growth_rate: '0.35', trending_score: '1.8' },
+        { entity_id: '2', display_name: 'Small Sample', absolute_growth: 1, growth_rate: 1, smoothed_growth_rate: null, trending_score: null },
+      ],
+    },
+  });
+
+  assert.equal(mapped.growth.institutions[0].smoothed_growth_rate, 0.35);
+  assert.equal(mapped.growth.institutions[0].trending_score, 1.8);
+  assert.equal(mapped.growth.institutions[1].smoothed_growth_rate, null);
+  assert.equal(mapped.growth.institutions[1].trending_score, null);
+});
+
+test('analysis mapper normalizes smoothed_growth_rate and trending_score on trending_articles', () => {
+  const mapped = mapPaperVnAnalysisResponse({
+    trending_articles: [
+      { article_id: '99', title: 'Paper', current_citations: 5, previous_citations: 2, absolute_growth: 3, growth_rate: 1.5, smoothed_growth_rate: '0.9', trending_score: '2.1' },
+    ],
+  });
+
+  assert.equal(mapped.trending_articles[0].smoothed_growth_rate, 0.9);
+  assert.equal(mapped.trending_articles[0].trending_score, 2.1);
+});
+
+test('trending score is formatted as a signed decimal, not a percentage', () => {
+  assert.equal(formatTrendingScore(1.823), '+1.82');
+  assert.equal(formatTrendingScore(-0.5), '-0.5');
+  assert.equal(formatTrendingScore(null), '—');
 });
 
 // --- FE-FIX-01: regression tests for known consistency gaps (expected red until fixed) ---

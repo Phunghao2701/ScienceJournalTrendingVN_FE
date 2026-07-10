@@ -1,6 +1,6 @@
 # Harness Handoff
 
-> **Generated**: 2026-07-10 20:53:05
+> **Generated**: 2026-07-10 21:01:34
 > **Reason**: session-stop
 
 ## Goal
@@ -14,25 +14,16 @@ No active plan. Continue from the latest user request and filesystem state.
 ## Files Touched
 
 ```
-.ai/harness/handoff/current.md
-scripts/paperVnAnalysis.test.mjs
-src/features/article/hooks/useArticleAnalytics.js
-src/features/trendingVN/components/TrendingArticleCard.jsx
-src/features/trendingVN/components/analysis/AnalysisEntityPanel.jsx
-src/features/trendingVN/components/analysis/AnalysisTrendingArticles.jsx
-src/features/trendingVN/pages/TrendingVNPage.jsx
-src/features/trendingVN/trendingVN.css
-src/features/trendingVN/utils/paperVnAnalysis.js
-trending-score-diff-results.md
+(none)
 ```
 
 ## Commands Run
 
-- {"ts":"2026-07-10T20:51:51+0700","event_type":"PostToolUse","tool_name":"AskUserQuestion","file_path":"","exit_code":0,"duration_ms":0,"session_key":"feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","run_id":"run-session-feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-07-10T20:52:14+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":6114,"session_key":"feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","run_id":"run-session-feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-07-10T20:52:33+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":5295,"session_key":"feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","run_id":"run-session-feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-07-10T20:52:42+0700","event_type":"PostToolUse","tool_name":"Read","file_path":"e:\\Science_Journal_Trending_VN\\ScienceJournalTrendingVN_FE\\src\\features\\trendingVN\\components\\TrendingArticleCard.jsx","exit_code":0,"duration_ms":6,"session_key":"feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","run_id":"run-session-feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","host":"unknown","agent_name":"unknown","session_source":"unknown"}
-- {"ts":"2026-07-10T20:52:54+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":4021,"session_key":"feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","run_id":"run-session-feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-10T20:59:15+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":3570,"session_key":"feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","run_id":"run-session-feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-10T20:59:33+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":3845,"session_key":"feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","run_id":"run-session-feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-10T20:59:57+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":4784,"session_key":"feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","run_id":"run-session-feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-10T21:01:10+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":6157,"session_key":"feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","run_id":"run-session-feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","host":"unknown","agent_name":"unknown","session_source":"unknown"}
+- {"ts":"2026-07-10T21:01:23+0700","event_type":"PostToolUse","tool_name":"Bash","file_path":"","exit_code":0,"duration_ms":3865,"session_key":"feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","run_id":"run-session-feaee91c-a46f-4c68-bb15-9f0e7ca1ca5c","host":"unknown","agent_name":"unknown","session_source":"unknown"}
 
 ## Checks
 
@@ -78,23 +69,14 @@ trending-score-diff-results.md
 
 - Next action stage: none
 - Next recommended action: (none)
-- Working tree:  9 files changed, 150 insertions(+), 92 deletions(-); 1 untracked files
-- Parent Run ID: run-20260710T205304-1787
+- Working tree: no uncommitted diff against HEAD
+- Parent Run ID: run-20260710T210134-1843
 - Supersedes: (none)
 
 ## Changed Files
 
 ```
-.ai/harness/handoff/current.md
-scripts/paperVnAnalysis.test.mjs
-src/features/article/hooks/useArticleAnalytics.js
-src/features/trendingVN/components/TrendingArticleCard.jsx
-src/features/trendingVN/components/analysis/AnalysisEntityPanel.jsx
-src/features/trendingVN/components/analysis/AnalysisTrendingArticles.jsx
-src/features/trendingVN/pages/TrendingVNPage.jsx
-src/features/trendingVN/trendingVN.css
-src/features/trendingVN/utils/paperVnAnalysis.js
-trending-score-diff-results.md
+(none)
 ```
 
 <!-- repo-harness:minimal-change-review begin -->

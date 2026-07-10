@@ -402,9 +402,9 @@ export default function TrendingVNPage() {
     return (analytics?.topInstitutions || []).slice(0, 8);
   }, [analytics]);
 
-  const topicCounts = useMemo(() => {
-    const sorted = analytics?.topTopics || [];
-    
+  const keywordCounts = useMemo(() => {
+    const sorted = analytics?.topKeywords || [];
+
     if (sorted.length <= 5) {
       return sorted;
     }
@@ -416,9 +416,9 @@ export default function TrendingVNPage() {
     return top4;
   }, [analytics, t]);
 
-  const maxTopicCount = useMemo(() => {
-    return Math.max(...topicCounts.map((item) => item.count)) || 1;
-  }, [topicCounts]);
+  const maxKeywordCount = useMemo(() => {
+    return Math.max(...keywordCounts.map((item) => item.count)) || 1;
+  }, [keywordCounts]);
 
   const groupedArticles = useMemo(() => {
     if (groupingMode !== 'simple-group' && groupingMode !== 'extended-group') {
@@ -1350,34 +1350,34 @@ export default function TrendingVNPage() {
 
               <div className="tvn-sidebar-panel tvn-topics-panel">
                 <div className="tvn-sidebar-title">{t('topKeywords')}</div>
-                {topicCounts.length === 0 ? (
+                {keywordCounts.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {t('anyTopic')}
                   </div>
                 ) : (
                   <div className="d-flex flex-column gap-2">
-                    {topicCounts.map((topic, idx) => {
-                      const canFilterTopic = Boolean(topic.id) && topic.name && topic.name !== 'Unknown' && topic.name !== t('others');
-                      const width = `${Math.max(6, Math.round((topic.count / maxTopicCount) * 100))}%`;
+                    {keywordCounts.map((keyword, idx) => {
+                      const canFilterKeyword = Boolean(keyword.id) && keyword.name && keyword.name !== 'Unknown' && keyword.name !== t('others');
+                      const width = `${Math.max(6, Math.round((keyword.count / maxKeywordCount) * 100))}%`;
                       return (
-                        <div key={topic.id || topic.name || idx}>
+                        <div key={keyword.id || keyword.name || idx}>
                           <div className="d-flex align-items-center gap-2 text-xs">
-                            {canFilterTopic ? (
+                            {canFilterKeyword ? (
                               <button
                                 type="button"
                                 className="text-main p-0 text-truncate"
-                                title={`${topic.name}: ${topic.count}`}
-                                onClick={() => handleEntityFilter('topic_id', topic.id)}
+                                title={`${keyword.name}: ${keyword.count}`}
+                                onClick={() => handleEntityFilter('keyword_id', keyword.id)}
                                 style={{ background: 'none', border: 0, textAlign: 'left', maxWidth: '78%' }}
                               >
-                                {topic.name}
+                                {keyword.name}
                               </button>
                             ) : (
-                              <span className="text-main text-truncate" title={topic.name} style={{ maxWidth: '78%' }}>
-                                {topic.name}
+                              <span className="text-main text-truncate" title={keyword.name} style={{ maxWidth: '78%' }}>
+                                {keyword.name}
                               </span>
                             )}
-                            <span className="text-muted ms-auto">{topic.count}</span>
+                            <span className="text-muted ms-auto">{keyword.count}</span>
                           </div>
                           <div style={{ height: '5px', background: 'var(--bg-section)', border: '1px solid var(--border)' }}>
                             <div style={{ width, height: '100%', background: 'var(--primary)' }} />

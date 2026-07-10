@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Button, ButtonGroup, Table } from 'react-bootstrap';
-import { formatGrowthRate } from '../../utils/paperVnAnalysis';
+import { formatGrowthRate, formatTrendingScore } from '../../utils/paperVnAnalysis';
 
 const ENTITY_TYPES = [
   { key: 'institutions', label: 'Institutions', filter: 'institution_id' },
@@ -64,6 +64,7 @@ export default function AnalysisEntityPanel({ top, growth, onEntityClick }) {
               <th className="text-end">Previous</th>
               <th className="text-end">Growth</th>
               <th className="text-end">Rate</th>
+              {mode === 'growth' && <th className="text-end">Trending score</th>}
             </tr>
           </thead>
           <tbody>
@@ -85,6 +86,7 @@ export default function AnalysisEntityPanel({ top, growth, onEntityClick }) {
                   <td className="text-end">{fmt(row.previous_count)}</td>
                   <td className="text-end">{fmt(row.absolute_growth)}</td>
                   <td className="text-end">{formatGrowthRate(row.growth_rate)}</td>
+                  {mode === 'growth' && <td className="text-end">{formatTrendingScore(row.trending_score)}</td>}
                 </tr>
               );
             })}

@@ -1,5 +1,5 @@
 import { Table } from 'react-bootstrap';
-import { formatGrowthRate } from '../../utils/paperVnAnalysis';
+import { formatGrowthRate, formatTrendingScore } from '../../utils/paperVnAnalysis';
 
 const fmt = (value) => new Intl.NumberFormat().format(Number(value || 0));
 
@@ -32,6 +32,7 @@ export default function AnalysisTrendingArticles({ articles = [], coverage, onAr
               <th className="text-end">Previous citations</th>
               <th className="text-end">Growth</th>
               <th className="text-end">Rate</th>
+              <th className="text-end">Trending score</th>
               <th className="text-end">Imported citations</th>
             </tr>
           </thead>
@@ -53,6 +54,7 @@ export default function AnalysisTrendingArticles({ articles = [], coverage, onAr
                 <td className="text-end">{fmt(article.previous_citations)}</td>
                 <td className="text-end">{fmt(article.absolute_growth)}</td>
                 <td className="text-end">{formatGrowthRate(article.growth_rate)}</td>
+                <td className="text-end">{formatTrendingScore(article.trending_score)}</td>
                 <td className="text-end">{fmt(article.citation_count)}</td>
               </tr>
             ))}

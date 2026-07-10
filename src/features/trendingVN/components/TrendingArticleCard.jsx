@@ -112,6 +112,23 @@ export default function TrendingArticleCard({
 
   return (
     <div key={article.article_id} className="tvn-article-card">
+      <button
+        type="button"
+        className="tvn-star-bookmark-btn"
+        disabled={isBookmarkLoading}
+        onClick={handleBookmarkClick}
+        title={isBookmarked ? t('bookmarked') : t('bookmarkSave')}
+        aria-label={isBookmarked ? t('bookmarked') : t('bookmarkSave')}
+      >
+        <Icon
+          icon="lucide:star"
+          width="16"
+          style={{
+            color: isBookmarked ? '#f5b301' : 'var(--text-muted)',
+            fill: isBookmarked ? '#f5b301' : 'none',
+          }}
+        />
+      </button>
       <div className="d-flex align-items-start gap-1">
         <div className="d-flex flex-column align-items-center gap-1" style={{ minWidth: '22px' }}>
           <button

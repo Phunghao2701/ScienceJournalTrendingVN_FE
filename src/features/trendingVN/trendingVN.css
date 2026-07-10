@@ -497,6 +497,7 @@
 
 /* ==================== ARTICLE CARDS ==================== */
 .tvn-article-card {
+  position: relative;
   border: 1px solid var(--border);
   border-radius: 0;
   transition: border-color 0.15s ease;
@@ -524,6 +525,34 @@
 
 .tvn-article-expand-toggle:hover {
   color: #0d47a1;
+}
+
+/* Icon dấu sao bookmark ở góc trên-phải card (chuẩn Scholar/Scopus) */
+.tvn-star-bookmark-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tvn-star-bookmark-btn:hover:not(:disabled) {
+  background: var(--bg-section);
+}
+
+.tvn-star-bookmark-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Tiêu đề bài báo */
@@ -2818,12 +2847,13 @@
    Lens Article Card styles (matched with Tri's search results cards)
    ========================================================================== */
 .tvn-article-card {
+  position: relative;
   border: 1px solid var(--border);
   border-radius: 4px;
   transition: border-color 0.15s ease;
   background: var(--bg-card);
   margin-bottom: 0.5rem;
-  padding: 6px 8px;
+  padding: 6px 32px 6px 8px;
 }
 
 .tvn-article-card:hover {
@@ -3518,7 +3548,7 @@
   }
 
   .tvn-article-card {
-    padding: 10px;
+    padding: 10px 32px 10px 10px;
     border-radius: 6px;
     margin-bottom: 8px;
   }

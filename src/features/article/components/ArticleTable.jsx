@@ -5,9 +5,93 @@
  */
 import { Table, Card, Button } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
+import { useTranslation } from 'react-i18next';
 import ArticleTableRow from './ArticleTableRow';
 import ScientificMathText from '../../../shared/components/ScientificMathText';
 import { toScientificPlainText } from '../../../shared/utils/scientificMath';
+import useBookmark from '../../bookmark/hooks/useBookmark';
+import { toast } from '../../../shared/utils/toast';
+
+function ArticleMobileCard({ article, index, topicClassName, onDetailClick }) {
+  const { t } = useTranslation();
+  const { isBookmarked, isBookmarkLoading, toggleBookmark } = useBookmark(article.article_id);
+
+  const handleBookmarkClick = async (event) => {
+    event.stopPropagation();
+    try {
+      const result = await toggleBookmark();
+      if (result.needsAuth) {
+        toast.info(t('loginToBookmark'));
+        return;
+      }
+      toast.success(result.isBookmarked ? t('bookmarkAdded') : t('bookmarkRemoved'));
+    } catch (err) {
+      console.warn('Unable to update bookmark:', err);
+      toast.error(t('bookmarkUpdateError'));
+    }
+  };
+
+  return (
+    <Card
+      onClick={() => onDetailClick(article.article_id)}
+      className="article-mobile-card"
+    >
+      <Card.Body className="p-3">
+        <div className="d-flex align-items-center justify-content-between mb-2">
+          <span className="text-muted-custom text-xs font-display">#{index + 1}</span>
+          <div className="d-flex gap-1.5 align-items-center">
+            <Button
+              variant="link"
+              className={`p-0 article-action-link ${isBookmarked ? 'text-primary' : ''}`}
+              disabled={isBookmarkLoading}
+              onClick={handleBookmarkClick}
+              title={isBookmarked ? t('bookmarkRemove') : t('bookmarkSave')}
+            >
+              <Icon icon={isBookmarked ? 'lucide:bookmark-check' : 'lucide:bookmark-plus'} width="14" />
+            </Button>
+            <span className={`article-topic-badge ${topicClassName}`}>
+              {article.primary_topic || 'Unclassified'}
+            </span>
+            {article.is_open_access && (
+              <span className="article-oa-badge">
+                OA
+              </span>
+            )}
+          </div>
+        </div>
+
+        <h6 className="text-main font-weight-semibold mb-2" style={{ lineHeight: '1.4', fontSize: '0.9rem' }}>
+          <ScientificMathText title={article.title_plain || toScientificPlainText(article.title)}>
+            {article.title}
+          </ScientificMathText>
+        </h6>
+
+        {article.abstract && (
+          <p className="text-muted-custom text-xs mb-3 text-truncate-2" style={{ fontSize: '0.75rem', lineHeight: '1.4' }}>
+            {article.abstract}
+          </p>
+        )}
+
+        <div className="pt-2 border-top border-light d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div>
+            {article.journal && (
+              <div className="text-primary text-xs font-weight-semibold" style={{ fontSize: '0.75rem' }}>
+                {article.journal.display_name}
+              </div>
+            )}
+            <div className="text-muted-custom text-xs font-display mt-0.5" style={{ fontSize: '0.7rem' }}>
+              Year: {article.publication_year} {article.doi ? `· DOI: ${article.doi}` : ''}
+            </div>
+          </div>
+          <span className="article-action-link d-flex align-items-center gap-0.5">
+            Details
+            <Icon icon="lucide:arrow-right" width="12" />
+          </span>
+        </div>
+      </Card.Body>
+    </Card>
+  );
+}
 
 export default function ArticleTable({ articles, isLoading, onDetailClick, onClearFilters }) {
   
@@ -156,56 +240,13 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
           {articles.map((article, index) => {
             const topicClassName = getTopicClassName(article.primary_topic);
             return (
-              <Card 
+              <ArticleMobileCard
                 key={article.article_id}
-                onClick={() => onDetailClick(article.article_id)}
-                className="article-mobile-card"
-              >
-                <Card.Body className="p-3">
-                  <div className="d-flex align-items-center justify-content-between mb-2">
-                    <span className="text-muted-custom text-xs font-display">#{index + 1}</span>
-                    <div className="d-flex gap-1.5 align-items-center">
-                      <span className={`article-topic-badge ${topicClassName}`}>
-                        {article.primary_topic || 'Unclassified'}
-                      </span>
-                      {article.is_open_access && (
-                        <span className="article-oa-badge">
-                          OA
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <h6 className="text-main font-weight-semibold mb-2" style={{ lineHeight: '1.4', fontSize: '0.9rem' }}>
-                    <ScientificMathText title={article.title_plain || toScientificPlainText(article.title)}>
-                      {article.title}
-                    </ScientificMathText>
-                  </h6>
-
-                  {article.abstract && (
-                    <p className="text-muted-custom text-xs mb-3 text-truncate-2" style={{ fontSize: '0.75rem', lineHeight: '1.4' }}>
-                      {article.abstract}
-                    </p>
-                  )}
-
-                  <div className="pt-2 border-top border-light d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <div>
-                      {article.journal && (
-                        <div className="text-primary text-xs font-weight-semibold" style={{ fontSize: '0.75rem' }}>
-                          {article.journal.display_name}
-                        </div>
-                      )}
-                      <div className="text-muted-custom text-xs font-display mt-0.5" style={{ fontSize: '0.7rem' }}>
-                        Year: {article.publication_year} {article.doi ? `· DOI: ${article.doi}` : ''}
-                      </div>
-                    </div>
-                    <span className="article-action-link d-flex align-items-center gap-0.5">
-                      Details
-                      <Icon icon="lucide:arrow-right" width="12" />
-                    </span>
-                  </div>
-                </Card.Body>
-              </Card>
+                article={article}
+                index={index}
+                topicClassName={topicClassName}
+                onDetailClick={onDetailClick}
+              />
             );
           })}
         </div>

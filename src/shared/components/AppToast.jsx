@@ -52,9 +52,14 @@ export default function AppToast() {
 
   return (
     <ToastContainer
-      position="top-end"
-      className="p-4"
-      style={{ zIndex: 9999 }}
+      className="app-toast-container p-3 p-sm-4"
+      style={{
+        position: "fixed",
+        top: 16,
+        right: 16,
+        zIndex: 9999,
+        maxWidth: "calc(100vw - 32px)",
+      }}
     >
       <Toast
         show={show}
@@ -64,7 +69,7 @@ export default function AppToast() {
         animation
         className="border-0 shadow-lg"
         style={{
-          minWidth: 360,
+          width: "min(360px, calc(100vw - 32px))",
           background: config.bg,
           borderLeft: `4px solid ${config.border}`,
           borderRadius: 16,

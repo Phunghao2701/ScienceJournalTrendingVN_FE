@@ -21,7 +21,7 @@ import TrendingArticleCard from '../components/TrendingArticleCard';
 import AnalysisDashboard from '../components/analysis/AnalysisDashboard';
 import { toast } from '../../../shared/utils/toast';
 import { toScientificPlainText } from '../../../shared/utils/scientificMath';
-import { useAuthStore } from '../../../app/store/authStore';
+import useAuth from '../../auth/hooks/useAuth';
 import { useTrendingFilters } from '../hooks/useTrendingFilters';
 import {
   TRENDING_VIEW_MODES,
@@ -39,13 +39,22 @@ export default function TrendingVNPage() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useTranslation();
-  const user = useAuthStore((state) => state.user);
+  const { user, logout, isAuthenticated, fetchProfile } = useAuth();
+  const userDisplayName = user
+    ? [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || user.email || 'Researcher'
+    : 'Researcher';
   const viewMode = getTrendingViewFromParams(searchParams);
   const isAnalysisView = viewMode === TRENDING_VIEW_MODES.ANALYSIS;
   const [activeLeftTab, setActiveLeftTab] = useState(null); // 'filters', 'profile', 'info', 'more'
   const [activeTooltip, setActiveTooltip] = useState(null); // { name, count, x, y }
   const [drawerSelectOpen, setDrawerSelectOpen] = useState(null);
   const [statsExpanded, setStatsExpanded] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated && !user) {
+      fetchProfile().catch(() => {});
+    }
+  }, [isAuthenticated, user, fetchProfile]);
 
   const {
     articles,
@@ -483,12 +492,6 @@ export default function TrendingVNPage() {
           <button className={`tvn-sidebar-icon-btn ${activeLeftTab === 'profile' ? 'active' : ''}`} title={t('sbWorkArea')} onClick={() => setActiveLeftTab(activeLeftTab === 'profile' ? null : 'profile')}>
             <Icon icon="lucide:user-cog" width="18" />
           </button>
-          <button className={`tvn-sidebar-icon-btn ${activeLeftTab === 'info' ? 'active' : ''}`} title={t('info')} onClick={() => setActiveLeftTab(activeLeftTab === 'info' ? null : 'info')}>
-            <Icon icon="lucide:info" width="18" />
-          </button>
-          <button className={`tvn-sidebar-icon-btn ${activeLeftTab === 'more' ? 'active' : ''}`} title={t('more')} onClick={() => setActiveLeftTab(activeLeftTab === 'more' ? null : 'more')}>
-            <Icon icon="lucide:more-horizontal" width="18" />
-          </button>
         </aside>
 
         {/* ==================== EXPANDED SIDEBAR DRAWER (Lens-style) ==================== */}
@@ -623,21 +626,57 @@ export default function TrendingVNPage() {
             {/* 2. PROFILE / WORK AREA TAB VIEW */}
             {activeLeftTab === 'profile' && (
               <div className="tvn-drawer-content">
-                <div className="tvn-profile-block">
-                  <div className="tvn-profile-avatar">
-                    {user?.name ? getInitials(user.name) : 'TM'}
-                  </div>
-                  <div className="tvn-profile-info">
-                    <div className="profile-name">{user?.name || user?.username || 'Researcher'}</div>
-                    <div className="profile-subtitle">
-                      {t('personalAccount')}{' '}
-                      <span className="text-danger" style={{ fontSize: '0.62rem', display: 'block' }}>
-                        ({t('notCommercialUse')})
-                      </span>
+                {isAuthenticated ? (
+                  <Dropdown className="w-100">
+                    <Dropdown.Toggle
+                      as="div"
+                      id="profile-dropdown-toggle"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="tvn-profile-block">
+                        <div className="tvn-profile-avatar">
+                          {userDisplayName !== 'Researcher' ? getInitials(userDisplayName) : 'TM'}
+                        </div>
+                        <div className="tvn-profile-info">
+                          <div className="profile-name">{userDisplayName}</div>
+                          <div className="profile-subtitle">
+                            {t('personalAccount')}{' '}
+                            <span className="text-danger" style={{ fontSize: '0.62rem', display: 'block' }}>
+                              ({t('notCommercialUse')})
+                            </span>
+                          </div>
+                        </div>
+                        <Icon icon="lucide:chevron-down" width="16" className="text-muted ms-auto" />
+                      </div>
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu className="w-100 text-xs shadow-sm" style={{ border: '1px solid var(--border)', padding: '4px 0' }}>
+                      <Dropdown.Item onClick={() => navigate('/profile')} className="d-flex align-items-center gap-2 py-2">
+                        <Icon icon="lucide:user" width="14" />
+                        <span>{t('profile') || 'Profile'}</span>
+                      </Dropdown.Item>
+                      <Dropdown.Divider className="my-1" />
+                      <Dropdown.Item onClick={() => logout(null)} className="d-flex align-items-center gap-2 py-2 text-danger">
+                        <Icon icon="lucide:log-out" width="14" />
+                        <span>{t('logoutLabel')}</span>
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+                ) : (
+                  <div
+                    className="tvn-profile-block"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate('/login')}
+                  >
+                    <div className="tvn-profile-avatar" style={{ backgroundColor: 'var(--primary-light, #eef6ff)', color: 'var(--primary, #1976d2)' }}>
+                      <Icon icon="lucide:log-in" width="16" />
                     </div>
+                    <div className="tvn-profile-info">
+                      <div className="profile-name text-primary fw-bold">{t('signIn') || 'Đăng nhập'}</div>
+                      <div className="profile-subtitle">{t('clickToLogin') || 'Bấm để đăng nhập'}</div>
+                    </div>
+                    <Icon icon="lucide:chevron-right" width="16" className="text-muted ms-auto" />
                   </div>
-                  <Icon icon="lucide:chevron-down" width="16" className="text-muted ms-auto" />
-                </div>
+                )}
 
                 <div className="tvn-profile-actions">
                   <Dropdown className="flex-fill">
@@ -665,14 +704,13 @@ export default function TrendingVNPage() {
                   {[
                     { key: 'savedQueries', label: t('sbSavedQueries'), icon: 'lucide:save', action: () => navigate('/dashboard') },
                     { key: 'searchHistory', label: t('sbSearchHistory'), icon: 'lucide:search' },
-                    { key: 'collections', label: t('sbCollections'), icon: 'lucide:folder' },
-                    { key: 'dashboards', label: t('sbDashboards'), icon: 'lucide:bar-chart-2' },
+                    { key: 'collections', label: t('sbCollections'), icon: 'lucide:folder', action: () => navigate('/bookmarks') },
+                    { key: 'dashboards', label: t('sbDashboards'), icon: 'lucide:bar-chart-2', action: () => navigate('/dashboard') },
                     { key: 'notes', label: t('sbNotes'), icon: 'lucide:file-text' },
                     { key: 'tags', label: t('sbTags'), icon: 'lucide:tag' },
                     { key: 'authorship', label: t('sbAuthorship'), icon: 'lucide:users' },
                     { key: 'notifications', label: t('sbNotifications'), icon: 'lucide:bell' },
-                    { key: 'mediaLibrary', label: t('sbMediaLibrary'), icon: 'lucide:image' },
-                    { key: 'settings', label: t('sbSettings'), icon: 'lucide:settings', action: () => navigate('/profile') }
+                    { key: 'mediaLibrary', label: t('sbMediaLibrary'), icon: 'lucide:image' }
                   ].map(item => (
                     <div
                       key={item.key}
@@ -684,77 +722,6 @@ export default function TrendingVNPage() {
                       <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
-
-            {/* 3. INFO / SUPPORT / SUGGESTIONS VIEW */}
-            {activeLeftTab === 'info' && (
-              <div className="tvn-drawer-content">
-                <div className="tvn-drawer-header">
-                  <span className="tvn-drawer-title">{t('sbSupport')}</span>
-                </div>
-                
-                <div className="px-3 py-2">
-                  <p className="text-muted" style={{ fontSize: '0.72rem', lineHeight: '1.4', margin: '0 0 10px 0' }}>
-                    {t('sbSupportDesc')}
-                  </p>
-                  <div className="tvn-search-group" style={{ height: '32px' }}>
-                    <Form.Control
-                      placeholder={t('sbSearchDoc')}
-                      className="tvn-search-input py-1"
-                      style={{ fontSize: '0.78rem' }}
-                    />
-                    <span className="d-flex align-items-center pe-2">
-                      <Icon icon="lucide:search" width="14" className="text-muted" />
-                    </span>
-                  </div>
-                </div>
-
-                <hr className="my-2 text-muted opacity-20" />
-
-                <div className="tvn-drawer-header pt-1">
-                  <span className="tvn-drawer-title">{t('sbSuggestions')}</span>
-                  <Icon icon="lucide:info" className="info-icon" width="14" style={{ color: 'var(--primary-hover)', cursor: 'pointer' }} />
-                </div>
-
-                <div className="tvn-drawer-scrollable">
-                  <div className="tvn-suggestion-item" onClick={() => setShowExportModal(true)}>
-                    <div className="suggestion-icon-wrapper">
-                      <Icon icon="lucide:download-cloud" width="18" className="text-primary" />
-                    </div>
-                    <div className="suggestion-info">
-                      <div className="suggestion-title">{t('sbExportResults')}</div>
-                      <div className="suggestion-desc">{t('sbExportResultsDesc')}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 4. MORE MENU VIEW */}
-            {activeLeftTab === 'more' && (
-              <div className="tvn-drawer-content">
-                <div className="tvn-drawer-header">
-                  <span className="tvn-drawer-title">{t('more')}</span>
-                </div>
-                <div className="tvn-drawer-scrollable">
-                  <div className="tvn-drawer-item" onClick={() => navigate('/')}>
-                    <Icon icon="lucide:home" width="16" className="item-icon" />
-                    <span className="item-label">{t('home')}</span>
-                  </div>
-                  <div className="tvn-drawer-item" onClick={() => navigate('/journals')}>
-                    <Icon icon="lucide:book-open" width="16" className="item-icon" />
-                    <span className="item-label">{t('journals')}</span>
-                  </div>
-                  <div className="tvn-drawer-item" onClick={() => navigate('/trends')}>
-                    <Icon icon="lucide:trending-up" width="16" className="item-icon" />
-                    <span className="item-label">{t('trends')}</span>
-                  </div>
-                  <div className="tvn-drawer-item" onClick={() => navigate('/geography')}>
-                    <Icon icon="lucide:globe" width="16" className="item-icon" />
-                    <span className="item-label">{t('geography')}</span>
-                  </div>
                 </div>
               </div>
             )}

@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Button, Modal } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
+import { useTranslation } from 'react-i18next';
 
 // Layout
 import Header from '../../landing/components/Header';
@@ -15,7 +16,8 @@ import Header from '../../landing/components/Header';
 import useAuth from '../../auth/hooks/useAuth';
 
 // API
-import { getArticleDetailApi, bookmarkArticleApi, getArticlesListApi } from '../api/articleApi';
+import { getArticleDetailApi, getArticlesListApi } from '../api/articleApi';
+import useBookmark from '../../bookmark/hooks/useBookmark';
 
 // Subcomponents
 import ArticleDetailSkeleton from '../components/ArticleDetailSkeleton';
@@ -23,6 +25,7 @@ import ArticleDetailEmpty from '../components/ArticleDetailEmpty';
 import ArticleDetailError from '../components/ArticleDetailError';
 import ArticlesTabContent from '../../journal/components/ArticlesTabContent';
 import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
+import ArticleComments from '../../comment/components/ArticleComments';
 import { toast } from '../../../shared/utils/toast';
 import { getDoiUrl, normalizeArticleDetail } from '../utils/articleFormatters';
 import './ArticleVisualDetailPage.css';
@@ -73,14 +76,13 @@ const smoothScrollTo = (targetId) => {
 export default function ArticleVisualDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const auth = useAuth();
-  const currentUser = auth?.user;
+  const isLoggedIn = Boolean(auth?.user || auth?.token || auth?.isAuthenticated);
 
   const [article, setArticle] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [activeTab, setActiveTab] = useState('preview');
   const [recommendedArticles, setRecommendedArticles] = useState([]);
@@ -89,6 +91,11 @@ export default function ArticleVisualDetailPage() {
   const [showCitationsModal, setShowCitationsModal] = useState(false);
   const [referencePage, setReferencePage] = useState(1);
   const referencesPerPage = 2;
+  const {
+    isBookmarked,
+    isBookmarkLoading,
+    toggleBookmark,
+  } = useBookmark(id);
 
   const visibleAuthors = useMemo(() => {
     const authors = article?.authors || [];
@@ -154,9 +161,6 @@ export default function ArticleVisualDetailPage() {
         setArticle(parsedArticle);
         fetchRecommendedArticles(parsedArticle);
 
-        const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${id}`;
-        const isLocallyBookmarked = localStorage.getItem(localBookmarkKey) === 'true';
-        setIsBookmarked(apiData.is_bookmarked || isLocallyBookmarked);
       } else {
         throw new Error('Không thể tải chi tiết bài báo khoa học.');
       }
@@ -166,34 +170,26 @@ export default function ArticleVisualDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [id, currentUser, fetchRecommendedArticles]);
+  }, [id, fetchRecommendedArticles]);
 
   useEffect(() => {
     fetchArticleDetail();
   }, [fetchArticleDetail]);
 
   const handleBookmarkToggle = async () => {
-    if (!currentUser) {
+    if (!isLoggedIn) {
       setShowLoginModal(true);
       return;
     }
 
-    setIsBookmarkLoading(true);
-    const localBookmarkKey = `bookmark_${currentUser.username}_${id}`;
-    const nextState = !isBookmarked;
-
     try {
-      await bookmarkArticleApi(id);
-      setIsBookmarked(nextState);
-      localStorage.setItem(localBookmarkKey, String(nextState));
-      toast.success(nextState ? 'Đã thêm bài báo vào project.' : 'Đã xóa bài báo khỏi project.');
+      const result = await toggleBookmark();
+      if (result.ok) {
+        toast.success(result.isBookmarked ? t('bookmarkAdded') : t('bookmarkRemoved'));
+      }
     } catch (err) {
-      console.warn('Bookmark API error, toggling state locally:', err);
-      setIsBookmarked(nextState);
-      localStorage.setItem(localBookmarkKey, String(nextState));
-      toast.warning('Không thể đồng bộ server, đã cập nhật tạm trên trình duyệt.');
-    } finally {
-      setIsBookmarkLoading(false);
+      console.warn('Bookmark API error:', err);
+      toast.error(t('bookmarkUpdateError'));
     }
   };
 
@@ -673,6 +669,10 @@ export default function ArticleVisualDetailPage() {
                     <span className="text-xs text-muted-custom font-sans">Không có tài liệu tham khảo chi tiết.</span>
                   )}
                 </section>
+                <ArticleComments
+                  articleId={article?.article_id || id}
+                  articleIds={[article?.id, article?.display_id, id]}
+                />
               </div>
             </aside>
           </main>

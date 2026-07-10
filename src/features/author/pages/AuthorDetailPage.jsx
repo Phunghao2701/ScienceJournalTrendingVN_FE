@@ -7,10 +7,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Button, Card, Nav, Collapse, Form } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
+import { useTranslation } from 'react-i18next';
 import Header from '../../landing/components/Header';
 import useAuthors from '../hooks/useAuthors';
 import useAuth from '../../auth/hooks/useAuth';
-import { bookmarkArticleApi } from '../../article/api/articleApi';
+import { useBookmarkStore } from '../../bookmark/store/bookmarkStore';
 import { toast } from '../../../shared/utils/toast';
 import './AuthorDetailPage.css';
 
@@ -161,8 +162,12 @@ function AuthorWorksChart({ data }) {
 export default function AuthorDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const auth = useAuth();
-  const currentUser = auth?.user;
+  const isLoggedIn = Boolean(auth?.user || auth?.token || auth?.isAuthenticated);
+  const bookmarkIds = useBookmarkStore((state) => state.bookmarkIds);
+  const loadBookmarks = useBookmarkStore((state) => state.loadBookmarks);
+  const toggleBookmarkInStore = useBookmarkStore((state) => state.toggleBookmark);
 
   const {
     currentAuthor,
@@ -186,18 +191,23 @@ export default function AuthorDetailPage() {
     }
   }, [id, fetchAuthorDetailsFull]);
 
-  // Load bookmarks state
+  useEffect(() => {
+    if (isLoggedIn) {
+      loadBookmarks().catch(() => {});
+    }
+  }, [isLoggedIn, loadBookmarks]);
+
+  // Sync bookmark state from the shared backend-backed store.
   useEffect(() => {
     if (authorArticles?.length > 0) {
       const map = {};
       authorArticles.forEach((art) => {
         const artId = art.article_id || art.id;
-        const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${artId}`;
-        map[artId] = localStorage.getItem(localBookmarkKey) === 'true';
+        map[artId] = bookmarkIds.has(String(artId));
       });
       setBookmarkedMap(map);
     }
-  }, [authorArticles, currentUser]);
+  }, [authorArticles, bookmarkIds]);
 
   const authorName = currentAuthor?.full_name ?? currentAuthor?.display_name ?? currentAuthor?.name ?? 'Tác giả';
   const primaryAffiliation = currentAuthor?.institution_1 ?? currentAuthor?.last_known_institution ?? 'Đang cập nhật đơn vị';
@@ -222,20 +232,20 @@ export default function AuthorDetailPage() {
 
   // Bookmark Toggle logic
   const handleBookmarkToggle = async (articleId) => {
+    if (!isLoggedIn) {
+      toast.info(t('loginToBookmark'));
+      return;
+    }
     const isBookmarked = bookmarkedMap[articleId];
-    const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${articleId}`;
     const nextState = !isBookmarked;
 
     try {
-      await bookmarkArticleApi(articleId);
+      await toggleBookmarkInStore(articleId, nextState);
       setBookmarkedMap((prev) => ({ ...prev, [articleId]: nextState }));
-      localStorage.setItem(localBookmarkKey, String(nextState));
-      toast.success(nextState ? 'Đã thêm bài báo vào project.' : 'Đã xóa bài báo khỏi project.');
+      toast.success(nextState ? t('bookmarkAdded') : t('bookmarkRemoved'));
     } catch (err) {
-      console.warn('Bookmark API error, toggling state locally:', err);
-      setBookmarkedMap((prev) => ({ ...prev, [articleId]: nextState }));
-      localStorage.setItem(localBookmarkKey, String(nextState));
-      toast.warning('Không thể đồng bộ server, đã cập nhật tạm trên trình duyệt.');
+      console.warn('Bookmark API error:', err);
+      toast.error(t('bookmarkUpdateError'));
     }
   };
 

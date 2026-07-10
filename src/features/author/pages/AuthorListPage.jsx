@@ -127,7 +127,7 @@ export default function AuthorListPage() {
     <div className="author-list-page">
       <Header />
 
-      <Container>
+      <Container className="pt-4">
         <nav className="author-list-breadcrumb mb-4" aria-label="breadcrumb">
           <ol className="breadcrumb">
             <li className="breadcrumb-item">

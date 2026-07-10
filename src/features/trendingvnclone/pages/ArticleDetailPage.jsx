@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ArticleDetailHeader from '../components/ArticleDetailHeader';
@@ -7,6 +8,7 @@ import ArticleSummaryTab from '../components/ArticleSummaryTab';
 import AuthorCardPopup from '../components/AuthorCardPopup';
 import { useScholarArticleDetail } from '../hooks/useScholarArticleDetail';
 import { useAuthStore } from '../../../app/store/authStore';
+import ArticleComments from '../../comment/components/ArticleComments';
 import { toast } from '../../../shared/utils/toast';
 import { toScientificPlainText } from '../../../shared/utils/scientificMath';
 import {
@@ -71,7 +73,11 @@ export default function ArticleDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoggedIn = Boolean(user || token || isAuthenticated);
 
   const {
     article,
@@ -89,7 +95,7 @@ export default function ArticleDetailPage() {
     isReferencesLoading,
     recommendedArticles,
     isRecommendedLoading
-  } = useScholarArticleDetail(id, user);
+  } = useScholarArticleDetail(id, user || isLoggedIn);
 
   const [activeTab, setActiveTab] = useState('summary');
   const [popupAuthor, setPopupAuthor] = useState(null);
@@ -112,13 +118,13 @@ export default function ArticleDetailPage() {
   };
 
   const handleBookmarkClick = async () => {
-    if (!user) {
-      toast.info('Vui lòng đăng nhập để lưu bài báo vào bộ sưu tập.');
+    if (!isLoggedIn) {
+      toast.info(t('loginToBookmark'));
       return;
     }
     const ok = await handleBookmarkToggle();
     if (ok) {
-      toast.success(isBookmarked ? 'Đã bỏ lưu bài báo.' : 'Đã lưu bài báo vào bộ sưu tập.');
+      toast.success(isBookmarked ? t('bookmarkRemoved') : t('bookmarkAdded'));
     }
   };
 
@@ -337,7 +343,7 @@ ER  - `;
               className="flex items-center justify-center gap-1.5 bg-white hover:bg-gray-50 border border-gray-300 text-lens-link-blue text-[12px] font-semibold py-1.5 rounded cursor-pointer disabled:opacity-50"
             >
               {isBookmarked ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
-              {isBookmarked ? 'Saved' : 'Save Article'}
+              {isBookmarked ? t('bookmarked') : t('bookmarkSave')}
             </button>
             <div className="flex items-center space-x-1.5 justify-between">
               <button className="flex-grow bg-white hover:bg-gray-50 border border-gray-300 text-lens-link-blue text-[12px] font-semibold py-1 rounded cursor-pointer text-center">
@@ -390,7 +396,7 @@ ER  - `;
               className="hover:text-gray-950 flex items-center space-x-1 cursor-pointer disabled:opacity-50"
             >
               {isBookmarked ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
-              <span>{isBookmarked ? 'Saved to Collection' : 'Add to Collection'}</span>
+              <span>{isBookmarked ? t('bookmarked') : t('bookmarkSave')}</span>
             </button>
             <button className="hover:text-gray-950 flex items-center space-x-1 cursor-pointer">
               <FileText className="w-3.5 h-3.5" />
@@ -476,6 +482,13 @@ ER  - `;
               </div>
             )}
           </div>
+        </div>
+
+        <div className="bg-white border border-[#D8E7F4] rounded shadow-xs p-5 select-text">
+          <ArticleComments
+            articleId={article?.id || id}
+            articleIds={[article?.article_id, article?.displayId, article?.lensId, id]}
+          />
         </div>
       </main>
 

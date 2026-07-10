@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthorCardPopup } from './AuthorCardPopup';
+import useBookmark from '../../bookmark/hooks/useBookmark';
+import { toast } from '../../../shared/utils/toast';
 import {
   ChevronDown,
   Unlock,
@@ -8,7 +11,9 @@ import {
   Building,
   DollarSign,
   FolderOpen,
-  ExternalLink
+  ExternalLink,
+  Bookmark,
+  BookmarkCheck
 } from 'lucide-react';
 
 export const ScholarlyWorkCard = ({
@@ -19,10 +24,31 @@ export const ScholarlyWorkCard = ({
   visibleFields = { authors: true, journal: true, doi: true },
   returnTo = ''
 }) => {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
   const [expandedLocal, setExpandedLocal] = useState(false);
   const expanded = forceExpanded || expandedLocal;
   const toggleExpanded = () => setExpandedLocal((prev) => !prev);
   const [popupAuthor, setPopupAuthor] = useState(null);
+  const { isBookmarked, isBookmarkLoading, toggleBookmark } = useBookmark(item.id);
+
+  const handleBookmarkClick = async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isBookmarkLoading) return;
+    try {
+      const result = await toggleBookmark();
+      if (result.needsAuth) {
+        toast.info(t('loginToBookmark'));
+        navigate('/login');
+        return;
+      }
+      toast.success(result.isBookmarked ? t('bookmarkAdded') : t('bookmarkRemoved'));
+    } catch (err) {
+      console.warn('Unable to update bookmark:', err);
+      toast.error(t('bookmarkUpdateError'));
+    }
+  };
 
   // Helper to choose badge colors based on label
   const getBadgeStyle = (label) => {
@@ -218,6 +244,17 @@ export const ScholarlyWorkCard = ({
                 {badge}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={handleBookmarkClick}
+              disabled={isBookmarkLoading}
+              className={`text-[10px] px-2 py-0.5 font-bold rounded flex items-center select-none cursor-pointer transition-all hover:opacity-90 active:scale-95 ${
+                isBookmarked ? 'bg-amber-600 text-white' : 'bg-white text-lens-link-blue border border-[#D8E7F4]'
+              } disabled:opacity-60`}
+            >
+              {isBookmarked ? <BookmarkCheck className="w-2.5 h-2.5 mr-0.5" /> : <Bookmark className="w-2.5 h-2.5 mr-0.5" />}
+              {isBookmarked ? t('bookmarked') : t('bookmarkSave')}
+            </button>
           </li>
         </ul>
       </div>

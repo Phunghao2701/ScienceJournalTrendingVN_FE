@@ -24,6 +24,14 @@ export default function Header() {
   const { logout } = auth;
   const email = useUserStore((state) => state.email);
   const userRole = auth.user?.role;
+  const accountLabel =
+    email ||
+    auth.user?.email ||
+    auth.user?.username ||
+    auth.user?.full_name ||
+    auth.user?.name ||
+    t("userLabel");
+  const isLoggedIn = Boolean(auth.isAuthenticated || auth.token || auth.user || email);
   const accountManagementRoute = userRole === 'ADMINISTRATOR' ? ROUTES.ADMIN_USERS : ROUTES.PROFILE;
   const language = i18n.language || "vi";
 
@@ -108,7 +116,7 @@ export default function Header() {
               </div>
 
               {/* Notification icon */}
-              {email && (
+              {isLoggedIn && (
                 <div
                   className="text-white hover:text-white-50 position-relative"
                   style={{ cursor: "pointer" }}
@@ -121,7 +129,7 @@ export default function Header() {
               )}
 
               {/* User Authentication Display/Buttons */}
-              {email ? (
+              {isLoggedIn ? (
                 <Dropdown align="end">
                   <Dropdown.Toggle
                     as="div"
@@ -158,10 +166,10 @@ export default function Header() {
                     <div className="px-3 py-2 text-xs font-bold text-main border-bottom pb-2 mb-1">
                       {t("userLabel")}
                       <div
-                        className="text-muted-custom font-normal mt-0.5 text-truncate"
+                      className="text-muted-custom font-normal mt-0.5 text-truncate"
                         style={{ fontSize: "10px", color: "var(--text-muted)" }}
                       >
-                        {email}
+                        {accountLabel}
                       </div>
                     </div>
                     <Dropdown.Item
@@ -174,6 +182,17 @@ export default function Header() {
                         className="text-muted-custom"
                       />
                       <span>{t("userDashboard")}</span>
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                      onClick={() => navigate('/bookmarks')}
+                      className="d-flex align-items-center gap-2 text-xs py-2 text-main"
+                    >
+                      <Icon
+                        icon="lucide:bookmark-check"
+                        width="14"
+                        className="text-muted-custom"
+                      />
+                      <span>{t("savedArticles")}</span>
                     </Dropdown.Item>
                     <Dropdown.Item
                       onClick={() => navigate(accountManagementRoute)}
@@ -331,7 +350,7 @@ export default function Header() {
             </div>
 
             {/* Mobile Auth options */}
-            {email ? (
+            {isLoggedIn ? (
               <div className="d-flex flex-column gap-3">
                 <Button
                   variant="outline-primary"
@@ -343,6 +362,17 @@ export default function Header() {
                 >
                   <Icon icon="lucide:layout-dashboard" className="me-1" />
                   {t("userDashboard")}
+                </Button>
+                <Button
+                  variant="outline-primary"
+                  className="w-100 rounded-pill py-2.5 text-xs font-bold"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    navigate('/bookmarks');
+                  }}
+                >
+                  <Icon icon="lucide:bookmark-check" className="me-1" />
+                  {t("savedArticles")}
                 </Button>
                 <div
                   className="d-flex align-items-center justify-content-center gap-2 p-2.5 rounded-3 border"
@@ -371,7 +401,7 @@ export default function Header() {
                       className="text-xxs text-muted"
                       style={{ fontSize: "9px", marginTop: "1px" }}
                     >
-                      {email}
+                      {accountLabel}
                     </div>
                   </div>
                 </div>

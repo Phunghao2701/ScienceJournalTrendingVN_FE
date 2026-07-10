@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   getArticleDetailApi,
   getArticlesListApi,
-  bookmarkArticleApi,
   getArticleCitingWorksApi,
   getArticleCitingWorksAnalyticsApi,
   getArticleReferencesApi,
 } from '../../article/api/articleApi';
+import useBookmark from '../../bookmark/hooks/useBookmark';
 import { PAPER_VN_SCOPE } from '../../article/utils/paperVnDiscoveryParams';
 import { mapArticleToCardItem } from './useScholarSearch';
 
@@ -19,7 +18,11 @@ import { mapArticleToCardItem } from './useScholarSearch';
  * through mapArticleToCardItem so clone components can render them consistently.
  */
 export const useScholarArticleDetail = (articleId, currentUser) => {
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const {
+    isBookmarked,
+    isBookmarkLoading,
+    toggleBookmark,
+  } = useBookmark(articleId);
 
   // 1. Article detail query
   const { data: article, isLoading, error, refetch } = useQuery({
@@ -36,15 +39,6 @@ export const useScholarArticleDetail = (articleId, currentUser) => {
     enabled: !!articleId,
     staleTime: 1000 * 60 * 5 // Cache 5 minutes
   });
-
-  // Initialize bookmark state from article data / local fallback
-  useEffect(() => {
-    if (article) {
-      const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${articleId}`;
-      const isLocallyBookmarked = localStorage.getItem(localBookmarkKey) === 'true';
-      setIsBookmarked(article.raw?.is_bookmarked || isLocallyBookmarked);
-    }
-  }, [article, currentUser, articleId]);
 
   // 2. Related data queries depend on the article's primary topic id
   const topicId = Number(article?.item?.topicId);
@@ -119,31 +113,10 @@ export const useScholarArticleDetail = (articleId, currentUser) => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // 3. Bookmark mutation (local-only, mirrors trendingVN's optimistic update)
-  const bookmarkMutation = useMutation({
-    mutationFn: async (newBookmarkState) => {
-      await bookmarkArticleApi(articleId, newBookmarkState);
-      return newBookmarkState;
-    },
-    onMutate: async (newBookmarkState) => {
-      setIsBookmarked(newBookmarkState);
-      const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${articleId}`;
-      localStorage.setItem(localBookmarkKey, newBookmarkState.toString());
-      return { previousState: !newBookmarkState };
-    },
-    onError: (err, newBookmarkState, context) => {
-      setIsBookmarked(context.previousState);
-      const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${articleId}`;
-      localStorage.setItem(localBookmarkKey, context.previousState.toString());
-      console.error('Error updating bookmark:', err);
-    },
-  });
-
   const handleBookmarkToggle = async () => {
     if (!currentUser) return false;
-    const newBookmarkState = !isBookmarked;
-    await bookmarkMutation.mutateAsync(newBookmarkState);
-    return true;
+    const result = await toggleBookmark();
+    return result.ok;
   };
 
   return {
@@ -151,7 +124,7 @@ export const useScholarArticleDetail = (articleId, currentUser) => {
     isLoading,
     error: error ? (error.response?.data?.message || error.message) : null,
     isBookmarked,
-    isBookmarking: bookmarkMutation.isPending,
+    isBookmarking: isBookmarkLoading,
     citingWorks: citingWorksData?.items || [],
     citingWorksTotal: citingWorksData?.total,
     isCitingWorksError,

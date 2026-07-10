@@ -1,9 +1,12 @@
-﻿import React from 'react';
+import React from 'react';
 import { Row, Col } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ScientificMathText from '../../../shared/components/ScientificMathText';
 import { toScientificPlainText } from '../../../shared/utils/scientificMath';
+import useBookmark from '../../bookmark/hooks/useBookmark';
+import { toast } from '../../../shared/utils/toast';
 
 export default function TrendingArticleCard({
   article,
@@ -16,6 +19,8 @@ export default function TrendingArticleCard({
   toggleAbstract,
 }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { isBookmarked, isBookmarkLoading, toggleBookmark } = useBookmark(article.article_id);
 
   const placeholder = '-';
   const publicationDate = article.publication_date || article.publication_year || placeholder;
@@ -87,6 +92,23 @@ export default function TrendingArticleCard({
     || (visibleColumns.doi && article.doi)
     || (visibleColumns.issn && article.journal_issn)
   );
+
+  const handleBookmarkClick = async (event) => {
+    event.stopPropagation();
+    if (isBookmarkLoading) return;
+    try {
+      const result = await toggleBookmark();
+      if (result.needsAuth) {
+        toast.info(t('loginToBookmark'));
+        navigate('/login');
+        return;
+      }
+      toast.success(result.isBookmarked ? t('bookmarkAdded') : t('bookmarkRemoved'));
+    } catch (err) {
+      console.warn('Unable to update bookmark:', err);
+      toast.error(t('bookmarkUpdateError'));
+    }
+  };
 
   return (
     <div key={article.article_id} className="tvn-article-card">
@@ -279,6 +301,15 @@ export default function TrendingArticleCard({
               <Icon icon="lucide:file-text" width="10" />
               Published
             </span>
+            <button
+              type="button"
+              className={`tvn-pill tvn-pill-collection ${isBookmarked ? 'is-active' : ''}`}
+              disabled={isBookmarkLoading}
+              onClick={handleBookmarkClick}
+            >
+              <Icon icon={isBookmarked ? 'lucide:bookmark-check' : 'lucide:bookmark-plus'} width="10" />
+              {isBookmarked ? t('bookmarked') : t('bookmarkSave')}
+            </button>
             <span
               className="tvn-pill tvn-pill-abstract"
               onClick={() => toggleAbstract(article.article_id)}

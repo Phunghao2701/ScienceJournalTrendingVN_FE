@@ -20,7 +20,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true
+  withCredentials: false
 });
 
 // Interceptor gửi token kèm request
@@ -29,6 +29,7 @@ api.interceptors.request.use(
     const token = useAuthStore.getState().token;
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
+      config.withCredentials = false;
     }
     return config;
   },

@@ -16,6 +16,7 @@ export default function useProfileForm() {
     deleteAccount,
     isLoading,
     error,
+    logout,
   } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -123,5 +124,6 @@ export default function useProfileForm() {
     fetchProfile,
     handleSave,
     handleDeleteAccount,
+    handleLogout: logout,
   };
 }

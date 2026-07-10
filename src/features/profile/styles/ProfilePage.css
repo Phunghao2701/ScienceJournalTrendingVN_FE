@@ -188,6 +188,44 @@
   opacity: 0.9;
 }
 
+.logout-card-btn {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 12px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.logout-card-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.sidebar-logout-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #ffe4e6;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-logout-btn:hover {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
 /* Danger Zone */
 .danger-zone {
   margin-top: 40px;

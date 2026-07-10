@@ -1,19 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   getArticleDetailApi,
   getArticlesListApi,
-  bookmarkArticleApi,
   getArticleCitingWorksApi,
   getArticleCitingWorksAnalyticsApi,
   getArticleReferencesApi,
 } from '../../article/api/articleApi';
+import useBookmark from '../../bookmark/hooks/useBookmark';
 import { normalizeArticleDetail } from '../../article/utils/articleFormatters';
 import { PAPER_VN_SCOPE } from '../../article/utils/paperVnDiscoveryParams';
 
 export const useTrendingArticleDetail = (id, currentUser) => {
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const {
+    isBookmarked,
+    isBookmarkLoading,
+    toggleBookmark,
+  } = useBookmark(id);
 
   // 1. Article detail query
   const { data: article, isLoading, error, refetch } = useQuery({
@@ -29,15 +33,6 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     },
     staleTime: 1000 * 60 * 5,
   });
-
-  // Initialize bookmark state from article data.
-  useEffect(() => {
-    if (article) {
-      const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${id}`;
-      const isLocallyBookmarked = localStorage.getItem(localBookmarkKey) === 'true';
-      setIsBookmarked(article.apiData.is_bookmarked || isLocallyBookmarked);
-    }
-  }, [article, currentUser, id]);
 
   // 2. Related data queries depend on the article topic ID.
   // The API returns primary_topic as a topic_id string rather than an object.
@@ -115,33 +110,10 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // 3. Mutation cho Bookmark
-  const bookmarkMutation = useMutation({
-    mutationFn: async (newBookmarkState) => {
-      await bookmarkArticleApi(id, newBookmarkState);
-      return newBookmarkState;
-    },
-    onMutate: async (newBookmarkState) => {
-      // Optimistic Update
-      setIsBookmarked(newBookmarkState);
-      const localBookmarkKey = `bookmark_${currentUser?.username}_${id}`;
-      localStorage.setItem(localBookmarkKey, newBookmarkState.toString());
-      return { previousState: !newBookmarkState };
-    },
-    onError: (err, newBookmarkState, context) => {
-      // Rollback
-      setIsBookmarked(context.previousState);
-      const localBookmarkKey = `bookmark_${currentUser?.username}_${id}`;
-      localStorage.setItem(localBookmarkKey, context.previousState.toString());
-      console.error('Error updating bookmark:', err);
-    },
-  });
-
   const handleBookmarkToggle = async () => {
     if (!currentUser) return false;
-    const newBookmarkState = !isBookmarked;
-    await bookmarkMutation.mutateAsync(newBookmarkState);
-    return true;
+    const result = await toggleBookmark();
+    return result.ok;
   };
 
   return {
@@ -149,7 +121,7 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     isLoading,
     error: error ? (error.response?.data?.message || error.message) : null,
     isBookmarked,
-    isBookmarking: bookmarkMutation.isPending,
+    isBookmarking: isBookmarkLoading,
     citingWorks: citingWorksData?.items || [],
     citingWorksTotal: citingWorksData?.total,
     isCitingWorksError,

@@ -32,6 +32,7 @@ import ArticleDetailEmpty from '../../article/components/ArticleDetailEmpty';
 import ArticleDetailError from '../../article/components/ArticleDetailError';
 import ArticlesTabContent from '../../journal/components/ArticlesTabContent';
 import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
+import ArticleComments from '../../comment/components/ArticleComments';
 
 import '../trendingVN.css';
 
@@ -43,6 +44,7 @@ export default function ArticleDetailPage() {
   const location = useLocation();
   const auth = useAuth();
   const currentUser = auth?.user;
+  const isLoggedIn = Boolean(auth?.user || auth?.token || auth?.isAuthenticated);
 
 
   const {
@@ -66,7 +68,7 @@ export default function ArticleDetailPage() {
     setSearchQuery,
     handleBookmarkToggle,
     refetch,
-  } = useTrendingArticleDetail(id, currentUser);
+  } = useTrendingArticleDetail(id, currentUser || isLoggedIn);
   
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { t } = useTranslation();
@@ -431,15 +433,15 @@ export default function ArticleDetailPage() {
 
 
   const handleBookmarkToggleClick = async () => {
-    if (!currentUser) {
+    if (!isLoggedIn) {
       setShowLoginModal(true);
       return;
     }
     try {
       await handleBookmarkToggle();
-      toast.success(isBookmarked ? 'Removed article from saved list' : 'Article saved successfully');
+      toast.success(isBookmarked ? t('bookmarkRemoved') : t('bookmarkAdded'));
     } catch {
-      toast.error('Error updating saved list');
+      toast.error(t('bookmarkUpdateError'));
     }
   };
 
@@ -951,6 +953,15 @@ ER  - `;
                 
                 {/* Action bar - Share only */}
                 <div className="tvn-actions-bar">
+                  <Button
+                    variant="link"
+                    className="tvn-action-btn"
+                    disabled={isBookmarkLoading}
+                    onClick={handleBookmarkToggleClick}
+                  >
+                    <Icon icon={isBookmarked ? 'lucide:bookmark-check' : 'lucide:bookmark-plus'} />
+                    <span>{isBookmarked ? t('bookmarked') : t('bookmarkSave')}</span>
+                  </Button>
                   <Button variant="link" className="tvn-action-btn" onClick={handleShareArticle}>
                     <Icon icon="lucide:share-2" />
                     <span>Share Article</span>
@@ -1339,6 +1350,11 @@ ER  - `;
                 )}
               </div>
             ) : null}
+
+            <ArticleComments
+              articleId={article?.article_id || id}
+              articleIds={[article?.id, article?.display_id, id]}
+            />
 
           </main>
       </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * UserStatusBadge Component
@@ -8,6 +9,7 @@ import React from 'react';
  * @param {string} props.status - User status: 'Active', 'Inactive', 'Pending'
  */
 export default function UserStatusBadge({ status }) {
+  const { t } = useTranslation();
   // Map color points and font color values for statuses
   const statusConfig = {
     Active: {
@@ -36,7 +38,7 @@ export default function UserStatusBadge({ status }) {
           backgroundColor: config.dotColor,
         }}
       />
-      <span>{status}</span>
+      <span>{t(`accountStatus${status}`, { defaultValue: status })}</span>
     </div>
   );
 }

@@ -114,7 +114,7 @@ export default function SubmitArticlePage() {
       
       setIsSubmitting(true);
       setIsSubmitting(false);
-      alert('ChÆ°a cÃ³ API submit PDF article. ÄÃ£ xÃ³a dá»¯ liá»‡u mock khá»i khu vá»±c nÃ y.');
+      alert('Chưa có API gửi bài PDF. Dữ liệu mẫu trong khu vực này đã được xóa.');
     }
   };
 

@@ -5,6 +5,7 @@ import AnalysisTimeSeriesChart from './AnalysisTimeSeriesChart';
 import AnalysisEntityPanel from './AnalysisEntityPanel';
 import AnalysisTrendingArticles from './AnalysisTrendingArticles';
 import { isAnalysisCohortEmpty } from '../../utils/paperVnAnalysis';
+import { useTranslation } from 'react-i18next';
 
 const fmt = (value) => new Intl.NumberFormat().format(Number(value || 0));
 
@@ -17,11 +18,12 @@ export default function AnalysisDashboard({
   onRetry,
   onYearRangeChange,
 }) {
+  const { t } = useTranslation();
   if (isLoading && !analysis) {
     return (
       <div className="analysis-state">
         <Spinner animation="border" size="sm" />
-        <span>Loading analysis dashboard...</span>
+        <span>{t('loadingAnalysis')}</span>
       </div>
     );
   }
@@ -32,11 +34,11 @@ export default function AnalysisDashboard({
         <div className="d-flex align-items-start gap-2">
           <Icon icon="lucide:alert-circle" width="18" className="mt-1" />
           <div>
-            <strong>Unable to load analysis</strong>
+            <strong>{t('analysisLoadError')}</strong>
             <div>{error}</div>
             {onRetry && (
               <Button variant="outline-danger" size="sm" className="mt-2" onClick={onRetry}>
-                Try again
+                {t('tryAgain')}
               </Button>
             )}
           </div>
@@ -49,8 +51,8 @@ export default function AnalysisDashboard({
     return (
       <div className="analysis-state empty">
         <Icon icon="lucide:bar-chart-3" width="28" />
-        <strong>No analysis cohort found</strong>
-        <span>Try broadening the search or removing a filter.</span>
+        <strong>{t('noAnalysisCohort')}</strong>
+        <span>{t('broadenSearchHint')}</span>
       </div>
     );
   }
@@ -70,16 +72,16 @@ export default function AnalysisDashboard({
       />
       <div className="analysis-chart-grid">
         <AnalysisTimeSeriesChart
-          title="Works over time"
-          description="Zero-filled publication counts across the backend window."
+          title={t('worksOverTime')}
+          description={t('worksOverTimeDescription')}
           years={years}
           rows={analysis.works_over_time}
           valueKey="count"
           color="#1976D2"
         />
         <AnalysisTimeSeriesChart
-          title="Citations over time"
-          description="Only valid imported citation-history years are counted."
+          title={t('citationsOverTime')}
+          description={t('citationsOverTimeDescription')}
           years={years}
           rows={analysis.citations_over_time}
           valueKey="citations"

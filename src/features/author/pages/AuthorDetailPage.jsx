@@ -7,13 +7,20 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Button, Card, Nav, Collapse, Form } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
-import { useTranslation } from 'react-i18next';
 import Header from '../../landing/components/Header';
 import useAuthors from '../hooks/useAuthors';
 import useAuth from '../../auth/hooks/useAuth';
-import { useBookmarkStore } from '../../bookmark/store/bookmarkStore';
+import { bookmarkArticleApi } from '../../article/api/articleApi';
 import { toast } from '../../../shared/utils/toast';
 import './AuthorDetailPage.css';
+
+// Formats large axis values compactly (e.g. 12141930 -> "12.1M") so long numbers
+// never overflow the chart's fixed padding and get clipped by the card border.
+function formatCompactAxisNumber(num) {
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  return num.toLocaleString();
+}
 
 // SVG Bar Chart Component for Scholarly Works & Citations Over Time
 function AuthorWorksChart({ data }) {
@@ -124,25 +131,38 @@ function AuthorWorksChart({ data }) {
         );
       })()}
 
-      {/* X Axis Labels */}
-      {data.map((d, i) => {
-        const x = PAD.left + i * (barW + gap) + gap * 0.5 + barW * 0.5;
-        return (
-          <text
-            key={i}
-            x={x}
-            y={H - 6}
-            textAnchor="middle"
-            style={{ fontSize: '8px', fill: 'var(--text-muted)', fontFamily: 'Inter' }}
-          >
-            {d.year}
-          </text>
-        );
-      })}
+      {/* X Axis Labels (thinned out so long histories don't overlap) */}
+      {(() => {
+        const maxLabels = Math.max(1, Math.floor(chartW / 28));
+        const labelStep = Math.max(1, Math.ceil(data.length / maxLabels));
+        const lastIndex = data.length - 1;
+        const indices = [];
+        for (let i = 0; i < data.length; i += labelStep) indices.push(i);
+        if (indices[indices.length - 1] !== lastIndex) {
+          // Drop the closest stepped label if it would crowd the forced last one.
+          if (lastIndex - indices[indices.length - 1] < labelStep) indices.pop();
+          indices.push(lastIndex);
+        }
+        return indices.map((i) => {
+          const d = data[i];
+          const x = PAD.left + i * (barW + gap) + gap * 0.5 + barW * 0.5;
+          return (
+            <text
+              key={i}
+              x={x}
+              y={H - 6}
+              textAnchor="middle"
+              style={{ fontSize: '8px', fill: 'var(--text-muted)', fontFamily: 'Inter' }}
+            >
+              {d.year}
+            </text>
+          );
+        });
+      })()}
 
       {/* Y Axis Left Labels (Works) */}
       <text x={PAD.left - 5} y={PAD.top + 3} textAnchor="end" style={{ fontSize: '8px', fill: 'var(--text-muted)', fontFamily: 'Inter' }}>
-        {maxWorks}
+        {formatCompactAxisNumber(maxWorks)}
       </text>
       <text x={PAD.left - 5} y={PAD.top + chartH + 3} textAnchor="end" style={{ fontSize: '8px', fill: 'var(--text-muted)', fontFamily: 'Inter' }}>
         0
@@ -150,7 +170,7 @@ function AuthorWorksChart({ data }) {
 
       {/* Y Axis Right Labels (Citations) */}
       <text x={PAD.left + chartW + 5} y={PAD.top + 3} textAnchor="start" style={{ fontSize: '8px', fill: 'var(--text-muted)', fontFamily: 'Inter' }}>
-        {maxCitations}
+        {formatCompactAxisNumber(maxCitations)}
       </text>
       <text x={PAD.left + chartW + 5} y={PAD.top + chartH + 3} textAnchor="start" style={{ fontSize: '8px', fill: 'var(--text-muted)', fontFamily: 'Inter' }}>
         0
@@ -162,12 +182,8 @@ function AuthorWorksChart({ data }) {
 export default function AuthorDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const auth = useAuth();
-  const isLoggedIn = Boolean(auth?.user || auth?.token || auth?.isAuthenticated);
-  const bookmarkIds = useBookmarkStore((state) => state.bookmarkIds);
-  const loadBookmarks = useBookmarkStore((state) => state.loadBookmarks);
-  const toggleBookmarkInStore = useBookmarkStore((state) => state.toggleBookmark);
+  const currentUser = auth?.user;
 
   const {
     currentAuthor,
@@ -191,23 +207,18 @@ export default function AuthorDetailPage() {
     }
   }, [id, fetchAuthorDetailsFull]);
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      loadBookmarks().catch(() => {});
-    }
-  }, [isLoggedIn, loadBookmarks]);
-
-  // Sync bookmark state from the shared backend-backed store.
+  // Load bookmarks state
   useEffect(() => {
     if (authorArticles?.length > 0) {
       const map = {};
       authorArticles.forEach((art) => {
         const artId = art.article_id || art.id;
-        map[artId] = bookmarkIds.has(String(artId));
+        const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${artId}`;
+        map[artId] = localStorage.getItem(localBookmarkKey) === 'true';
       });
       setBookmarkedMap(map);
     }
-  }, [authorArticles, bookmarkIds]);
+  }, [authorArticles, currentUser]);
 
   const authorName = currentAuthor?.full_name ?? currentAuthor?.display_name ?? currentAuthor?.name ?? 'Tác giả';
   const primaryAffiliation = currentAuthor?.institution_1 ?? currentAuthor?.last_known_institution ?? 'Đang cập nhật đơn vị';
@@ -232,20 +243,20 @@ export default function AuthorDetailPage() {
 
   // Bookmark Toggle logic
   const handleBookmarkToggle = async (articleId) => {
-    if (!isLoggedIn) {
-      toast.info(t('loginToBookmark'));
-      return;
-    }
     const isBookmarked = bookmarkedMap[articleId];
+    const localBookmarkKey = `bookmark_${currentUser?.username || 'guest'}_${articleId}`;
     const nextState = !isBookmarked;
 
     try {
-      await toggleBookmarkInStore(articleId, nextState);
+      await bookmarkArticleApi(articleId);
       setBookmarkedMap((prev) => ({ ...prev, [articleId]: nextState }));
-      toast.success(nextState ? t('bookmarkAdded') : t('bookmarkRemoved'));
+      localStorage.setItem(localBookmarkKey, String(nextState));
+      toast.success(nextState ? 'Đã thêm bài báo vào project.' : 'Đã xóa bài báo khỏi project.');
     } catch (err) {
-      console.warn('Bookmark API error:', err);
-      toast.error(t('bookmarkUpdateError'));
+      console.warn('Bookmark API error, toggling state locally:', err);
+      setBookmarkedMap((prev) => ({ ...prev, [articleId]: nextState }));
+      localStorage.setItem(localBookmarkKey, String(nextState));
+      toast.warning('Không thể đồng bộ server, đã cập nhật tạm trên trình duyệt.');
     }
   };
 
@@ -327,10 +338,10 @@ export default function AuthorDetailPage() {
   }, [authorArticles, sortKey]);
 
   return (
-    <div className="author-detail-page grid-bg">
+    <div className="author-detail-page">
       <Header />
 
-      <Container fluid className="position-relative z-1 px-3 px-xl-5">
+      <Container fluid className="position-relative z-1 px-3 px-xl-5 pt-4">
         {/* BREADCRUMB */}
         <div className="lens-breadcrumb mb-4">
           <span className="lens-breadcrumb-link" onClick={() => navigate('/')}>Tổng quan</span>

@@ -1140,3 +1140,182 @@ select.account-form-input {
     min-height: 38px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * SHARED PAGINATION SYSTEM
+ * Used by PaginationControls (shared component) across all pages.
+ * admin.css extends these styles for the admin layout wrapper (.admin-pagination-bar).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Pagination nav row ─────────────────────────────────────────────────── */
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Horizontal spacing between page buttons and ellipsis */
+  gap: 4px;
+  margin-top: 16px;
+}
+
+/* ─── Base button: shared by page-number and Prev/Next buttons ───────────── */
+.admin-pagination__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background-color: var(--bg-card);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.8125rem; /* 13 px — slightly crisper than 0.8rem */
+  line-height: 1;
+  cursor: pointer;
+  /* Animate only the properties we actually change */
+  transition:
+    background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color     var(--motion-duration-fast) var(--motion-ease-standard),
+    color            var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow       var(--motion-duration-fast) var(--motion-ease-standard),
+    transform        var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+/* ─── Prev / Next arrow buttons ─────────────────────────────────────────── */
+.admin-pagination__btn--nav {
+  min-width: 34px;
+  padding: 0 8px;
+  /* Keep arrows in the main text color so they feel like controls, not page numbers */
+  color: var(--text-main);
+}
+
+/* Hover: light primary tint + colored border + slight upward lift */
+.admin-pagination__btn:hover:not(:disabled) {
+  background-color: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+  /* 1px lift gives tactile feedback without distracting the eye */
+  transform: translateY(-1px);
+}
+
+/* Press: cancel the lift */
+.admin-pagination__btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Disabled state (Prev on page 1, Next on last page) */
+.admin-pagination__btn:disabled {
+  /* 0.38 = Material Design 3 disabled-content opacity token */
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* ─── Active (current) page — solid fill + ambient glow ring ─────────────── */
+.admin-pagination__btn--active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  /*
+   * White text on a saturated blue background (--primary: #1976d2).
+   * Using a literal #fff here is intentional and correct by WCAG AA contrast
+   * (4.6:1 ratio). A CSS variable would add indirection without benefit since
+   * this color is always white regardless of theme.
+   */
+  color: #fff;
+  /* Soft halo that echoes the brand color without distracting */
+  box-shadow: 0 0 0 3px var(--glow-accent);
+  font-weight: 600;
+}
+
+/* Active page hover: shift to darker primary, keep white text */
+.admin-pagination__btn--active:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: #fff; /* same rationale as above */
+}
+
+/* ─── Ellipsis placeholder (…) ───────────────────────────────────────────── */
+.admin-pagination__ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 34px;
+  /* Recede visually relative to active page numbers */
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  user-select: none;
+  /* Clickable — indicates the user can jump to a hidden page */
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  border-radius: 6px;
+  transition: color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.admin-pagination__ellipsis:hover {
+  color: var(--primary);
+}
+
+/* ─── Jumper input (replaces ellipsis on click) ───────────────────────────── */
+.admin-pagination__jumper-input {
+  /* Match the height and feel of a page button */
+  width: 52px;
+  height: 34px;
+  padding: 0 6px;
+  border-radius: 8px;
+  border: 1.5px solid var(--primary);
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: center;
+  outline: none;
+  /* Focus ring uses primary color to match active state */
+  box-shadow: 0 0 0 3px var(--glow-accent);
+  /* Remove browser number input spinner arrows */
+  -moz-appearance: textfield;
+}
+
+.admin-pagination__jumper-input::-webkit-inner-spin-button,
+.admin-pagination__jumper-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
+/* ─── Pagination bar wrapper (summary text + controls + spacer) ──────────── */
+.admin-pagination-bar,
+.admin-journal-pagination-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0 0;
+}
+
+.admin-pagination-bar > .admin-pagination-bar__center,
+.admin-journal-pagination-bar > .admin-pagination {
+  justify-self: center;
+}
+
+/* Remove the extra top margin when pagination sits inside the bar wrapper */
+.admin-pagination-bar > .admin-pagination-bar__center .admin-pagination,
+.admin-journal-pagination-bar .admin-pagination {
+  margin-top: 0;
+}
+
+/* Stack vertically on very narrow screens */
+@media (max-width: 576px) {
+  .admin-pagination-bar,
+  .admin-journal-pagination-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

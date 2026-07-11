@@ -1,7 +1,7 @@
 /**
- * - Hiển thị bảng "Volume & Issue Overview" ở cuối Admin Dashboard,
- *   gồm cột Volume, Total Issues, Publication Date, Status, Progress, Actions.
- * - Có nút "Export CSV" gọi API backend để tải file CSV thật.
+ * - Hi?n th? b?ng "Volume & Issue Overview" ? cu?i Admin Dashboard,
+ *   g?m c?t Volume, Total Issues, Publication Date, Status, Progress, Actions.
+ * - C� n�t "Export CSV" g?i API backend d? t?i file CSV th?t.
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import StatusBadge from '../shared/StatusBadge';
 import AdminProgressBar from '../layout/AdminProgressBar';
 import Pagination from '../../../../shared/components/Pagination';
 import { exportAdminVolumeIssueStatusCsv } from '../../api/adminDashboard.api';
+import { useTranslation } from 'react-i18next';
 
 export default function VolumeIssueTable({
   items = [],
@@ -21,6 +22,7 @@ export default function VolumeIssueTable({
   limit = 5,
 
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const isPreview = window.location.pathname.startsWith('/admin-preview');
   const basePath = isPreview ? '/admin-preview' : '/admin';
@@ -42,8 +44,8 @@ export default function VolumeIssueTable({
       window.URL.revokeObjectURL(downloadUrl);
     } catch (downloadError) {
       alert(downloadError.response?.status === 403
-        ? 'Backend từ chối quyền admin: token hiện tại không có role ADMINISTRATOR.'
-        : 'Không thể tải file CSV từ backend.');
+        ? t('adminExportForbidden')
+        : t('adminExportFailed'));
     } finally {
       setExporting(false);
     }
@@ -55,33 +57,33 @@ export default function VolumeIssueTable({
 
   return (
     <div className="admin-card admin-volume-card">
-      {/* Header card: tiêu đề bên trái, nút Export CSV bên phải */}
+      {/* Header card: ti�u d? b�n tr�i, n�t Export CSV b�n ph?i */}
       <div className="admin-volume-card__header">
-        <h3 className="admin-card__title">Volume &amp; Issue Overview</h3>
+        <h3 className="admin-card__title">{t('volumeIssueOverview')}</h3>
         <button type="button" className="admin-export-btn" onClick={handleExportCsv} disabled={loading || exporting}>
           <Icon icon={exporting ? 'lucide:loader-2' : 'lucide:download'} />
-          <span>{exporting ? 'Exporting...' : 'Export CSV'}</span>
+          <span>{exporting ? t('exporting') : t('exportCsv')}</span>
         </button>
       </div>
 
       {loading ? (
-        <p className="admin-muted-text mb-0">Đang tải Volume & Issue Overview...</p>
+        <p className="admin-muted-text mb-0">{t('volumeIssueLoading')}</p>
       ) : error ? (
         <p className="admin-error-text mb-0">{error}</p>
       ) : safeItems.length === 0 ? (
-        <p className="admin-muted-text mb-0">Chưa có dữ liệu Volume & Issue Overview.</p>
+        <p className="admin-muted-text mb-0">{t('volumeIssueEmpty')}</p>
       ) : (
         <>
           <div className="admin-table-wrapper">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Volume</th>
-                  <th>Total Issues</th>
-                  <th>Publication Date</th>
-                  <th>Status</th>
-                  <th>Progress</th>
-                  <th className="admin-table__actions-col">Actions</th>
+                  <th>{t('adminVolumes')}</th>
+                  <th>{t('totalIssues')}</th>
+                  <th>{t('publicationDate')}</th>
+                  <th>{t('status')}</th>
+                  <th>{t('progress')}</th>
+                  <th className="admin-table__actions-col">{t('actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -111,7 +113,7 @@ export default function VolumeIssueTable({
                       <button
                         type="button"
                         className="admin-table__icon-btn"
-                        aria-label="Open volume repository"
+                        aria-label={t('openVolumeRepository')}
                         onClick={(event) => {
                           event.stopPropagation();
                           handleOpenRepository();
@@ -131,10 +133,10 @@ export default function VolumeIssueTable({
             currentPage={currentPage}
             limit={limit}
             onPageChange={onPageChange}
-            entityName="volumes"
+            entityName={t('adminVolumes').toLowerCase()}
           />
         </>
       )}
     </div>
   );
-}
+}

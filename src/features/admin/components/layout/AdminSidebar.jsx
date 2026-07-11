@@ -1,8 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import Icon from '../../../shared/components/Icon';
 import ADMIN_MENU from '../constants/adminMenu';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminSidebar() {
+  const { t } = useTranslation();
   const location = useLocation();
   const isPreview = location.pathname.startsWith('/admin-preview');
 
@@ -48,11 +50,11 @@ export default function AdminSidebar() {
       <div className="admin-sidebar__footer">
         <a href="#support" className="admin-sidebar__item">
           <Icon icon="lucide:help-circle" className="admin-sidebar__item-icon" />
-          <span>Support</span>
+          <span>{t('support')}</span>
         </a>
         <a href="/login" className="admin-sidebar__item">
           <Icon icon="lucide:log-out" className="admin-sidebar__item-icon" />
-          <span>Sign Out</span>
+          <span>{t('logoutLabel')}</span>
         </a>
       </div>
     </aside>

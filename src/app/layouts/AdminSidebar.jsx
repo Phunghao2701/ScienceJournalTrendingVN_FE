@@ -1,16 +1,17 @@
-import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Nav } from 'react-bootstrap';
 import Icon from '../../shared/components/Icon';
 import Logo from '../../shared/components/Logo';
 import useAuth from '../../features/auth/hooks/useAuth';
 import ROUTES from '../routes/routePaths';
+import { useTranslation } from 'react-i18next';
 
 /**
  * AdminSidebar Component
  * Render thanh điều hướng sidebar bên trái của trang Admin theo mẫu thiết kế.
  */
 export default function AdminSidebar() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
@@ -18,11 +19,11 @@ export default function AdminSidebar() {
 
   // Danh sách các mục menu trên sidebar - Sử dụng ROUTES thay vì hardcode
   const menuItems = [
-    { label: 'Dashboard', path: ROUTES.ADMIN_DASHBOARD, icon: 'lucide:layout-dashboard' },
-    { label: 'Journals', path: ROUTES.ADMIN_JOURNALS, icon: 'lucide:book-open' },
-    { label: 'Articles', path: ROUTES.ADMIN_ARTICLES, icon: 'lucide:file-text' },
-    { label: 'Volumes', path: ROUTES.ADMIN_REPOSITORY, icon: 'lucide:layers' },
-    { label: 'Account', path: ROUTES.ADMIN_USERS, icon: 'lucide:user' },
+    { label: t('adminDashboard'), path: ROUTES.ADMIN_DASHBOARD, icon: 'lucide:layout-dashboard' },
+    { label: t('adminJournals'), path: ROUTES.ADMIN_JOURNALS, icon: 'lucide:book-open' },
+    { label: t('adminArticles'), path: ROUTES.ADMIN_ARTICLES, icon: 'lucide:file-text' },
+    { label: t('adminVolumes'), path: ROUTES.ADMIN_REPOSITORY, icon: 'lucide:layers' },
+    { label: t('adminAccount'), path: ROUTES.ADMIN_USERS, icon: 'lucide:user' },
   ];
 
   /**
@@ -73,7 +74,7 @@ export default function AdminSidebar() {
           className="admin-sidebar__item"
         >
           <Icon icon="lucide:help-circle" width="18" className="admin-sidebar__item-icon" />
-          <span>Support</span>
+          <span>{t('support')}</span>
         </Nav.Link>
 
         {/* Sign Out Button */}
@@ -82,7 +83,7 @@ export default function AdminSidebar() {
           className="admin-sidebar__item admin-sidebar__item--danger"
         >
           <Icon icon="lucide:log-out" width="18" className="admin-sidebar__item-icon" />
-          <span>Sign Out</span>
+          <span>{t('logoutLabel')}</span>
         </Nav.Link>
       </Nav>
     </aside>

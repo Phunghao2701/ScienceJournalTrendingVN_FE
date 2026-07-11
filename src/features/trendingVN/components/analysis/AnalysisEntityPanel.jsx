@@ -1,18 +1,20 @@
 import { useMemo, useState } from 'react';
 import { Button, ButtonGroup, Table } from 'react-bootstrap';
 import { formatGrowthRate, formatTrendingScore } from '../../utils/paperVnAnalysis';
+import { useTranslation } from 'react-i18next';
 
 const ENTITY_TYPES = [
-  { key: 'institutions', label: 'Institutions', filter: 'institution_id' },
-  { key: 'authors', label: 'Authors', filter: 'author_id' },
-  { key: 'journals', label: 'Journals', filter: 'journal_id' },
-  { key: 'topics', label: 'Topics', filter: 'topic_id' },
-  { key: 'keywords', label: 'Keywords', filter: 'keyword_id' },
+  { key: 'institutions', labelKey: 'statInstitutions', filter: 'institution_id' },
+  { key: 'authors', labelKey: 'statAuthors', filter: 'author_id' },
+  { key: 'journals', labelKey: 'statJournals', filter: 'journal_id' },
+  { key: 'topics', labelKey: 'statTopics', filter: 'topic_id' },
+  { key: 'keywords', labelKey: 'colKeywords', filter: 'keyword_id' },
 ];
 
 const fmt = (value) => new Intl.NumberFormat().format(Number(value || 0));
 
 export default function AnalysisEntityPanel({ top, growth, onEntityClick }) {
+  const { t } = useTranslation();
   const [entityType, setEntityType] = useState('institutions');
   const [mode, setMode] = useState('top');
   const activeMeta = ENTITY_TYPES.find((item) => item.key === entityType) || ENTITY_TYPES[0];
@@ -30,12 +32,12 @@ export default function AnalysisEntityPanel({ top, growth, onEntityClick }) {
     <section className="analysis-section">
       <div className="analysis-section-header">
         <div>
-          <h2>Entity rankings</h2>
-          <p>Top and Growth are separate backend-ranked lists for the selected entity type.</p>
+          <h2>{t('entityRankings')}</h2>
+          <p>{t('entityRankingsDescription')}</p>
         </div>
         <ButtonGroup size="sm" className="analysis-mode-toggle">
-          <Button variant={mode === 'top' ? 'primary' : 'outline-secondary'} onClick={() => setMode('top')}>Top</Button>
-          <Button variant={mode === 'growth' ? 'primary' : 'outline-secondary'} onClick={() => setMode('growth')}>Growth</Button>
+          <Button variant={mode === 'top' ? 'primary' : 'outline-secondary'} onClick={() => setMode('top')}>{t('top')}</Button>
+          <Button variant={mode === 'growth' ? 'primary' : 'outline-secondary'} onClick={() => setMode('growth')}>{t('growth')}</Button>
         </ButtonGroup>
       </div>
 
@@ -47,24 +49,24 @@ export default function AnalysisEntityPanel({ top, growth, onEntityClick }) {
             className={item.key === entityType ? 'active' : ''}
             onClick={() => setEntityType(item.key)}
           >
-            {item.label}
+            {t(item.labelKey)}
           </button>
         ))}
       </div>
 
       {rows.length === 0 ? (
-        <div className="analysis-empty">No {mode} rows returned for {activeMeta.label.toLowerCase()}.</div>
+        <div className="analysis-empty">{t('noArticlesFound')}</div>
       ) : (
         <Table responsive hover className="analysis-table mb-0">
           <thead>
             <tr>
-              <th>Rank</th>
-              <th>Name</th>
-              <th className="text-end">Current</th>
-              <th className="text-end">Previous</th>
-              <th className="text-end">Growth</th>
-              <th className="text-end">Rate</th>
-              {mode === 'growth' && <th className="text-end">Trending score</th>}
+              <th>{t('rank')}</th>
+              <th>{t('name')}</th>
+              <th className="text-end">{t('current')}</th>
+              <th className="text-end">{t('previous')}</th>
+              <th className="text-end">{t('growth')}</th>
+              <th className="text-end">{t('rate')}</th>
+              {mode === 'growth' && <th className="text-end">{t('trendingScore')}</th>}
             </tr>
           </thead>
           <tbody>

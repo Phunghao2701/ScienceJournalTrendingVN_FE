@@ -50,7 +50,7 @@ function ArticleMobileCard({ article, index, topicClassName, onDetailClick }) {
               <Icon icon={isBookmarked ? 'lucide:bookmark-check' : 'lucide:bookmark-plus'} width="14" />
             </Button>
             <span className={`article-topic-badge ${topicClassName}`}>
-              {article.primary_topic || 'Unclassified'}
+              {article.primary_topic || t('unclassified')}
             </span>
             {article.is_open_access && (
               <span className="article-oa-badge">
@@ -84,7 +84,7 @@ function ArticleMobileCard({ article, index, topicClassName, onDetailClick }) {
             </div>
           </div>
           <span className="article-action-link d-flex align-items-center gap-0.5">
-            Details
+            {t('details')}
             <Icon icon="lucide:arrow-right" width="12" />
           </span>
         </div>
@@ -94,6 +94,7 @@ function ArticleMobileCard({ article, index, topicClassName, onDetailClick }) {
 }
 
 export default function ArticleTable({ articles, isLoading, onDetailClick, onClearFilters }) {
+  const { t } = useTranslation();
   
   // Renders a loader with multiple shimmer rows
   const renderSkeletons = () => (
@@ -186,9 +187,9 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
         <div className="article-empty-icon mb-3">
           <Icon icon="lucide:search-code" width="30" height="30" />
         </div>
-        <h5 className="text-main font-weight-bold mb-2 font-display">No matching articles found</h5>
+        <h5 className="text-main font-weight-bold mb-2 font-display">{t('noMatchingArticles')}</h5>
         <p className="text-muted-custom mb-4 text-sm max-w-md">
-          Try changing the keyword or clearing the current search filters to find more results.
+          {t('noMatchingArticlesHint')}
         </p>
         {onClearFilters && (
           <Button 
@@ -197,7 +198,7 @@ export default function ArticleTable({ articles, isLoading, onDetailClick, onCle
             className="d-flex align-items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-pill"
           >
             <Icon icon="lucide:rotate-ccw" width="14" />
-            <span>Clear filters</span>
+            <span>{t('clearFilters')}</span>
           </Button>
         )}
       </div>

@@ -14,8 +14,8 @@ const ROUTES = {
   FORGOT_PASSWORD:       "/forgot-password",
   RESET_PASSWORD:        "/reset-password",
 
-  // Tổng quan & Bản đồ phân bố địa lý
-  DASHBOARD:             "/dashboard",
+  // Tổng quan (trang TrendingVN) & Bản đồ phân bố địa lý
+  DASHBOARD:             "/",
   GEOGRAPHY:             "/geography",
 
   // Quản lý Dự án (Project)

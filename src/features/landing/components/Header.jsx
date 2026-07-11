@@ -161,17 +161,6 @@ export default function Header() {
                       </div>
                     </div>
                     <Dropdown.Item
-                      onClick={() => navigate(ROUTES.DASHBOARD)}
-                      className="d-flex align-items-center gap-2 text-xs py-2 text-main"
-                    >
-                      <Icon
-                        icon="lucide:layout-dashboard"
-                        width="14"
-                        className="text-muted-custom"
-                      />
-                      <span>{t("userDashboard")}</span>
-                    </Dropdown.Item>
-                    <Dropdown.Item
                       onClick={() => navigate('/bookmarks')}
                       className="d-flex align-items-center gap-2 text-xs py-2 text-main"
                     >
@@ -342,17 +331,6 @@ export default function Header() {
             {/* Mobile Auth options */}
             {isLoggedIn ? (
               <div className="d-flex flex-column gap-3">
-                <Button
-                  variant="outline-primary"
-                  className="w-100 rounded-pill py-2.5 text-xs font-bold"
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    navigate(ROUTES.DASHBOARD);
-                  }}
-                >
-                  <Icon icon="lucide:layout-dashboard" className="me-1" />
-                  {t("userDashboard")}
-                </Button>
                 <Button
                   variant="outline-primary"
                   className="w-100 rounded-pill py-2.5 text-xs font-bold"

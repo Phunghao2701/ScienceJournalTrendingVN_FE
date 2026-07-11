@@ -5,6 +5,7 @@
  */
 import axios from 'axios';
 import { useAuthStore } from '../../app/store/authStore';
+import { shouldSkipTokenRefresh } from '../utils/authRefresh';
 
 /**
  * Axios instance dùng chung cho toàn bộ FE.
@@ -56,8 +57,15 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Mỗi request chỉ được refresh một lần để tránh vòng lặp vô hạn khi token lỗi
-    if (error.response && error.response.status === 401 && originalRequest && !originalRequest._retry) {
+    // Mỗi request chỉ được refresh một lần để tránh vòng lặp vô hạn khi token lỗi.
+    // Các endpoint xác thực (login/register/google/refresh) bị loại trừ: 401 ở đây
+    // nghĩa là sai thông tin đăng nhập, không phải phiên hết hạn — nếu vẫn thử refresh,
+    // lỗi "Refresh token không được để trống" (do chưa từng đăng nhập) sẽ ghi đè lên
+    // thông báo lỗi đăng nhập thật.
+    if (
+      error.response && error.response.status === 401 && originalRequest && !originalRequest._retry
+      && !shouldSkipTokenRefresh(originalRequest.url)
+    ) {
       originalRequest._retry = true;
 
       try {

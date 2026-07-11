@@ -33,7 +33,7 @@ export default function TrendingArticleCard({
     .filter((keyword) => keyword.name);
   const citationCount = article.citation_count ?? article.semantic_citation_count ?? 0;
   const referenceCount = article.reference_count ?? 0;
-  const accessLabel = article.is_open_access ? 'Open Access' : 'Closed Access';
+  const accessLabel = article.is_open_access ? t('openAccess') : t('closedAccess');
   const publicationDateDetail = article.publication_date
     && String(article.publication_date) !== String(article.publication_year || '')
     ? article.publication_date
@@ -159,7 +159,7 @@ export default function TrendingArticleCard({
           )}
 
           <div className="tvn-detail-line">
-            <strong>Journal Article</strong>
+            <strong>{t('journalArticle')}</strong>
             {visibleColumns.journal && article.journal_name && (
               <>
                 {' '}
@@ -188,7 +188,7 @@ export default function TrendingArticleCard({
 
           {visibleColumns.authors && (
             <div className="tvn-detail-line">
-              <strong>Authors: </strong>
+              <strong>{t('authorsLabel')}: </strong>
               {article.authors && article.authors.length > 0 ? (
                 article.authors.map((au, aIdx) => (
                   <button
@@ -258,7 +258,7 @@ export default function TrendingArticleCard({
             <div className="tvn-detail-line">
               {visibleColumns.citations && (
                 <>
-                  <strong>Citation Count:</strong>{' '}
+                  <strong>{t('citationCount')}:</strong>{' '}
                   <span style={{ color: 'var(--primary)', fontWeight: 700 }}>
                     {citationCount}
                   </span>
@@ -267,7 +267,7 @@ export default function TrendingArticleCard({
               {visibleColumns.references && (
                 <>
                   {visibleColumns.citations ? ' | ' : ''}
-                  <strong>Reference Count:</strong> {referenceCount}
+                  <strong>{t('referenceCount')}:</strong> {referenceCount}
                 </>
               )}
               {visibleColumns.doi && article.doi && (
@@ -316,7 +316,7 @@ export default function TrendingArticleCard({
             )}
             <span className="tvn-pill tvn-pill-pending">
               <Icon icon="lucide:file-text" width="10" />
-              Published
+              {t('statusPublished')}
             </span>
             <button
               type="button"
@@ -332,7 +332,7 @@ export default function TrendingArticleCard({
               onClick={() => toggleAbstract(article.article_id)}
             >
               <Icon icon="lucide:text" width="10" />
-              Abstract
+              {t('abstract')}
             </span>
           </div>
 

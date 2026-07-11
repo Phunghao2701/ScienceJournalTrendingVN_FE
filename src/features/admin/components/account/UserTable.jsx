@@ -3,6 +3,7 @@ import { Table } from 'react-bootstrap';
 import RoleBadge from './RoleBadge';
 import UserStatusBadge from './UserStatusBadge';
 import Icon from '../../../../shared/components/Icon';
+import { useTranslation } from 'react-i18next';
 
 /**
  * UserTable Component
@@ -14,12 +15,13 @@ import Icon from '../../../../shared/components/Icon';
  * @param {function} props.onDelete - Delete action handler: (userId) => void
  */
 export default function UserTable({ users = [], onEdit, onDelete }) {
+  const { t } = useTranslation();
   if (users.length === 0) {
     return (
       <div className="text-center py-5 border rounded-3 bg-white">
         <Icon icon="lucide:users" width="48" className="text-muted mb-2 opacity-50" />
-        <h6 className="text-main fw-bold">No Users Found</h6>
-        <p className="text-muted-custom small mb-0">Try adjusting your search query or role/status filters.</p>
+        <h6 className="text-main fw-bold">{t('accountNoUsersFound')}</h6>
+        <p className="text-muted-custom small mb-0">{t('accountNoUsersHint')}</p>
       </div>
     );
   }
@@ -30,10 +32,10 @@ export default function UserTable({ users = [], onEdit, onDelete }) {
         {/* Table Header */}
         <thead className="border-bottom text-muted-custom" style={{ fontSize: '0.75rem', letterSpacing: '0.05em' }}>
           <tr>
-            <th className="py-3 px-4 fw-bold text-uppercase" style={{ width: '45%', backgroundColor: '#f8fafc', color: '#64748b' }}>User Profile</th>
-            <th className="py-3 px-3 fw-bold text-uppercase" style={{ width: '20%', backgroundColor: '#f8fafc', color: '#64748b' }}>Role</th>
-            <th className="py-3 px-3 fw-bold text-uppercase" style={{ width: '15%', backgroundColor: '#f8fafc', color: '#64748b' }}>Status</th>
-            <th className="py-3 px-4 fw-bold text-uppercase text-end" style={{ width: '20%', backgroundColor: '#f8fafc', color: '#64748b' }}>Actions</th>
+            <th className="py-3 px-4 fw-bold text-uppercase" style={{ width: '45%', backgroundColor: '#f8fafc', color: '#64748b' }}>{t('accountUserProfile')}</th>
+            <th className="py-3 px-3 fw-bold text-uppercase" style={{ width: '20%', backgroundColor: '#f8fafc', color: '#64748b' }}>{t('accountRole')}</th>
+            <th className="py-3 px-3 fw-bold text-uppercase" style={{ width: '15%', backgroundColor: '#f8fafc', color: '#64748b' }}>{t('status')}</th>
+            <th className="py-3 px-4 fw-bold text-uppercase text-end" style={{ width: '20%', backgroundColor: '#f8fafc', color: '#64748b' }}>{t('actions')}</th>
           </tr>
         </thead>
 
@@ -84,7 +86,8 @@ export default function UserTable({ users = [], onEdit, onDelete }) {
                     onClick={() => onEdit?.(user.id)}
                     className="btn btn-link p-1 text-decoration-none text-muted-custom hover-primary rounded-circle border-0 d-flex align-items-center justify-content-center"
                     style={{ width: '32px', height: '32px', transition: 'all 0.2s' }}
-                    title="Edit User"
+                    title={t('accountEditUser')}
+                    aria-label={t('accountEditUser')}
                   >
                     <Icon icon="lucide:edit-2" width="16" />
                   </button>
@@ -93,13 +96,14 @@ export default function UserTable({ users = [], onEdit, onDelete }) {
                   <button
                     type="button"
                     onClick={() => {
-                      if (window.confirm(`Are you sure you want to delete contributor "${user.name}"?`)) {
+                      if (window.confirm(t('accountConfirmDeleteUser', { name: user.name }))) {
                         onDelete?.(user.id);
                       }
                     }}
                     className="btn btn-link p-1 text-decoration-none text-muted-custom hover-danger rounded-circle border-0 d-flex align-items-center justify-content-center"
                     style={{ width: '32px', height: '32px', transition: 'all 0.2s' }}
-                    title="Delete User"
+                    title={t('accountDeleteUser')}
+                    aria-label={t('accountDeleteUser')}
                   >
                     <Icon icon="lucide:trash-2" width="16" />
                   </button>

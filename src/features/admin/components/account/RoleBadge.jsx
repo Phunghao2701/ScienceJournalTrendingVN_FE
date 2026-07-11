@@ -7,6 +7,7 @@
  * @param {string} props.role - User role
  */
 export default function RoleBadge({ role }) {
+  const { t } = useTranslation();
   // Define styling map matching SCImago / mockup aesthetics
   const styles = {
     RESEARCHER: {
@@ -31,13 +32,6 @@ export default function RoleBadge({ role }) {
     }
   };
 
-  const labels = {
-    RESEARCHER: 'Researcher',
-    LECTURER: 'Lecturer',
-    STUDENT: 'Student',
-    ADMINISTRATOR: 'Administrator',
-  };
-
   const currentStyle = styles[role] || styles.RESEARCHER;
 
   return (
@@ -49,7 +43,7 @@ export default function RoleBadge({ role }) {
         ...currentStyle
       }}
     >
-      {labels[role] || role}
+      {t(`accountRole${role}`, { defaultValue: role })}
     </span>
   );
 }

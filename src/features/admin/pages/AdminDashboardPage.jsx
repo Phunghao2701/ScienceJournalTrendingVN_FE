@@ -5,8 +5,10 @@ import {
   VolumeIssueTable,
 } from '../components/dashboard';
 import useAdminDashboard from '../hooks/useAdminDashboard';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminDashboardPage() {
+  const { t } = useTranslation();
   const {
     selectedYear,
     setSelectedYear,
@@ -34,10 +36,10 @@ export default function AdminDashboardPage() {
     <>
       <div className="admin-page-header">
         <div className="admin-page-header__copy">
-          <p className="admin-page-kicker">Admin Overview</p>
-          <h1 className="admin-page-title">Dashboard</h1>
+          <p className="admin-page-kicker">{t('adminOverview')}</p>
+          <h1 className="admin-page-title">{t('adminDashboard')}</h1>
           <p className="admin-page-lede">
-            Monitor journals, article flow, review workload, and publication operations from a single research management surface.
+            {t('adminDashboardDescription')}
           </p>
         </div>
       </div>
@@ -46,7 +48,7 @@ export default function AdminDashboardPage() {
         {summaryLoading ? (
           <div className="admin-state-card">
             <span className="admin-state-dot" />
-            <span>Đang tải số liệu Dashboard...</span>
+            <span>{t('dashboardLoading')}</span>
           </div>
         ) : summaryError ? (
           <div className="admin-state-card admin-state-card--error">
@@ -56,7 +58,7 @@ export default function AdminDashboardPage() {
         ) : statCards.length === 0 ? (
           <div className="admin-state-card">
             <span className="admin-state-dot" />
-            <span>Chưa có dữ liệu tổng quan Dashboard.</span>
+            <span>{t('dashboardEmpty')}</span>
           </div>
         ) : (
           statCards.map((stat) => (

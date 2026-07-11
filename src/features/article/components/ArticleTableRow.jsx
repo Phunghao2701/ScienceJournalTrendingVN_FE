@@ -47,7 +47,7 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
     e.stopPropagation();
     if (!doi) return;
     navigator.clipboard.writeText(doi);
-    alert('Copied DOI to clipboard: ' + doi);
+    alert(`${t('copyDoi')}: ${doi}`);
   };
 
   const handleJournalClick = (e, journalId) => {
@@ -131,10 +131,10 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
             style={{ textDecoration: 'none', cursor: 'pointer', fontWeight: 500 }}
             title={article.journal_name || article.journal?.display_name}
           >
-            {article.journal_name || article.journal?.display_name || 'Journal information unavailable'}
+            {article.journal_name || article.journal?.display_name || t('journalInfoUnavailable')}
           </div>
         ) : (
-          <span className="text-muted text-xs">Journal information unavailable</span>
+          <span className="text-muted text-xs">{t('journalInfoUnavailable')}</span>
         )}
       </td>
 
@@ -154,7 +154,7 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
               variant="link" 
               className="p-0 text-muted-custom hover:text-dark d-flex align-items-center"
               onClick={(e) => handleCopyDoi(e, article.doi)}
-              title="Copy DOI"
+              title={t('copyDoi')}
             >
               <Icon icon="lucide:copy" width="12" />
             </Button>
@@ -167,7 +167,7 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
       {/* Topic Badge */}
       <td style={{ width: '130px' }}>
         <span className={`article-topic-badge ${topicClassName}`}>
-          {article.primary_topic || 'Unclassified'}
+          {article.primary_topic || t('unclassified')}
         </span>
       </td>
 
@@ -196,7 +196,7 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
         <span
           className="article-action-link d-flex align-items-center justify-content-end gap-0.5"
         >
-          Details
+          {t('details')}
           <Icon icon="lucide:arrow-right" width="12" />
         </span>
       </td>

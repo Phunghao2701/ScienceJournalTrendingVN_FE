@@ -1371,65 +1371,17 @@
 
 /* ───────────────────────────────────────────────────────────────
  * 22. PAGINATION
+ *
+ * Base pagination styles (.admin-pagination, .admin-pagination__btn, etc.)
+ * are defined in src/index.css so they are available on ALL pages
+ * (public article list, journals, keywords, etc.), not just admin.
+ *
+ * Only admin-specific layout wrappers are defined here.
  * ─────────────────────────────────────────────────────────────── */
 
-.admin-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 16px;
-}
-
-.admin-pagination__btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  padding: 0 8px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background-color: var(--bg-card);
-  color: var(--text-main);
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.admin-pagination__btn:hover:not(:disabled) {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.admin-pagination__btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* Trang hiện tại - nền cam, chữ trắng */
-.admin-pagination__btn--active {
-  background-color: var(--primary);
-  border-color: var(--primary);
-  color: #ffffff;
-}
-
-.admin-pagination__btn--active:hover {
-  color: #ffffff;
-}
-
-.admin-pagination__ellipsis {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
+/* ─── Admin layout bar: summary text | centered controls | right spacer ──── */
+/* Uses a 3-column grid so the pagination stays centred regardless of
+   how wide the summary text on the left grows.                               */
 .admin-pagination-bar,
 .admin-journal-pagination-bar {
   display: grid;
@@ -1439,16 +1391,20 @@
   padding: 16px 0 0;
 }
 
+/* Center the inner pagination nav within the middle column */
 .admin-pagination-bar > .admin-pagination-bar__center,
 .admin-journal-pagination-bar > .admin-pagination {
   justify-self: center;
 }
 
+/* The <nav> inside the bar wrapper has its own margin-top in index.css;
+   reset it here so the bar controls the vertical rhythm instead.            */
 .admin-pagination-bar > .admin-pagination-bar__center .admin-pagination,
 .admin-journal-pagination-bar .admin-pagination {
   margin-top: 0;
 }
 
+/* On narrow screens, stack summary text above controls */
 @media (max-width: 576px) {
   .admin-pagination-bar,
   .admin-journal-pagination-bar {
@@ -1804,8 +1760,7 @@
 }
 
 .admin-btn:active,
-.admin-table__icon-btn:active,
-.admin-pagination__btn:active {
+.admin-table__icon-btn:active {
   transform: translateY(1px);
 }
 
@@ -2331,8 +2286,9 @@
   background-color: var(--primary-light);
 }
 
+/* Transition override for export/icon/btn buttons
+ * Note: admin-pagination__btn has its own transitions defined in section 22 */
 .admin-export-btn,
-.admin-pagination__btn,
 .admin-table__icon-btn,
 .admin-file-item__replace-btn,
 .admin-btn {
@@ -2340,7 +2296,6 @@
 }
 
 .admin-export-btn:hover,
-.admin-pagination__btn:hover:not(:disabled),
 .admin-table__icon-btn:hover,
 .admin-file-item__replace-btn:hover {
   transform: translateY(-1px);

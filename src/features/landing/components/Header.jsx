@@ -34,7 +34,6 @@ export default function Header() {
   const isLoggedIn = Boolean(auth.isAuthenticated || auth.token || auth.user || email);
   const accountManagementRoute = userRole === 'ADMINISTRATOR' ? ROUTES.ADMIN_USERS : ROUTES.PROFILE;
   const language = i18n.language || "vi";
-
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const changeLanguage = (lang) => {
@@ -56,6 +55,10 @@ export default function Header() {
         className="transition-all duration-300 py-0"
         style={{
           minHeight: "56px",
+          padding: 0,
+          position: "relative",
+          zIndex: 1050,
+          overflow: "visible",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
           background: "#1F2F40",
           backdropFilter: "blur(12px)",
@@ -65,11 +68,12 @@ export default function Header() {
           {/* Logo Brand */}
           <Navbar.Brand
             onClick={() => navigate(ROUTES.HOME)}
-            className="d-flex align-items-center text-white font-weight-bold"
+            className="d-flex flex-row flex-nowrap align-items-center text-white font-weight-bold"
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 800,
               cursor: "pointer",
+              whiteSpace: "nowrap",
             }}
           >
             <div
@@ -97,24 +101,8 @@ export default function Header() {
           </Navbar.Toggle>
 
           {/* Desktop Navigation Link Items */}
-          <Navbar.Collapse
-            id="basic-navbar-nav"
-            className="d-none d-md-flex justify-content-between align-items-center w-full"
-          >
+          <div className="ms-auto d-none d-md-flex align-items-center">
             <div className="d-flex align-items-center gap-3 ms-auto">
-              {/* (Compact) Language selector moved to the far right below */}
-
-              {/* Theme Toggle Sun/Moon Icon */}
-              <div
-                className="text-white hover:text-white-50"
-                style={{ cursor: "pointer" }}
-                onClick={() =>
-                  alert(t("applyLightThemeAlert"))
-                }
-              >
-                <Icon icon="lucide:sun" width="18" className="text-warning" />
-              </div>
-
               {/* Notification icon */}
               {isLoggedIn && (
                 <div
@@ -215,39 +203,41 @@ export default function Header() {
                   </Dropdown.Menu>
                 </Dropdown>
               ) : (
-                <>
+                <div
+                  className="d-flex align-items-center text-white"
+                  role="group"
+                  aria-label="Authentication"
+                >
                   <Button
                     variant="link"
-                    className="text-white-50 hover:text-white text-xs font-semibold text-decoration-none"
+                    className="p-0 text-white text-xs font-semibold text-decoration-none"
+                    style={{ lineHeight: 1 }}
+                    onClick={handleAuthRegister}
+                  >
+                    {t("register")}
+                  </Button>
+                  <span className="mx-2 text-white-50" aria-hidden="true">/</span>
+                  <Button
+                    variant="link"
+                    className="p-0 text-white text-xs font-semibold text-decoration-none"
+                    style={{ lineHeight: 1 }}
                     onClick={handleAuthLogin}
                   >
                     {t("signIn")}
                   </Button>
-                  <Button
-                    className="rounded-pill px-4 py-2 text-xs font-bold"
-                    style={{
-                      backgroundColor: "var(--header-brand-primary)",
-                      borderColor: "var(--header-brand-primary)",
-                      color: "var(--header-nav-active-color)",
-                    }}
-                    onClick={handleAuthRegister}
-                  >
-                    {t("signUp")}
-                  </Button>
-                </>
+                </div>
               )}
-              {/* Compact language icon on the far right */}
+              {/* Keep the language control compact and horizontal in the header. */}
               <NavDropdown
                 title={
-                  <Icon
-                    icon="lucide:globe"
-                    width="18"
-                    className="text-white"
-                  />
+                  <span className="d-inline-flex align-items-center gap-2 text-white text-xs font-semibold">
+                    <Icon icon="lucide:globe" width="17" />
+                    <span>{language.startsWith("vi") ? "Tiếng Việt" : "English"}</span>
+                  </span>
                 }
                 id="language-nav-compact"
                 align="end"
-                className="bg-transparent border-0"
+                className="language-selector d-flex align-items-center mb-0"
               >
                 <NavDropdown.Item
                   onClick={() => changeLanguage("vi")}
@@ -279,7 +269,7 @@ export default function Header() {
                 </NavDropdown.Item>
               </NavDropdown>
             </div>
-          </Navbar.Collapse>
+          </div>
         </Container>
       </Navbar>
 
@@ -435,7 +425,7 @@ export default function Header() {
                     handleAuthRegister();
                   }}
                 >
-                  {t("signUp")}
+                  {t("register")}
                 </Button>
               </div>
             )}

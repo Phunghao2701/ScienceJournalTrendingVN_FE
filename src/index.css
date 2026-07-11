@@ -63,6 +63,28 @@
   --motion-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.language-selector .dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #fff !important;
+  font-size: 0.75rem;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+.language-selector .dropdown-toggle::after {
+  margin-left: 0.45rem;
+  vertical-align: 0;
+}
+
+.navbar .dropdown-menu {
+  z-index: 1060;
+}
+
 html,
 body {
   background-color: var(--bg-main);

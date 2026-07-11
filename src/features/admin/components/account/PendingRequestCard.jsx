@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, Button } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 
 /**
  * PendingRequestCard Component
@@ -11,6 +12,7 @@ import { Card, Button } from 'react-bootstrap';
  * @param {function} props.onDecline - Callback for declination action
  */
 export default function PendingRequestCard({ request, onApprove, onDecline }) {
+  const { t } = useTranslation();
   const { id, name, roleRequested, institution } = request;
   
   // Extract initials for mock avatar circle
@@ -49,7 +51,7 @@ export default function PendingRequestCard({ request, onApprove, onDecline }) {
 
       {/* Description payload */}
       <p className="text-muted-custom small mb-3 lh-sm">
-        Requesting <strong className="text-main">{roleRequested}</strong> role for the Platform.
+        {t('accountRequestingRole', { role: t(`accountRole${roleRequested}`, { defaultValue: roleRequested }) })}
       </p>
 
       {/* Action buttons */}
@@ -59,7 +61,7 @@ export default function PendingRequestCard({ request, onApprove, onDecline }) {
           className="btn-primary-glow flex-grow-1 border-0 py-1.5 text-xs fw-semibold rounded-pill"
           style={{ fontSize: '0.8rem' }}
         >
-          Approve
+          {t('accountApprove')}
         </Button>
         <Button 
           onClick={() => onDecline(id)}
@@ -67,7 +69,7 @@ export default function PendingRequestCard({ request, onApprove, onDecline }) {
           className="border flex-grow-1 py-1.5 text-xs fw-semibold rounded-pill"
           style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}
         >
-          Decline
+          {t('accountDecline')}
         </Button>
       </div>
     </Card>

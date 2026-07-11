@@ -2,6 +2,7 @@ import React from 'react';
 import { Form, Row, Col } from 'react-bootstrap';
 import Icon from '../../../../shared/components/Icon';
 import { SYSTEM_ROLES, ACCOUNT_STATUSES } from '../../../../shared/constants/systemConstants';
+import { useTranslation } from 'react-i18next';
 
 /**
  * UserFilterBar Component
@@ -25,11 +26,12 @@ export default function UserFilterBar({
   onStatusChange,
   totalCount
 }) {
+  const { t } = useTranslation();
   return (
     <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
       {/* Left section: Contributor count */}
       <div className="d-flex align-items-center" style={{ gap: '12px' }}>
-        <span className="fw-bold text-main" style={{ fontSize: '1.1rem' }}>All Contributors</span>
+        <span className="fw-bold text-main" style={{ fontSize: '1.1rem' }}>{t('accountAllContributors')}</span>
         <span 
           className="rounded-pill px-3 py-1 text-xs fw-semibold d-inline-block text-white" 
           style={{
@@ -38,7 +40,7 @@ export default function UserFilterBar({
             lineHeight: '1.2'
           }}
         >
-          {totalCount} {totalCount === 1 ? 'User' : 'Users'}
+          {t('accountUserCount', { count: totalCount })}
         </span>
       </div>
 
@@ -56,7 +58,8 @@ export default function UserFilterBar({
           <Icon icon="lucide:search" width="16" style={{ color: 'var(--text-muted)' }} />
           <input 
             type="text" 
-            placeholder="Search by name/email..." 
+            placeholder={t('accountSearchPlaceholder')}
+            aria-label={t('accountSearchUsers')}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             className="border-0 bg-transparent text-main w-100"
@@ -78,10 +81,10 @@ export default function UserFilterBar({
             cursor: 'pointer'
           }}
         >
-          <option value="all">All Roles</option>
+          <option value="all">{t('accountAllRoles')}</option>
           {SYSTEM_ROLES.map((r) => (
             <option key={r.value} value={r.value}>
-              {r.label}
+              {t(`accountRole${r.value}`)}
             </option>
           ))}
         </Form.Select>
@@ -100,10 +103,10 @@ export default function UserFilterBar({
             cursor: 'pointer'
           }}
         >
-          <option value="all">All Statuses</option>
+          <option value="all">{t('accountAllStatuses')}</option>
           {ACCOUNT_STATUSES.map((status) => (
             <option key={status.value} value={status.value}>
-              {status.value}
+              {t(`accountStatus${status.value}`)}
             </option>
           ))}
         </Form.Select>
@@ -121,7 +124,7 @@ export default function UserFilterBar({
             style={{ fontSize: '0.85rem' }}
           >
             <Icon icon="lucide:x-circle" width="16" />
-            <span>Reset</span>
+            <span>{t('accountResetFilters')}</span>
           </button>
         )}
       </div>

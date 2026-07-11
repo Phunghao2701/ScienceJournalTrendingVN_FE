@@ -102,7 +102,7 @@ export default function TrendingVNPage() {
 
   const showSidebar = !isAnalysisView;
   const [expandedAbstracts, setExpandedAbstracts] = useState({});
-  const [allExpanded, setAllExpanded] = useState(false);          // Toggle táº¥t cáº£ abstract
+  const [allExpanded, setAllExpanded] = useState(false);          // Toggle all abstracts
   const [showCustomise, setShowCustomise] = useState(false);
 
   const [showShareModal, setShowShareModal] = useState(false);
@@ -508,11 +508,11 @@ export default function TrendingVNPage() {
                     { key: 'dateRange', label: t('sbDateRange'), icon: 'lucide:calendar', select: 'dateRange' },
                     { key: 'accessStatus', label: t('accessStatus'), icon: 'lucide:lock-keyhole', select: 'access' },
                     { key: 'institutions', label: t('statInstitutions'), icon: 'lucide:building', select: 'institutions' },
-                    { key: 'publishers', label: 'Publishers', icon: 'lucide:building-2', select: 'publishers' },
-                    { key: 'authors', label: 'Authors', icon: 'lucide:users', select: 'authors' },
-                    { key: 'topics', label: 'Topics', icon: 'lucide:tags', select: 'topics' },
-                    { key: 'journals', label: 'Journals', icon: 'lucide:book-open', select: 'journals' },
-                    { key: 'docFamily', label: t('sbDocFamily'), icon: 'lucide:folder-git2', action: () => {
+                    { key: 'publishers', label: t('statPublishers'), icon: 'lucide:building-2', select: 'publishers' },
+                    { key: 'authors', label: t('statAuthors'), icon: 'lucide:users', select: 'authors' },
+                    { key: 'topics', label: t('statTopics'), icon: 'lucide:tags', select: 'topics' },
+                    { key: 'journals', label: t('statJournals'), icon: 'lucide:book-open', select: 'journals' },
+                    { key: 'docFamily', label: t('sbDocFamily'), icon: 'lucide:folder-tree', action: () => {
                       setGroupingMode(prev => prev === 'none' ? 'simple-group' : 'none');
                     }},
                     { key: 'queryTools', label: t('sbQueryTools'), icon: 'lucide:settings', action: () => {
@@ -1137,7 +1137,7 @@ export default function TrendingVNPage() {
               <div className="tvn-sidebar-panel tvn-institutions-panel">
                 {institutionCounts.length > 0 ? (
                   <>
-                    <div className="tvn-sidebar-title">Top Vietnamese Institutions</div>
+                    <div className="tvn-sidebar-title">{t('topVietnameseInstitutions')}</div>
                     <div className="institution-tvn-grid">
                       {institutionCounts.map((institution, index) => {
                         const institutionName = institution.display_name || institution.name || 'Unknown institution';

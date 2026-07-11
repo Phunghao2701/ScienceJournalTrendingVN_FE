@@ -8,6 +8,7 @@
     "build": "vite build",
     "test:scientific-math": "node scripts/scientificMath.test.mjs",
     "test:paper-vn-analysis": "node scripts/paperVnAnalysis.test.mjs",
+    "test:in-app-browser": "node scripts/inAppBrowser.test.mjs",
     "preview": "vite preview --port $PORT --host",
     "lint": "eslint .",
     "check:brain-manifest": "repo-harness run check-brain-manifest",

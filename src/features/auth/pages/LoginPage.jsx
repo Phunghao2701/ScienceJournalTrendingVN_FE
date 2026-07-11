@@ -3,7 +3,7 @@
  *
  * File: features/auth/pages/LoginPage.jsx
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import AuthLayout from '../../../app/layouts/AuthLayout';
@@ -11,6 +11,7 @@ import AuthBanner from '../components/AuthBanner';
 import LoginForm from '../components/LoginForm';
 import SocialAuthButton from '../components/SocialAuthButton';
 import { toast } from '../../../shared/utils/toast';
+import { isInAppBrowser } from '../../../shared/utils/inAppBrowser';
 import ROUTES from '../../../app/routes/routePaths';
 
 const DASHBOARD_PAGE = ROUTES.DASHBOARD;
@@ -23,6 +24,19 @@ export default function LoginPage() {
   // State riêng của màn hình login để điều khiển loading và lỗi form.
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Google chặn cứng OAuth khi mở từ trình duyệt nhúng (Messenger, Facebook, Instagram...)
+  // với lỗi "403: disallowed_user_agent" — không có cách vượt qua từ phía app.
+  const inAppBrowser = useMemo(() => isInAppBrowser(), []);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success('Đã sao chép liên kết. Hãy dán vào Safari/Chrome để đăng nhập Google.');
+    } catch {
+      toast.error('Không thể sao chép liên kết, vui lòng copy thủ công trên thanh địa chỉ.');
+    }
+  };
 
   // Nếu người dùng bị redirect tới login từ một trang khác, đăng nhập xong quay lại trang đó.
   const from = location.state?.from?.pathname || DASHBOARD_PAGE;
@@ -78,9 +92,29 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Nút đăng nhập bằng Google OAuth. */}
+      {/* Nút đăng nhập bằng Google OAuth — Google chặn OAuth trong trình duyệt nhúng
+          (Messenger, Facebook, Instagram...) nên phải ẩn nút và hướng dẫn thay thế. */}
       <div className="mb-4">
-        <SocialAuthButton onClick={handleLoginWithGoogle} disabled={isLoading} />
+        {inAppBrowser ? (
+          <div
+            className="rounded-3 p-3 text-sm"
+            style={{ background: 'var(--bg-chip)', border: '1px solid var(--border)', color: 'var(--text-main)' }}
+          >
+            <p className="mb-2">
+              Bạn đang mở trang này trong trình duyệt của một ứng dụng khác (Messenger, Facebook, Instagram...).
+              Google không cho phép đăng nhập từ đây. Vui lòng mở liên kết bằng Safari/Chrome (chọn "Mở bằng trình duyệt" ở menu &bull;&bull;&bull;) rồi thử lại.
+            </p>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary"
+              onClick={handleCopyLink}
+            >
+              Sao chép liên kết
+            </button>
+          </div>
+        ) : (
+          <SocialAuthButton onClick={handleLoginWithGoogle} disabled={isLoading} />
+        )}
       </div>
 
       {/* Đường phân cách giữa Google OAuth và form email/password. */}

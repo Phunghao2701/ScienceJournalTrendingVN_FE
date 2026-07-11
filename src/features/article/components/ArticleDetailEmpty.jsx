@@ -31,10 +31,10 @@ export default function ArticleDetailEmpty({ articleId }) {
         <Button 
           variant="outline-secondary"
           className="px-4 py-2 font-semibold text-xs rounded-pill text-main border-secondary"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/')}
           style={{ backgroundColor: 'transparent' }}
         >
-          Về Dashboard
+          Về trang chính
         </Button>
         <Button 
           className="btn-primary-glow border-0 px-4 py-2 font-semibold text-xs rounded-pill text-white"

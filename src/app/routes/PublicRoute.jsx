@@ -20,8 +20,8 @@ const PublicRoute = () => {
 
   if (loading) return <div>Đang tải...</div>;
   
-  // 🔥 Nếu đã đăng nhập thành công -> Đá ngược về dashboard, không cho xem trang login nữa
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;
+  // 🔥 Nếu đã đăng nhập thành công -> Đá ngược về trang chính, không cho xem trang login nữa
+  return isAuthenticated ? <Navigate to="/" replace /> : <Outlet />;
 };
 
 export default PublicRoute;

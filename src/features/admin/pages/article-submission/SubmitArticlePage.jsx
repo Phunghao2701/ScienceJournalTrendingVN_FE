@@ -140,7 +140,7 @@ export default function SubmitArticlePage() {
       {/* Page Breadcrumbs */}
       <nav aria-label="breadcrumb" className="mb-3">
         <ol className="breadcrumb text-muted-custom small mb-0">
-          <li className="breadcrumb-item"><Link to="/dashboard" className="text-decoration-none text-muted-custom hover-primary">Articles</Link></li>
+          <li className="breadcrumb-item"><Link to="/" className="text-decoration-none text-muted-custom hover-primary">Articles</Link></li>
           <li className="breadcrumb-item active" aria-current="page">New Submission</li>
         </ol>
       </nav>
@@ -288,10 +288,10 @@ export default function SubmitArticlePage() {
               className="btn-primary-glow border-0 rounded-pill py-2.5"
               onClick={() => {
                 setShowSuccessModal(false);
-                navigate('/dashboard');
+                navigate('/');
               }}
             >
-              Go to Dashboard
+              Go to Home
             </Button>
             <Button 
               variant="light"

@@ -1,14 +1,9 @@
-﻿/**
- * File source thuộc hệ thống FE ResearchPulse.
- *
- * File: features\dashboard\components\StatCard.jsx
- */
 import { Icon } from '@iconify/react';
-import { formatCount, formatGrowth } from '../../../shared/utils/formatNumber';
+import { formatCount, formatGrowth } from '../utils/formatNumber';
 
 /**
  * StatCard — hiển thị một thống kê đơn với icon, số liệu, label và growth indicator.
- * Reusable: có thể dùng ở Journal/Article/Project pages.
+ * Reusable: có thể dùng ở Journal/Article/Project/Geography pages.
  *
  * @param {string}  icon       - Iconify icon string
  * @param {string}  accentColor - CSS color for top border & value

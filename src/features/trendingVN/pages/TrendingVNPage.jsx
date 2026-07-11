@@ -702,10 +702,9 @@ export default function TrendingVNPage() {
                 <div className="tvn-drawer-section-title">{t('sbWorkArea')}</div>
                 <div className="tvn-drawer-scrollable">
                   {[
-                    { key: 'savedQueries', label: t('sbSavedQueries'), icon: 'lucide:save', action: () => navigate('/dashboard') },
                     { key: 'searchHistory', label: t('sbSearchHistory'), icon: 'lucide:search' },
                     { key: 'collections', label: t('sbCollections'), icon: 'lucide:folder', action: () => navigate('/bookmarks') },
-                    { key: 'dashboards', label: t('sbDashboards'), icon: 'lucide:bar-chart-2', action: () => navigate('/dashboard') },
+                    { key: 'dashboards', label: t('sbDashboards'), icon: 'lucide:bar-chart-2', action: () => navigate('/') },
                     { key: 'notes', label: t('sbNotes'), icon: 'lucide:file-text' },
                     { key: 'tags', label: t('sbTags'), icon: 'lucide:tag' },
                     { key: 'authorship', label: t('sbAuthorship'), icon: 'lucide:users' },

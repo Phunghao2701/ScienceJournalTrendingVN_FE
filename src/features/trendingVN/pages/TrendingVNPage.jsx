@@ -524,21 +524,14 @@ export default function TrendingVNPage() {
                   ].map(item => (
                     <div key={item.key}>
                       <div
-                        className={`tvn-drawer-item${item.key === 'docFamily' && groupingMode !== 'none' ? ' is-active' : ''}`}
+                        className="tvn-drawer-item"
                         onClick={item.select
                           ? () => setDrawerSelectOpen(prev => (prev === item.select ? null : item.select))
                           : (item.action || (() => {}))}
                       >
                         <Icon icon={item.icon} width="16" className="item-icon" />
                         <span className="item-label">{item.label}</span>
-                        {/* For toggle-type items, show a check icon when active; for expandable items show chevron */}
-                        {item.key === 'docFamily' ? (
-                          groupingMode !== 'none'
-                            ? <Icon icon="lucide:check-circle-2" width="14" className="ms-auto text-primary" />
-                            : <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
-                        ) : (
-                          <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
-                        )}
+                        <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
                       </div>
                       {item.select === 'journals' && drawerSelectOpen === 'journals' && (
                         renderDrawerSearchSelect({

@@ -510,11 +510,6 @@ export default function TrendingVNPage() {
                     { key: 'institutions', label: t('statInstitutions'), icon: 'lucide:building', select: 'institutions' },
                     { key: 'publishers', label: t('statPublishers'), icon: 'lucide:building-2', select: 'publishers' },
                     { key: 'authors', label: t('statAuthors'), icon: 'lucide:users', select: 'authors' },
-                    { key: 'topics', label: t('statTopics'), icon: 'lucide:tags', select: 'topics' },
-                    { key: 'journals', label: t('statJournals'), icon: 'lucide:book-open', select: 'journals' },
-                    { key: 'docFamily', label: t('sbDocFamily'), icon: 'lucide:folder-tree', action: () => {
-                      setGroupingMode(prev => prev === 'none' ? 'simple-group' : 'none');
-                    }},
                     { key: 'queryTools', label: t('sbQueryTools'), icon: 'lucide:settings', action: () => {
                       setShowCustomise(prev => !prev);
                     }},
@@ -533,14 +528,6 @@ export default function TrendingVNPage() {
                         <span className="item-label">{item.label}</span>
                         <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
                       </div>
-                      {item.select === 'journals' && drawerSelectOpen === 'journals' && (
-                        renderDrawerSearchSelect({
-                          placeholder: `${t('journalLabel')}...`,
-                          value: filters.selectedJournal !== 'all' ? filters.selectedJournal : '',
-                          onChange: (id) => updateFilters({ selectedJournal: id || 'all' }),
-                          options: journalOptions.map(j => ({ value: j.journal_id, label: j.display_name })),
-                        })
-                      )}
                       {item.select === 'publishers' && drawerSelectOpen === 'publishers' && (
                         renderDrawerSearchSelect({
                           placeholder: 'Publisher...',
@@ -570,17 +557,6 @@ export default function TrendingVNPage() {
                             handleEntityFilter('author_id', id);
                           },
                           options: authorCounts.filter(a => a.id && a.name && a.name !== 'Unknown').map(a => ({ value: a.id, label: a.name })),
-                        })
-                      )}
-                      {item.select === 'topics' && drawerSelectOpen === 'topics' && (
-                        renderDrawerSearchSelect({
-                          placeholder: 'Topic...',
-                          value: filters.selectedTopic !== 'all' ? filters.selectedTopic : '',
-                          onChange: (id) => {
-                            if (!id) { updateFilters({ selectedTopic: 'all' }); return; }
-                            handleEntityFilter('topic_id', id);
-                          },
-                          options: topicOptions.map(tp => ({ value: tp.topic_id || tp.id, label: tp.display_name })),
                         })
                       )}
                       {item.select === 'access' && drawerSelectOpen === 'access' && (
@@ -678,43 +654,16 @@ export default function TrendingVNPage() {
                   </div>
                 )}
 
-                <div className="tvn-profile-actions">
-                  <Dropdown className="flex-fill">
-                    <Dropdown.Toggle variant="outline-primary" size="sm" className="w-100 font-sans text-xs d-flex align-items-center justify-content-between">
-                      {t('sbNewItem')}
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="text-xs">
-                      <Dropdown.Item onClick={() => setShowExportModal(true)}>{t('export')}</Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-
-                  <Dropdown className="flex-fill">
-                    <Dropdown.Toggle variant="primary" size="sm" className="w-100 font-sans text-xs d-flex align-items-center justify-content-between">
-                      {t('sbSearch')}
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="text-xs">
-                      <Dropdown.Item onClick={() => updateFilters({ sortBy: 'created_at', sortOrder: 'desc' })}>{t('sortDateNewest')}</Dropdown.Item>
-                      <Dropdown.Item onClick={() => updateFilters({ access: 'oa' })}>{t('openAccess')}</Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </div>
-
                 <div className="tvn-drawer-section-title">{t('sbWorkArea')}</div>
                 <div className="tvn-drawer-scrollable">
                   {[
-                    { key: 'searchHistory', label: t('sbSearchHistory'), icon: 'lucide:search' },
                     { key: 'collections', label: t('sbCollections'), icon: 'lucide:folder', action: () => navigate('/bookmarks') },
-                    { key: 'dashboards', label: t('sbDashboards'), icon: 'lucide:bar-chart-2', action: () => navigate('/') },
-                    { key: 'notes', label: t('sbNotes'), icon: 'lucide:file-text' },
-                    { key: 'tags', label: t('sbTags'), icon: 'lucide:tag' },
-                    { key: 'authorship', label: t('sbAuthorship'), icon: 'lucide:users' },
-                    { key: 'notifications', label: t('sbNotifications'), icon: 'lucide:bell' },
-                    { key: 'mediaLibrary', label: t('sbMediaLibrary'), icon: 'lucide:image' }
+                    { key: 'dashboards', label: t('sbDashboards'), icon: 'lucide:bar-chart-2', action: () => navigate('/') }
                   ].map(item => (
                     <div
                       key={item.key}
                       className="tvn-drawer-item"
-                      onClick={item.action || (() => {})}
+                      onClick={item.action}
                     >
                       <Icon icon={item.icon} width="16" className="item-icon" />
                       <span className="item-label">{item.label}</span>

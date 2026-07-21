@@ -654,43 +654,16 @@ export default function TrendingVNPage() {
                   </div>
                 )}
 
-                <div className="tvn-profile-actions">
-                  <Dropdown className="flex-fill">
-                    <Dropdown.Toggle variant="outline-primary" size="sm" className="w-100 font-sans text-xs d-flex align-items-center justify-content-between">
-                      {t('sbNewItem')}
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="text-xs">
-                      <Dropdown.Item onClick={() => setShowExportModal(true)}>{t('export')}</Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-
-                  <Dropdown className="flex-fill">
-                    <Dropdown.Toggle variant="primary" size="sm" className="w-100 font-sans text-xs d-flex align-items-center justify-content-between">
-                      {t('sbSearch')}
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="text-xs">
-                      <Dropdown.Item onClick={() => updateFilters({ sortBy: 'created_at', sortOrder: 'desc' })}>{t('sortDateNewest')}</Dropdown.Item>
-                      <Dropdown.Item onClick={() => updateFilters({ access: 'oa' })}>{t('openAccess')}</Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </div>
-
                 <div className="tvn-drawer-section-title">{t('sbWorkArea')}</div>
                 <div className="tvn-drawer-scrollable">
                   {[
-                    { key: 'searchHistory', label: t('sbSearchHistory'), icon: 'lucide:search' },
                     { key: 'collections', label: t('sbCollections'), icon: 'lucide:folder', action: () => navigate('/bookmarks') },
-                    { key: 'dashboards', label: t('sbDashboards'), icon: 'lucide:bar-chart-2', action: () => navigate('/') },
-                    { key: 'notes', label: t('sbNotes'), icon: 'lucide:file-text' },
-                    { key: 'tags', label: t('sbTags'), icon: 'lucide:tag' },
-                    { key: 'authorship', label: t('sbAuthorship'), icon: 'lucide:users' },
-                    { key: 'notifications', label: t('sbNotifications'), icon: 'lucide:bell' },
-                    { key: 'mediaLibrary', label: t('sbMediaLibrary'), icon: 'lucide:image' }
+                    { key: 'dashboards', label: t('sbDashboards'), icon: 'lucide:bar-chart-2', action: () => navigate('/') }
                   ].map(item => (
                     <div
                       key={item.key}
                       className="tvn-drawer-item"
-                      onClick={item.action || (() => {})}
+                      onClick={item.action}
                     >
                       <Icon icon={item.icon} width="16" className="item-icon" />
                       <span className="item-label">{item.label}</span>

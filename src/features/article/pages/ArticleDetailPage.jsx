@@ -1,4 +1,4 @@
-﻿/**
+/**
  * File source for the ResearchPulse FE system.
  *
  * File: features\article\pages\ArticleDetailPage.jsx
@@ -26,7 +26,7 @@ import ArticleDetailEmpty from '../components/ArticleDetailEmpty';
 import ArticleDetailError from '../components/ArticleDetailError';
 import ArticlesTabContent from '../../journal/components/ArticlesTabContent';
 import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
-import ArticleComments from '../../comment/components/ArticleComments';
+
 import ScientificMathText from '../../../shared/components/ScientificMathText';
 import { toast } from '../../../shared/utils/toast';
 import { toScientificPlainText } from '../../../shared/utils/scientificMath';
@@ -626,10 +626,7 @@ export default function ArticleDetailPage() {
                     onArticleClick={(articleId) => navigate(`/articles/${articleId}/visual`)}
                   />
                 )}
-                <ArticleComments
-                  articleId={article?.article_id || id}
-                  articleIds={[article?.id, article?.display_id, id]}
-                />
+
               </section>
             </div>
 

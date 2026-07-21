@@ -32,7 +32,7 @@ import ArticleDetailEmpty from '../../article/components/ArticleDetailEmpty';
 import ArticleDetailError from '../../article/components/ArticleDetailError';
 import ArticlesTabContent from '../../journal/components/ArticlesTabContent';
 import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
-import ArticleComments from '../../comment/components/ArticleComments';
+
 
 import '../trendingVN.css';
 
@@ -1351,10 +1351,7 @@ ER  - `;
               </div>
             ) : null}
 
-            <ArticleComments
-              articleId={article?.article_id || id}
-              articleIds={[article?.id, article?.display_id, id]}
-            />
+
 
           </main>
       </div>

@@ -25,7 +25,7 @@ import ArticleDetailEmpty from '../components/ArticleDetailEmpty';
 import ArticleDetailError from '../components/ArticleDetailError';
 import ArticlesTabContent from '../../journal/components/ArticlesTabContent';
 import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
-import ArticleComments from '../../comment/components/ArticleComments';
+
 import { toast } from '../../../shared/utils/toast';
 import { getDoiUrl, normalizeArticleDetail } from '../utils/articleFormatters';
 import './ArticleVisualDetailPage.css';
@@ -669,10 +669,7 @@ export default function ArticleVisualDetailPage() {
                     <span className="text-xs text-muted-custom font-sans">Không có tài liệu tham khảo chi tiết.</span>
                   )}
                 </section>
-                <ArticleComments
-                  articleId={article?.article_id || id}
-                  articleIds={[article?.id, article?.display_id, id]}
-                />
+
               </div>
             </aside>
           </main>

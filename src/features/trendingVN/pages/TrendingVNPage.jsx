@@ -510,11 +510,6 @@ export default function TrendingVNPage() {
                     { key: 'institutions', label: t('statInstitutions'), icon: 'lucide:building', select: 'institutions' },
                     { key: 'publishers', label: t('statPublishers'), icon: 'lucide:building-2', select: 'publishers' },
                     { key: 'authors', label: t('statAuthors'), icon: 'lucide:users', select: 'authors' },
-                    { key: 'topics', label: t('statTopics'), icon: 'lucide:tags', select: 'topics' },
-                    { key: 'journals', label: t('statJournals'), icon: 'lucide:book-open', select: 'journals' },
-                    { key: 'docFamily', label: t('sbDocFamily'), icon: 'lucide:folder-tree', action: () => {
-                      setGroupingMode(prev => prev === 'none' ? 'simple-group' : 'none');
-                    }},
                     { key: 'queryTools', label: t('sbQueryTools'), icon: 'lucide:settings', action: () => {
                       setShowCustomise(prev => !prev);
                     }},

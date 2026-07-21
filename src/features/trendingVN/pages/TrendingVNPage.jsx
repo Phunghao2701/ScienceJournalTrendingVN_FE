@@ -528,14 +528,6 @@ export default function TrendingVNPage() {
                         <span className="item-label">{item.label}</span>
                         <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
                       </div>
-                      {item.select === 'journals' && drawerSelectOpen === 'journals' && (
-                        renderDrawerSearchSelect({
-                          placeholder: `${t('journalLabel')}...`,
-                          value: filters.selectedJournal !== 'all' ? filters.selectedJournal : '',
-                          onChange: (id) => updateFilters({ selectedJournal: id || 'all' }),
-                          options: journalOptions.map(j => ({ value: j.journal_id, label: j.display_name })),
-                        })
-                      )}
                       {item.select === 'publishers' && drawerSelectOpen === 'publishers' && (
                         renderDrawerSearchSelect({
                           placeholder: 'Publisher...',
@@ -565,17 +557,6 @@ export default function TrendingVNPage() {
                             handleEntityFilter('author_id', id);
                           },
                           options: authorCounts.filter(a => a.id && a.name && a.name !== 'Unknown').map(a => ({ value: a.id, label: a.name })),
-                        })
-                      )}
-                      {item.select === 'topics' && drawerSelectOpen === 'topics' && (
-                        renderDrawerSearchSelect({
-                          placeholder: 'Topic...',
-                          value: filters.selectedTopic !== 'all' ? filters.selectedTopic : '',
-                          onChange: (id) => {
-                            if (!id) { updateFilters({ selectedTopic: 'all' }); return; }
-                            handleEntityFilter('topic_id', id);
-                          },
-                          options: topicOptions.map(tp => ({ value: tp.topic_id || tp.id, label: tp.display_name })),
                         })
                       )}
                       {item.select === 'access' && drawerSelectOpen === 'access' && (

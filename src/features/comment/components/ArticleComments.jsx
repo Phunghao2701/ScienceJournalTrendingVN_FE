@@ -190,9 +190,9 @@ export default function ArticleComments({ articleId, articleIds = [] }) {
           rows={3}
           value={content}
           onChange={(event) => setContent(event.target.value)}
-          placeholder={isLoggedIn ? t('commentPlaceholder') : t('commentLoginPlaceholder')}
-          disabled={addMutation.isPending}
+          /* No placeholder — keep the textarea clean; aria-label handles accessibility */
           aria-label={isLoggedIn ? t('commentPlaceholder') : t('commentLoginPlaceholder')}
+          disabled={addMutation.isPending}
         />
         <div className="d-flex justify-content-end mt-2">
           <Button
@@ -207,22 +207,25 @@ export default function ArticleComments({ articleId, articleIds = [] }) {
       </Form>
 
       {commentsQuery.isLoading ? (
+        /* Loading state */
         <div className="article-comments-state">
-          <Spinner animation="border" size="sm" className="me-2" />
+          <Spinner animation="border" size="sm" className="comments-state-icon" />
           {t('commentsLoading')}
         </div>
       ) : commentsQuery.isError ? (
+        /* Error state */
         <div className="article-comments-state is-error">
-          <Icon icon="lucide:alert-circle" width="18" />
+          <Icon icon="lucide:alert-circle" width="24" className="comments-state-icon" />
           <span>{commentsQuery.error?.message || t('commentsLoadError')}</span>
-          <Button variant="link" onClick={() => commentsQuery.refetch()} className="p-0 ms-2">
+          <Button variant="link" onClick={() => commentsQuery.refetch()} className="p-0">
             {t('tryAgain')}
           </Button>
         </div>
       ) : comments.length === 0 ? (
+        /* Empty state */
         <div className="article-comments-state">
-          <Icon icon="lucide:message-circle" width="20" />
-          {t('commentsEmpty')}
+          <Icon icon="lucide:message-circle" width="28" className="comments-state-icon" />
+          <span>{t('commentsEmpty')}</span>
         </div>
       ) : (
         <div className="article-comments-list">

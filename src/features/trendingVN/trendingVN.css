@@ -1547,6 +1547,17 @@
   color: #0f172a;
 }
 
+/* Active state for toggle items (e.g. Group by Topic when grouping is on) */
+.tvn-drawer-item.is-active {
+  background-color: var(--primary-light, #eef6ff);
+  color: var(--primary, #1976d2);
+  font-weight: 600;
+}
+
+.tvn-drawer-item.is-active .item-icon {
+  color: var(--primary, #1976d2);
+}
+
 .tvn-drawer-inline-select {
   padding: 0 16px 8px 44px;
 }

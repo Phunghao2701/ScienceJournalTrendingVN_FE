@@ -657,6 +657,7 @@ export default function TrendingVNPage() {
                 <div className="tvn-drawer-section-title">{t('sbWorkArea')}</div>
                 <div className="tvn-drawer-scrollable">
                   {[
+                    { key: 'projects', label: t('sbProjects'), icon: 'lucide:folder-kanban', action: () => navigate('/projects') },
                     { key: 'collections', label: t('sbCollections'), icon: 'lucide:folder', action: () => navigate('/bookmarks') },
                     { key: 'dashboards', label: t('sbDashboards'), icon: 'lucide:bar-chart-2', action: () => navigate('/') }
                   ].map(item => (

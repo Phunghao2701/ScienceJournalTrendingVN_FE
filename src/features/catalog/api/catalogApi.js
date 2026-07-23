@@ -9,8 +9,8 @@ import api from '../../../shared/services/api';
  * Get catalog academic subject areas list
  * @returns {Promise} Axios promise
  */
-export const getSubjectAreasApi = () => {
-  return api.get('/subject-areas');
+export const getSubjectAreasApi = (params = {}) => {
+  return api.get('/subject-areas', { params });
 };
 
 /**

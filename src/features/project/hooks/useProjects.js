@@ -48,7 +48,6 @@ export default function useProjects() {
   }, [fetchProjects]);
 
   const deleteProject = useCallback(async (id) => {
-    setIsLoading(true);
     setError(null);
     try {
       const response = await deleteProjectApi(id);
@@ -61,8 +60,6 @@ export default function useProjects() {
     } catch (err) {
       setError(err.response?.data?.message || err.message);
       throw err;
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 

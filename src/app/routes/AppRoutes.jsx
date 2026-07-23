@@ -30,6 +30,7 @@ import ProjectListPage from '../../features/project/pages/ProjectListPage';
 import CreateProjectPage from '../../features/project/pages/CreateProjectPage';
 import EditProjectPage from '../../features/project/pages/EditProjectPage';
 import ProjectDetailPage from '../../features/project/pages/ProjectDetailPage';
+import ProjectWorkspaceLayout from '../../features/project/layouts/ProjectWorkspaceLayout';
 
 /**
  * Nơi khai báo route chính của ứng dụng.
@@ -55,10 +56,12 @@ export default function AppRoutes() {
         <Route element={<ProtectedRoute />}>
           <Route path="/authors/leaderboard" element={<AuthorLeaderboardPage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />
-          <Route path="/projects" element={<ProjectListPage />} />
-          <Route path="/projects/create" element={<CreateProjectPage />} />
-          <Route path="/projects/:id/edit" element={<EditProjectPage />} />
-          <Route path="/projects/:id" element={<ProjectDetailPage />} />
+          <Route element={<ProjectWorkspaceLayout />}>
+            <Route path="/projects" element={<ProjectListPage />} />
+            <Route path="/projects/create" element={<CreateProjectPage />} />
+            <Route path="/projects/:id/edit" element={<EditProjectPage />} />
+            <Route path="/projects/:id" element={<ProjectDetailPage />} />
+          </Route>
         </Route>
 
         {/* Public pages inside layout */}

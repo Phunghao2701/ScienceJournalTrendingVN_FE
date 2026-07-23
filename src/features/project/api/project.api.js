@@ -89,8 +89,10 @@ export const getTrendingKeywordsApi = (id, limit = 20, sortBy = 'count') => {
  * @param {number|string} id - Project ID
  * @returns {Promise} Axios promise
  */
-export const getWatchedKeywordArticlesApi = (id) => {
-  return api.get(`/projects/${id}/keywords/watch/articles`);
+export const getWatchedKeywordArticlesApi = (id, page = 1, limit = 50) => {
+  return api.get(`/projects/${id}/keywords/watch/articles`, {
+    params: { page, limit },
+  });
 };
 
 /**
@@ -99,8 +101,8 @@ export const getWatchedKeywordArticlesApi = (id) => {
  * @param {Array<string>} keywords - Keywords array
  * @returns {Promise} Axios promise
  */
-export const watchKeywordsApi = (id, keywords) => {
-  return api.post(`/projects/${id}/keywords/watch`, { keywords });
+export const watchKeywordsApi = (id, keywordIds) => {
+  return api.post(`/projects/${id}/keywords/watch`, { keyword_ids: keywordIds });
 };
 
 /**
@@ -109,8 +111,8 @@ export const watchKeywordsApi = (id, keywords) => {
  * @param {Array<string>} keywords - Keywords array
  * @returns {Promise} Axios promise
  */
-export const updateWatchedKeywordsApi = (id, keywords) => {
-  return api.put(`/projects/${id}/keywords/watch`, { keywords });
+export const updateWatchedKeywordsApi = (id, keywordIds) => {
+  return api.put(`/projects/${id}/keywords/watch`, { keyword_ids: keywordIds });
 };
 
 /**

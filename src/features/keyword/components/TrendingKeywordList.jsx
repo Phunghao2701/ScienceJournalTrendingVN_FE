@@ -1,18 +1,19 @@
-import React from 'react';
 import KeywordChip from './KeywordChip';
+import { useProjectText } from '../../project/i18n/useProjectText';
 
 const TrendingKeywordList = ({ trendingKeywords, loading, onKeywordClick }) => {
+  const p = useProjectText();
   return (
     <div className="glass-card p-4 rounded-4 mb-4">
       <div className="d-flex align-items-center mb-3">
-        <h4 className="font-display mb-0 text-main fw-bold">🔥 Top 20 Trending Keywords</h4>
+        <h4 className="font-display mb-0 text-main fw-bold">🔥 {p('topTrendingKeywords')}</h4>
       </div>
-      <p className="text-muted-custom small mb-4">Tính trong 30 ngày gần nhất</p>
+      <p className="text-muted-custom small mb-4">{p('trendingPeriod')}</p>
 
       {loading ? (
         <div className="d-flex flex-wrap gap-2">
-          {[...Array(10)].map((_, i) => (
-            <div key={i} className="skeleton-shimmer" style={{ width: `${Math.random() * 80 + 80}px`, height: '32px', borderRadius: '16px' }}></div>
+          {[84, 126, 98, 142, 112, 88, 134, 104, 120, 92].map((width, i) => (
+            <div key={i} className="skeleton-shimmer" style={{ width: `${width}px`, height: '32px', borderRadius: '16px' }}></div>
           ))}
         </div>
       ) : Array.isArray(trendingKeywords) && trendingKeywords.length > 0 ? (
@@ -29,12 +30,12 @@ const TrendingKeywordList = ({ trendingKeywords, loading, onKeywordClick }) => {
         </div>
       ) : (
         <div className="text-center py-4 text-muted-custom">
-          Chưa có dữ liệu trending.
+          {p('noTrending')}
         </div>
       )}
 
       <div className="mt-4 p-3 rounded text-muted-custom small" style={{ backgroundColor: 'var(--bg-chip)', border: '1px solid var(--border)' }}>
-        💡 Click vào keyword để theo dõi (★). Các keyword đang watch sẽ hiển thị bài báo mới nhất bên dưới.
+        {p('trendingHint')}
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
+import { useProjectText } from '../../project/i18n/useProjectText';
 
-const KeywordRelatedArticleList = ({ articles, loading }) => {
+const KeywordRelatedArticleList = ({ articles, loading, filterKeyword }) => {
+  const p = useProjectText();
   if (loading) {
     return (
       <div className="d-flex flex-column gap-3">
@@ -16,32 +17,46 @@ const KeywordRelatedArticleList = ({ articles, loading }) => {
     );
   }
 
-  if (!Array.isArray(articles) || articles.length === 0) {
+  const normalizedFilter = filterKeyword?.trim().toLocaleLowerCase();
+  const filteredArticles = normalizedFilter
+    ? (Array.isArray(articles) ? articles : []).filter((article) => {
+        const matchedKeywords = article.matched_keywords
+          || (article.matched_keyword ? [article.matched_keyword] : []);
+        return matchedKeywords.some(
+          (keyword) => keyword?.trim().toLocaleLowerCase() === normalizedFilter,
+        );
+      })
+    : articles;
+
+  if (!Array.isArray(filteredArticles) || filteredArticles.length === 0) {
     return (
       <div className="text-center py-4 text-muted-custom border rounded">
-        Không có bài báo nào liên quan đến các keyword đang theo dõi.
+        {p('noKeywordArticles')}
       </div>
     );
   }
 
   return (
     <div className="d-flex flex-column gap-3">
-      {articles.map((article, idx) => (
-        <div key={article.id || idx} className="p-3 border rounded bg-card hover-shadow transition-all">
+      {filteredArticles.map((article, idx) => (
+        <div key={article.article_id || article.id || idx} className="p-3 border rounded bg-card hover-shadow transition-all">
           <div className="d-flex justify-content-between align-items-start mb-2">
             <div>
-               {article.matched_keyword && (
-                 <span className="badge border mb-2 me-2" style={{ backgroundColor: 'var(--bg-chip)', color: 'var(--primary)', borderColor: 'var(--border) !important' }}>
-                   {article.matched_keyword}
-                 </span>
-               )}
+               {(filterKeyword
+                 ? [filterKeyword]
+                 : article.matched_keywords || (article.matched_keyword ? [article.matched_keyword] : []))
+                 .map((keyword) => (
+                   <span key={keyword} className="badge border mb-2 me-2" style={{ backgroundColor: 'var(--bg-chip)', color: 'var(--primary)', borderColor: 'var(--border) !important' }}>
+                     {keyword}
+                   </span>
+                 ))}
             </div>
             <span className="text-muted-custom small">
-              {article.published_date || article.year || 'Gần đây'}
+              {article.published_date || article.year || p('recent')}
             </span>
           </div>
           <h5 className="font-display fw-bold mb-2">
-            <Link to={`/articles/${article.id}/visual`} className="text-main text-decoration-none">
+            <Link to={`/articles/${article.article_id || article.id}/visual`} className="text-main text-decoration-none">
               {article.title}
             </Link>
           </h5>

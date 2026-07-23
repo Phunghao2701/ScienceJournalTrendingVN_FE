@@ -1,0 +1,169 @@
+.project-workspace {
+  min-height: 100dvh;
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+.project-workspace-main {
+  min-width: 0;
+  background: var(--bg-main);
+}
+
+.project-workspace-main .project-list-page,
+.project-workspace-main .project-form-page,
+.project-workspace-main .project-detail-page {
+  min-height: calc(100dvh - 8rem) !important;
+  padding: 1.5rem 2rem 3rem !important;
+  background: var(--bg-main) !important;
+}
+
+.project-workspace-main .project-list-page > .container,
+.project-workspace-main .project-detail-page > .container {
+  width: min(100%, 80rem);
+  max-width: 80rem !important;
+  margin-top: 0 !important;
+}
+
+.project-workspace-main .project-form-page > .container {
+  width: min(100%, 48rem);
+  max-width: 48rem !important;
+  margin-top: 0 !important;
+}
+
+.project-workspace-main .breadcrumb {
+  margin-bottom: 0;
+  font-size: 0.78rem;
+}
+
+.project-workspace-main h1,
+.project-workspace-main h2 {
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.project-workspace-main .project-list-page h1 {
+  font-size: clamp(1.9rem, 3vw, 2.65rem);
+}
+
+.project-workspace-main .glass-card,
+.project-workspace-main .card,
+.project-workspace-main .modal-content {
+  border-radius: 0.4rem !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 0.4rem 1rem rgba(30, 64, 99, 0.06) !important;
+}
+
+.project-workspace-main .project-card {
+  border: 1px solid var(--border) !important;
+}
+
+.project-workspace-main .project-card:hover {
+  border-color: #b9d2e8 !important;
+  box-shadow: 0 0.65rem 1.4rem rgba(30, 64, 99, 0.1) !important;
+}
+
+.project-workspace-main .btn {
+  min-height: 2.35rem;
+  border-radius: 0.28rem !important;
+  padding-inline: 0.9rem;
+  font-weight: 600;
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.project-workspace-main .btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.project-workspace-main .btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.project-workspace-main .btn:focus-visible,
+.project-workspace-main .nav-link:focus-visible,
+.project-workspace-main .form-control:focus-visible,
+.project-workspace-main .form-select:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 24%, transparent);
+  outline-offset: 2px;
+}
+
+.project-workspace-main .badge {
+  border-radius: 0.25rem !important;
+}
+
+.project-workspace-main .form-control,
+.project-workspace-main .form-select,
+.project-workspace-main .app-multiselect > .form-control,
+.project-workspace-main .app-multiselect-menu {
+  border-radius: 0.35rem !important;
+}
+
+.project-workspace-main .project-form-page .glass-card > div:first-child {
+  text-align: left !important;
+}
+
+.project-workspace-main .project-form-page .glass-card {
+  padding: clamp(1.5rem, 4vw, 2.5rem) !important;
+}
+
+.project-workspace-main .project-form-page label {
+  letter-spacing: 0.035em;
+  color: var(--text-main);
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.project-workspace-main .tab-nav-custom {
+  padding-left: 0 !important;
+}
+
+.project-workspace-main .tab-nav-custom .nav-link {
+  border-radius: 0 !important;
+  min-height: 3rem;
+  color: var(--text-muted);
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.project-workspace-main .tab-nav-custom .nav-link.active {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, transparent) !important;
+}
+
+.project-workspace-main .project-detail-page h5,
+.project-workspace-main .project-list-page h5,
+.project-workspace-main .project-form-page h5 {
+  letter-spacing: -0.012em;
+}
+
+.project-workspace-main .project-detail-page .list-group-item {
+  transition: background-color 160ms ease;
+}
+
+.project-workspace-main .project-detail-page .list-group-item:hover {
+  background: color-mix(in srgb, var(--primary) 3%, transparent) !important;
+}
+
+.project-workspace-main .project-trend-bar {
+  border-radius: 0.2rem 0.2rem 0 0 !important;
+}
+
+@media (max-width: 991px) {
+  .project-workspace-main .project-list-page,
+  .project-workspace-main .project-form-page,
+  .project-workspace-main .project-detail-page {
+    padding-inline: 1.35rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .project-workspace-main .project-list-page,
+  .project-workspace-main .project-form-page,
+  .project-workspace-main .project-detail-page {
+    padding: 1rem 0.75rem 2.5rem !important;
+  }
+
+  .project-workspace-main .project-form-page .glass-card {
+    padding: 1.1rem !important;
+  }
+}

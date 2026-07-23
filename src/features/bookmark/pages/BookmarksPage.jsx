@@ -9,6 +9,8 @@ import { getBookmarksApi } from '../../article/api/articleApi';
 import { useBookmarkStore } from '../store/bookmarkStore';
 import { toast } from '../../../shared/utils/toast';
 import AnalysisDashboard from '../../trendingVN/components/analysis/AnalysisDashboard';
+import WorkspaceSidebar from '../../trendingVN/components/WorkspaceSidebar';
+import '../../trendingVN/trendingVN.css';
 import './BookmarksPage.css';
 
 const bookmarksQueryKey = ['bookmarks', 'list'];
@@ -202,83 +204,86 @@ export default function BookmarksPage() {
   return (
     <div className="bookmarks-page">
       <Header />
-      <main className="bookmarks-shell">
-        <section className="bookmarks-hero">
-          <div>
-            <div className="bookmarks-eyebrow">
-              <Icon icon="lucide:bookmark-check" width="16" />
-              {t('savedArticles')}
+      <div className="tvn-layout-wrapper">
+        <WorkspaceSidebar activeItem="collections" />
+        <main className="tvn-main-content bookmarks-main-content">
+          <div className="tvn-top-info-bar">
+            <div className="total-count">
+              <Icon icon="lucide:bookmark-check" width="13" className="me-1" />
+              {t('savedArticlesCount', { count: sortedBookmarks.length })}
             </div>
-            <h1>{t('savedArticlesTitle')}</h1>
-            <p>{t('savedArticlesSubtitle')}</p>
           </div>
-          <Button variant="outline-primary" onClick={() => navigate('/articles')}>
-            <Icon icon="lucide:search" width="16" />
-            {t('browseArticles')}
-          </Button>
-        </section>
 
-        <section className="bookmarks-panel">
-          <div className="bookmarks-panel-header">
-            <div>
-              <h2>{t('savedArticles')}</h2>
-              <span>{t('savedArticlesCount', { count: sortedBookmarks.length })}</span>
+          <section className="bookmarks-heading">
+            <h1 className="tvn-page-title">{t('savedArticlesTitle')}</h1>
+            <div className="tvn-filter-indicator">
+              <span className="filter-count-link">
+                {t('savedArticlesCount', { count: sortedBookmarks.length })}
+              </span>
+              <span className="tvn-filter-divider" aria-hidden="true">-</span>
+              <span className="tvn-filter-status">
+                <Icon icon="lucide:bookmark" width="12" className="me-1" />
+                {t('savedArticlesSubtitle')}
+              </span>
             </div>
-            <div className="d-flex align-items-center gap-2 ms-auto">
-              <div className="d-flex align-items-center gap-1 border rounded-2 p-1 bg-light me-2">
-                <Button
-                  variant={viewTab === 'list' ? 'primary' : 'light'}
-                  size="sm"
-                  onClick={() => setViewTab('list')}
-                  className="d-flex align-items-center gap-1 py-1 px-3 text-xs"
-                  style={
-                    viewTab === 'list'
-                      ? { backgroundColor: '#0d6efd', borderColor: '#0d6efd' }
-                      : { backgroundColor: '#f8f9fa', borderColor: 'transparent' }
-                  }
-                >
-                  <Icon
-                    icon="lucide:list"
-                    width="14"
-                    style={viewTab === 'list' ? { color: '#ffffff' } : { color: '#212529' }}
-                  />
-                  <span
-                    style={viewTab === 'list' ? { color: '#ffffff', fontWeight: '600', marginTop: '0', display: 'inline' } : { color: '#212529', fontWeight: '500', marginTop: '0', display: 'inline' }}
-                  >
-                    {t('viewList') || 'Danh sách'}
-                  </span>
-                </Button>
-                <Button
-                  variant={viewTab === 'analysis' ? 'primary' : 'light'}
-                  size="sm"
-                  onClick={() => setViewTab('analysis')}
-                  className="d-flex align-items-center gap-1 py-1 px-3 text-xs"
-                  disabled={sortedBookmarks.length === 0}
-                  style={
-                    viewTab === 'analysis'
-                      ? { backgroundColor: '#0d6efd', borderColor: '#0d6efd' }
-                      : { backgroundColor: '#f8f9fa', borderColor: 'transparent' }
-                  }
-                >
-                  <Icon
-                    icon="lucide:bar-chart-2"
-                    width="14"
-                    style={viewTab === 'analysis' ? { color: '#ffffff' } : { color: '#212529' }}
-                  />
-                  <span
-                    style={viewTab === 'analysis' ? { color: '#ffffff', fontWeight: '600', marginTop: '0', display: 'inline' } : { color: '#212529', fontWeight: '500', marginTop: '0', display: 'inline' }}
-                  >
-                    {t('viewAnalysis') || 'Phân tích'}
-                  </span>
-                </Button>
+          </section>
+
+          <div className="tvn-stats-bar bookmarks-stats-bar">
+            {[
+              { key: 'saved', color: '#00acc1', label: t('savedArticles'), value: sortedBookmarks.length },
+              { key: 'citations', color: '#0288d1', label: t('statCitations'), value: bookmarkAnalysisData?.summary.total_citations || 0 },
+              { key: 'authors', color: '#7b1fa2', label: t('statAuthors'), value: bookmarkAnalysisData?.summary.authors || 0 },
+              { key: 'journals', color: '#475569', label: t('statJournals'), value: bookmarkAnalysisData?.summary.journals || 0 },
+            ].map((segment) => (
+              <div className="stat-segment" key={segment.key}>
+                <div className="stat-color-bar" style={{ background: segment.color }} />
+                <div className="stat-label">{segment.label}</div>
+                <div className="stat-value">{segment.value.toLocaleString()}</div>
               </div>
-              <Button variant="link" className="bookmarks-refresh-btn" onClick={retry} disabled={bookmarksQuery.isFetching}>
-                <Icon icon="lucide:refresh-cw" width="15" />
-                {t('refresh')}
-              </Button>
+            ))}
+          </div>
+
+          <div className="tvn-sticky-results-toolbar bookmarks-toolbar">
+            <div className="tvn-tab-row">
+              <div className="tab-group">
+                <button type="button" className="tab-item active">{t('savedArticles')}</button>
+              </div>
+              <div className="view-toggles ps-2">
+                <button
+                  type="button"
+                  className={`view-toggle-btn ${viewTab === 'list' ? 'active' : ''}`}
+                  onClick={() => setViewTab('list')}
+                >
+                  <Icon icon="lucide:list" width="13" />
+                  {t('viewList')}
+                </button>
+                <button
+                  type="button"
+                  className={`view-toggle-btn ${viewTab === 'analysis' ? 'active' : ''}`}
+                  onClick={() => setViewTab('analysis')}
+                  disabled={sortedBookmarks.length === 0}
+                >
+                  <Icon icon="lucide:bar-chart-3" width="13" />
+                  {t('viewAnalysis')}
+                </button>
+              </div>
+            </div>
+            <div className="tvn-action-toolbar">
+              <div className="action-group">
+                <button type="button" className="tvn-action-btn" onClick={() => navigate('/articles')}>
+                  <Icon icon="lucide:search" width="12" />
+                  {t('browseArticles')}
+                </button>
+                <span className="action-sep" aria-hidden="true">|</span>
+                <button type="button" className="tvn-action-btn" onClick={retry} disabled={bookmarksQuery.isFetching}>
+                  <Icon icon="lucide:refresh-cw" width="12" className={bookmarksQuery.isFetching ? 'bookmarks-spin' : ''} />
+                  {t('refresh')}
+                </button>
+              </div>
             </div>
           </div>
 
+          <section className="bookmarks-results">
           {bookmarksQuery.isLoading ? (
             <div className="bookmarks-state">
               <Spinner animation="border" size="sm" />
@@ -355,8 +360,9 @@ export default function BookmarksPage() {
               </div>
             )
           )}
-        </section>
-      </main>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

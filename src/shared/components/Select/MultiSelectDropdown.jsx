@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Icon } from '@iconify/react';
 
 /**
@@ -11,7 +11,8 @@ export default function MultiSelectDropdown({
   placeholder = "Chọn...", 
   disabled = false,
   loading = false,
-  searchable = true
+  searchable = true,
+  emptyMessage = "Không tìm thấy kết quả"
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -100,7 +101,7 @@ export default function MultiSelectDropdown({
           
           <div className="overflow-auto py-1" style={{ maxHeight: '250px' }}>
             {filteredOptions.length === 0 ? (
-              <div className="p-3 text-center text-muted small">Không tìm thấy kết quả</div>
+              <div className="p-3 text-center text-muted small">{emptyMessage}</div>
             ) : (
               filteredOptions.map(opt => (
                 <div 

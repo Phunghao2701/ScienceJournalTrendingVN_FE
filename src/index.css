@@ -1341,3 +1341,52 @@ select.account-form-input {
   }
 }
 
+.project-card {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.project-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.85rem 2rem rgba(36, 50, 75, 0.12) !important;
+}
+
+.project-card:active {
+  transform: translateY(-1px);
+}
+
+.project-card .btn:focus-visible,
+.project-list-page input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 28%, transparent);
+  outline-offset: 2px;
+}
+
+.project-trend-chart {
+  min-height: 13rem;
+  padding: 1rem 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.project-trend-column {
+  min-width: 3rem;
+  display: flex;
+  flex: 1 0 3rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.project-trend-bar {
+  width: min(2.25rem, 72%);
+  min-height: 0.75rem;
+  border-radius: 0.25rem 0.25rem 0 0;
+  background: var(--primary);
+}
+
+.project-trend-value,
+.project-trend-year {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}

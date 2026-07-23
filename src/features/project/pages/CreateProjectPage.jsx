@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import ROUTES from '../../../app/routes/routePaths';
 import useProjects from '../hooks/useProjects';
@@ -6,10 +6,12 @@ import { Icon } from '@iconify/react';
 import { getSubjectAreasApi, getSubjectCategoriesApi } from '../../catalog/api/catalogApi';
 import { searchJournalsApi } from '../../journal/api/journalApi';
 import MultiSelectDropdown from '../../../shared/components/Select/MultiSelectDropdown';
+import { useProjectText } from '../i18n/useProjectText';
 
 const CreateProjectPage = () => {
   const navigate = useNavigate();
   const { createProject } = useProjects();
+  const p = useProjectText();
   
   // Form State
   const [title, setTitle] = useState('');
@@ -25,7 +27,7 @@ const CreateProjectPage = () => {
   // Loading States
   const [loading, setLoading] = useState(false);
   const [loadingCatalogs, setLoadingCatalogs] = useState(true);
-  const [loadingJournals, setLoadingJournals] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [error, setError] = useState(null);
 
   // Initial Data Fetch
@@ -33,9 +35,8 @@ const CreateProjectPage = () => {
     const fetchCatalogs = async () => {
       setLoadingCatalogs(true);
       try {
-        const [areasRes, catsRes, journalsRes] = await Promise.all([
-          getSubjectAreasApi(),
-          getSubjectCategoriesApi(),
+        const [areasRes, journalsRes] = await Promise.all([
+          getSubjectAreasApi({ limit: 200 }),
           searchJournalsApi({ limit: 200 }) // Load initial batch of journals
         ]);
         
@@ -43,23 +44,53 @@ const CreateProjectPage = () => {
           const rawAreas = areasRes.data.data || areasRes.data;
           setAreas(Array.isArray(rawAreas) ? rawAreas : (rawAreas?.items || []));
         }
-        if (catsRes?.data) {
-          const rawCats = catsRes.data.data || catsRes.data;
-          setCategories(Array.isArray(rawCats) ? rawCats : (rawCats?.items || []));
-        }
         if (journalsRes?.data) {
           const rawJournals = journalsRes.data.data || journalsRes.data;
           setJournals(Array.isArray(rawJournals) ? rawJournals : (rawJournals?.items || []));
         }
       } catch (err) {
         console.error('Lỗi tải danh mục:', err);
-        setError('Không thể tải dữ liệu danh mục. Vui lòng tải lại trang.');
+        setError(p('loadCatalogError'));
       } finally {
         setLoadingCatalogs(false);
       }
     };
     fetchCatalogs();
-  }, []);
+  }, [p]);
+
+  useEffect(() => {
+    if (!subjectAreaId) {
+      setCategories([]);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      try {
+        const response = await getSubjectCategoriesApi({
+          subject_area_id: subjectAreaId,
+          limit: 200,
+        });
+        const payload = response?.data?.data || response?.data;
+        if (!cancelled) {
+          setCategories(Array.isArray(payload) ? payload : (payload?.items || []));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setCategories([]);
+          setError(err.response?.data?.message || p('loadCategoriesError'));
+        }
+      } finally {
+        if (!cancelled) setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+    return () => {
+      cancelled = true;
+    };
+  }, [subjectAreaId, p]);
 
   // Format data for MultiSelect
   const categoryOptions = (Array.isArray(categories) ? categories : [])
@@ -67,7 +98,7 @@ const CreateProjectPage = () => {
     .map(c => ({ value: c.id || c.subject_category_id, label: c.name || c.category_name || c.display_name || '' }));
     
   const journalOptions = (Array.isArray(journals) ? journals : [])
-    .filter(j => j && (!subjectAreaId || String(j.subject_area_id) === String(subjectAreaId)))
+    .filter(j => j && (!subjectAreaId || j.subject_area_id == null || String(j.subject_area_id) === String(subjectAreaId)))
     .map(j => ({ value: j.id || j.journal_id, label: j.name || j.title || j.display_name || '' }));
 
   // Handle Area Change
@@ -80,7 +111,7 @@ const CreateProjectPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !subjectAreaId) {
-      setError('Vui lòng nhập tên dự án và chọn lĩnh vực nghiên cứu.');
+      setError(p('requiredFields'));
       return;
     }
 
@@ -95,16 +126,16 @@ const CreateProjectPage = () => {
         journal_ids: journalIds.map(id => parseInt(id, 10))
       };
       
-      const response = await createProject(payload);
-      if (response && response.success !== false) {
-        const projectId = response.data?.project_id || response.data?.id || response.project_id;
+      const createdProject = await createProject(payload);
+      if (createdProject) {
+        const projectId = createdProject.project_id || createdProject.id;
         navigate(projectId ? ROUTES.PROJECT_DETAIL.replace(':id', projectId) : ROUTES.PROJECTS);
       } else {
-        setError(response?.message || 'Tạo dự án thất bại');
+        setError(p('createFailed'));
       }
     } catch (err) {
       console.error('Error creating project:', err);
-      setError(err.response?.data?.message || err.message || 'Đã có lỗi xảy ra khi tạo dự án');
+      setError(err.response?.data?.message || err.message || p('createFailed'));
     } finally {
       setLoading(false);
     }
@@ -115,16 +146,16 @@ const CreateProjectPage = () => {
       <div className="container mx-auto" style={{ maxWidth: '650px', marginTop: '20px' }}>
         <nav aria-label="breadcrumb" className="mb-4">
           <ol className="breadcrumb mb-2 text-muted-custom small">
-            <li className="breadcrumb-item"><Link to={ROUTES.DASHBOARD} className="text-decoration-none text-muted-custom hover-primary">Tổng quan</Link></li>
-            <li className="breadcrumb-item"><Link to={ROUTES.PROJECTS} className="text-decoration-none text-muted-custom hover-primary">Dự án theo dõi</Link></li>
-            <li className="breadcrumb-item active" aria-current="page">Tạo dự án mới</li>
+            <li className="breadcrumb-item"><Link to={ROUTES.DASHBOARD} className="text-decoration-none text-muted-custom hover-primary">{p('overview')}</Link></li>
+            <li className="breadcrumb-item"><Link to={ROUTES.PROJECTS} className="text-decoration-none text-muted-custom hover-primary">{p('projects')}</Link></li>
+            <li className="breadcrumb-item active" aria-current="page">{p('createProject')}</li>
           </ol>
         </nav>
 
         <div className="glass-card p-4 p-md-5 rounded-4 shadow-sm border">
           <div className="mb-4 text-center">
-            <h2 className="font-display fw-bold text-main mb-2">Khởi tạo dự án nghiên cứu mới</h2>
-            <p className="text-muted-custom small mb-0">Thiết lập không gian làm việc để tự động theo dõi xu hướng, nhận cảnh báo bài viết khoa học và giám sát từ khóa.</p>
+            <h2 className="font-display fw-bold text-main mb-2">{p('newProject')}</h2>
+            <p className="text-muted-custom small mb-0">{p('newProjectHint')}</p>
           </div>
 
           {error && (
@@ -137,13 +168,13 @@ const CreateProjectPage = () => {
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label htmlFor="projectTitle" className="form-label fw-semibold text-main mb-2 small text-uppercase tracking-wider">
-                Tên Dự án <span className="text-danger">*</span>
+                {p('projectName')} <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
                 className="form-control form-control-lg journal-dark-input"
                 id="projectTitle"
-                placeholder="Ví dụ: Nghiên cứu ứng dụng Deep Learning trong Y học"
+                placeholder={p('projectNameExample')}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={loading}
@@ -155,7 +186,7 @@ const CreateProjectPage = () => {
 
             <div className="mb-4">
               <label htmlFor="subjectArea" className="form-label fw-semibold text-main mb-2 small text-uppercase tracking-wider">
-                Lĩnh vực nghiên cứu chính <span className="text-danger">*</span>
+                {p('primaryArea')} <span className="text-danger">*</span>
               </label>
               <select
                 className="form-select form-control-lg journal-dark-input"
@@ -166,42 +197,44 @@ const CreateProjectPage = () => {
                 required
                 style={{ backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', borderColor: 'var(--border)' }}
               >
-                <option value="">-- Chọn lĩnh vực nghiên cứu --</option>
+                <option value="">{p('selectArea')}</option>
                 {areas.map(area => (
                   <option key={area.id || area.subject_area_id} value={area.id || area.subject_area_id}>
-                    {area.name || area.area_name}
+                    {area.name || area.area_name || area.display_name}
                   </option>
                 ))}
               </select>
-              {loadingCatalogs && <div className="form-text mt-2"><span className="spinner-border spinner-border-sm me-2"></span> Đang tải danh mục...</div>}
+              {loadingCatalogs && <div className="form-text mt-2"><span className="spinner-border spinner-border-sm me-2"></span> {p('loadingCatalogs')}</div>}
             </div>
 
             <div className="mb-4">
               <label className="form-label fw-semibold text-main mb-2 small text-uppercase tracking-wider">
-                Chuyên ngành (Subject Categories)
+                {p('subjectCategories')}
               </label>
               <MultiSelectDropdown
                 options={categoryOptions}
                 value={subjectCategoryIds}
                 onChange={setSubjectCategoryIds}
-                placeholder={!subjectAreaId ? "Vui lòng chọn lĩnh vực trước..." : "Chọn chuyên ngành..."}
-                disabled={!subjectAreaId || loadingCatalogs || loading}
+                placeholder={!subjectAreaId ? p('selectAreaFirst') : p('selectCategories')}
+                disabled={!subjectAreaId || loadingCategories || loading}
+                loading={loadingCategories}
+                emptyMessage={p('noCategories')}
               />
             </div>
 
             <div className="mb-5">
               <label className="form-label fw-semibold text-main mb-2 small text-uppercase tracking-wider">
-                Tạp chí theo dõi (Journals)
+                {p('watchedJournals')}
               </label>
               <MultiSelectDropdown
                 options={journalOptions}
                 value={journalIds}
                 onChange={setJournalIds}
-                placeholder={!subjectAreaId ? "Vui lòng chọn lĩnh vực trước..." : "Chọn tạp chí..."}
+                placeholder={!subjectAreaId ? p('selectAreaFirst') : p('selectJournals')}
                 disabled={!subjectAreaId || loadingCatalogs || loading}
               />
               <div className="form-text mt-2 small text-muted-custom">
-                Bạn có thể thêm từ khóa theo dõi sau khi tạo dự án xong.
+                {p('keywordAfterCreate')}
               </div>
             </div>
 
@@ -213,7 +246,7 @@ const CreateProjectPage = () => {
                 disabled={loading}
                 style={{ color: 'var(--text-muted)' }}
               >
-                Hủy
+                {p('cancel')}
               </button>
               <button
                 type="submit"
@@ -223,12 +256,12 @@ const CreateProjectPage = () => {
                 {loading ? (
                   <>
                     <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    Đang tạo...
+                    {p('creating')}
                   </>
                 ) : (
                   <>
                     <Icon icon="lucide:check" width="18" />
-                    Tạo dự án
+                    {p('createProject')}
                   </>
                 )}
               </button>

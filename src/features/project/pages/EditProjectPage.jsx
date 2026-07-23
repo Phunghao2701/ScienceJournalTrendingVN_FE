@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import ROUTES from '../../../app/routes/routePaths';
 import projectService from '../services/projectService';
@@ -6,10 +6,12 @@ import { Icon } from '@iconify/react';
 import { getSubjectAreasApi, getSubjectCategoriesApi } from '../../catalog/api/catalogApi';
 import { searchJournalsApi } from '../../journal/api/journalApi';
 import MultiSelectDropdown from '../../../shared/components/Select/MultiSelectDropdown';
+import { useProjectText } from '../i18n/useProjectText';
 
 const EditProjectPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const p = useProjectText();
   
   // Form State
   const [title, setTitle] = useState('');
@@ -25,6 +27,7 @@ const EditProjectPage = () => {
   // Loading States
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [error, setError] = useState(null);
 
   // Initial Data Fetch
@@ -32,9 +35,8 @@ const EditProjectPage = () => {
     const fetchData = async () => {
       setLoadingData(true);
       try {
-        const [areasRes, catsRes, journalsRes, projectRes] = await Promise.all([
-          getSubjectAreasApi(),
-          getSubjectCategoriesApi(),
+        const [areasRes, journalsRes, projectRes] = await Promise.all([
+          getSubjectAreasApi({ limit: 200 }),
           searchJournalsApi({ limit: 500 }),
           projectService.getProjectById(id)
         ]);
@@ -43,10 +45,6 @@ const EditProjectPage = () => {
           const rawAreas = areasRes.data.data || areasRes.data;
           setAreas(Array.isArray(rawAreas) ? rawAreas : (rawAreas?.items || []));
         }
-        if (catsRes?.data) {
-          const rawCats = catsRes.data.data || catsRes.data;
-          setCategories(Array.isArray(rawCats) ? rawCats : (rawCats?.items || []));
-        }
         if (journalsRes?.data) {
           const rawJournals = journalsRes.data.data || journalsRes.data;
           setJournals(Array.isArray(rawJournals) ? rawJournals : (rawJournals?.items || []));
@@ -54,15 +52,15 @@ const EditProjectPage = () => {
 
         // Pre-fill
         if (projectRes?.data) {
-          const p = projectRes.data;
-          setTitle(p.title || '');
-          setSubjectAreaId(p.subject_area?.subject_area_id || p.subject_area || '');
-          setSubjectCategoryIds(p.subject_categories?.map(c => c.subject_category_id || c.id) || []);
-          setJournalIds(p.journals?.map(j => j.journal_id || j.id) || p.journal_ids || []);
+          const projectData = projectRes.data;
+          setTitle(projectData.title || '');
+          setSubjectAreaId(projectData.subject_area?.subject_area_id || projectData.subject_area || '');
+          setSubjectCategoryIds(projectData.subject_categories?.map(c => c.subject_category_id || c.id) || []);
+          setJournalIds(projectData.journals?.map(j => j.journal_id || j.id) || projectData.journal_ids || []);
         }
       } catch (err) {
         console.error('Lỗi tải dữ liệu dự án:', err);
-        setError('Không thể tải dữ liệu dự án. Vui lòng tải lại trang.');
+        setError(p('loadProjectError'));
       } finally {
         setLoadingData(false);
       }
@@ -70,7 +68,41 @@ const EditProjectPage = () => {
     if (id) {
       fetchData();
     }
-  }, [id]);
+  }, [id, p]);
+
+  useEffect(() => {
+    if (!subjectAreaId) {
+      setCategories([]);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      try {
+        const response = await getSubjectCategoriesApi({
+          subject_area_id: subjectAreaId,
+          limit: 200,
+        });
+        const payload = response?.data?.data || response?.data;
+        if (!cancelled) {
+          setCategories(Array.isArray(payload) ? payload : (payload?.items || []));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setCategories([]);
+          setError(err.response?.data?.message || p('loadCategoriesError'));
+        }
+      } finally {
+        if (!cancelled) setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+    return () => {
+      cancelled = true;
+    };
+  }, [subjectAreaId, p]);
 
   // Format data for MultiSelect
   const categoryOptions = (Array.isArray(categories) ? categories : [])
@@ -78,7 +110,7 @@ const EditProjectPage = () => {
     .map(c => ({ value: c.id || c.subject_category_id, label: c.name || c.category_name || c.display_name || '' }));
     
   const journalOptions = (Array.isArray(journals) ? journals : [])
-    .filter(j => j && (!subjectAreaId || String(j.subject_area_id) === String(subjectAreaId)))
+    .filter(j => j && (!subjectAreaId || j.subject_area_id == null || String(j.subject_area_id) === String(subjectAreaId)))
     .map(j => ({ value: j.id || j.journal_id, label: j.name || j.title || j.display_name || '' }));
 
   // Handle Area Change
@@ -91,7 +123,7 @@ const EditProjectPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !subjectAreaId) {
-      setError('Vui lòng nhập tên dự án và chọn lĩnh vực nghiên cứu.');
+      setError(p('requiredFields'));
       return;
     }
 
@@ -110,11 +142,11 @@ const EditProjectPage = () => {
       if (response && response.success !== false) {
         navigate(ROUTES.PROJECT_DETAIL.replace(':id', id));
       } else {
-        setError(response?.message || 'Cập nhật dự án thất bại');
+        setError(response?.message || p('updateFailed'));
       }
     } catch (err) {
       console.error('Error updating project:', err);
-      setError(err.response?.data?.message || err.message || 'Đã có lỗi xảy ra khi cập nhật dự án');
+      setError(err.response?.data?.message || err.message || p('updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -133,17 +165,17 @@ const EditProjectPage = () => {
       <div className="container mx-auto" style={{ maxWidth: '650px', marginTop: '20px' }}>
         <nav aria-label="breadcrumb" className="mb-4">
           <ol className="breadcrumb mb-2 text-muted-custom small">
-            <li className="breadcrumb-item"><Link to={ROUTES.DASHBOARD} className="text-decoration-none text-muted-custom hover-primary">Tổng quan</Link></li>
-            <li className="breadcrumb-item"><Link to={ROUTES.PROJECTS} className="text-decoration-none text-muted-custom hover-primary">Dự án theo dõi</Link></li>
-            <li className="breadcrumb-item"><Link to={ROUTES.PROJECT_DETAIL.replace(':id', id)} className="text-decoration-none text-muted-custom hover-primary">{title || 'Dự án'}</Link></li>
-            <li className="breadcrumb-item active" aria-current="page">Chỉnh sửa</li>
+            <li className="breadcrumb-item"><Link to={ROUTES.DASHBOARD} className="text-decoration-none text-muted-custom hover-primary">{p('overview')}</Link></li>
+            <li className="breadcrumb-item"><Link to={ROUTES.PROJECTS} className="text-decoration-none text-muted-custom hover-primary">{p('projects')}</Link></li>
+            <li className="breadcrumb-item"><Link to={ROUTES.PROJECT_DETAIL.replace(':id', id)} className="text-decoration-none text-muted-custom hover-primary">{title || p('untitledProject')}</Link></li>
+            <li className="breadcrumb-item active" aria-current="page">{p('editProject')}</li>
           </ol>
         </nav>
 
         <div className="glass-card p-4 p-md-5 rounded-4 shadow-sm border">
           <div className="mb-4 text-center">
-            <h2 className="font-display fw-bold text-main mb-2">Chỉnh sửa dự án</h2>
-            <p className="text-muted-custom small mb-0">Cập nhật thông tin và lĩnh vực theo dõi của dự án nghiên cứu.</p>
+            <h2 className="font-display fw-bold text-main mb-2">{p('editProject')}</h2>
+            <p className="text-muted-custom small mb-0">{p('editProjectHint')}</p>
           </div>
 
           {error && (
@@ -156,13 +188,13 @@ const EditProjectPage = () => {
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label htmlFor="projectTitle" className="form-label fw-semibold text-main mb-2 small text-uppercase tracking-wider">
-                Tên Dự án <span className="text-danger">*</span>
+                {p('projectName')} <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
                 className="form-control form-control-lg journal-dark-input"
                 id="projectTitle"
-                placeholder="Ví dụ: Nghiên cứu ứng dụng Deep Learning trong Y học"
+                placeholder={p('projectNameExample')}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={loading}
@@ -173,7 +205,7 @@ const EditProjectPage = () => {
 
             <div className="mb-4">
               <label htmlFor="subjectArea" className="form-label fw-semibold text-main mb-2 small text-uppercase tracking-wider">
-                Lĩnh vực nghiên cứu chính <span className="text-danger">*</span>
+                {p('primaryArea')} <span className="text-danger">*</span>
               </label>
               <select
                 className="form-select form-control-lg journal-dark-input"
@@ -184,10 +216,10 @@ const EditProjectPage = () => {
                 required
                 style={{ backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', borderColor: 'var(--border)' }}
               >
-                <option value="">-- Chọn lĩnh vực nghiên cứu --</option>
+                <option value="">{p('selectArea')}</option>
                 {areas.map(area => (
                   <option key={area.id || area.subject_area_id} value={area.id || area.subject_area_id}>
-                    {area.name || area.area_name}
+                    {area.name || area.area_name || area.display_name}
                   </option>
                 ))}
               </select>
@@ -195,26 +227,28 @@ const EditProjectPage = () => {
 
             <div className="mb-4">
               <label className="form-label fw-semibold text-main mb-2 small text-uppercase tracking-wider">
-                Chuyên ngành (Subject Categories)
+                {p('subjectCategories')}
               </label>
               <MultiSelectDropdown
                 options={categoryOptions}
                 value={subjectCategoryIds}
                 onChange={setSubjectCategoryIds}
-                placeholder={!subjectAreaId ? "Vui lòng chọn lĩnh vực trước..." : "Chọn chuyên ngành..."}
-                disabled={!subjectAreaId || loading}
+                placeholder={!subjectAreaId ? p('selectAreaFirst') : p('selectCategories')}
+                disabled={!subjectAreaId || loadingCategories || loading}
+                loading={loadingCategories}
+                emptyMessage={p('noCategories')}
               />
             </div>
 
             <div className="mb-5">
               <label className="form-label fw-semibold text-main mb-2 small text-uppercase tracking-wider">
-                Tạp chí theo dõi (Journals)
+                {p('watchedJournals')}
               </label>
               <MultiSelectDropdown
                 options={journalOptions}
                 value={journalIds}
                 onChange={setJournalIds}
-                placeholder={!subjectAreaId ? "Vui lòng chọn lĩnh vực trước..." : "Chọn tạp chí..."}
+                placeholder={!subjectAreaId ? p('selectAreaFirst') : p('selectJournals')}
                 disabled={!subjectAreaId || loading}
               />
             </div>
@@ -227,7 +261,7 @@ const EditProjectPage = () => {
                 disabled={loading}
                 style={{ color: 'var(--text-muted)' }}
               >
-                Hủy
+                {p('cancel')}
               </button>
               <button
                 type="submit"
@@ -237,12 +271,12 @@ const EditProjectPage = () => {
                 {loading ? (
                   <>
                     <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    Đang lưu...
+                    {p('saving')}
                   </>
                 ) : (
                   <>
                     <Icon icon="lucide:save" width="18" />
-                    Lưu thay đổi
+                    {p('saveChanges')}
                   </>
                 )}
               </button>

@@ -92,7 +92,7 @@ export default function useProjectDetails(projectId) {
     try {
       const response = await getTrendingKeywordsApi(projectId, limit, sortBy);
       if (response.data) {
-        setTrendingKeywords(response.data.keywords || []);
+        setTrendingKeywords(response.data.data?.keywords || response.data.keywords || []);
       }
     } catch (err) {
       console.error('Fetch trending keywords failed:', err);

@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import keywordService from '../services/keywordService';
 import projectService from '../../project/services/projectService';
+import { useProjectText } from '../../project/i18n/useProjectText';
 
 export const useKeywordTracking = (projectId) => {
+  const p = useProjectText();
   const [project, setProject] = useState(null);
   const [trendingKeywords, setTrendingKeywords] = useState([]);
   const [watchArticles, setWatchArticles] = useState([]);
@@ -41,11 +43,11 @@ export const useKeywordTracking = (projectId) => {
 
     } catch (err) {
       console.error("Error fetching keyword tracking data", err);
-      setError("Failed to load keyword tracking data. Please try again.");
+      setError(p('unableLoad'));
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, p]);
 
   useEffect(() => {
     fetchAllData();
@@ -58,7 +60,11 @@ export const useKeywordTracking = (projectId) => {
   const addKeywordWatch = async (keywordStr) => {
     setActionLoading(true);
     try {
-      await keywordService.watchKeywords(projectId, [keywordStr]);
+      const keyword = await keywordService.findKeywordByName(keywordStr);
+      if (!keyword?.keyword_id) {
+        throw new Error('Không tìm thấy từ khóa này trong hệ thống. Vui lòng nhập đúng tên keyword.');
+      }
+      await keywordService.watchKeywords(projectId, [Number(keyword.keyword_id)]);
       await fetchAllData();
       return true;
     } catch (err) {

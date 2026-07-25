@@ -7,6 +7,7 @@ import { jwtDecode } from 'jwt-decode';
 import {
   loginApi,
   registerApi,
+  resendActivationApi,
   loginGoogleApi,
   logoutApi,
 } from '../api/auth.api';
@@ -91,6 +92,17 @@ export const loginWithGoogleCode = async (code) => {
  */
 export const registerUser = async (payload) => {
   const response = await registerApi(payload);
+  return response.data;
+};
+
+/**
+ * Ask the backend to resend the activation link.
+ *
+ * @param {string} email - Registered email address.
+ * @returns {Promise<Object>} Backend response body.
+ */
+export const resendActivationEmail = async (email) => {
+  const response = await resendActivationApi(email);
   return response.data;
 };
 

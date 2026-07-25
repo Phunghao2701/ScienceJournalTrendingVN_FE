@@ -137,15 +137,6 @@ export default function WorkspaceSidebar({ activeItem = 'collections' }) {
               <span className="item-label">{t('sbCollections')}</span>
               <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
             </button>
-            <button
-              type="button"
-              className={`tvn-drawer-item workspace-drawer-button ${activeItem === 'dashboards' ? 'active' : ''}`}
-              onClick={() => navigate('/')}
-            >
-              <Icon icon="lucide:bar-chart-2" width="16" className="item-icon" />
-              <span className="item-label">{t('sbDashboards')}</span>
-              <Icon icon="lucide:chevron-right" width="12" className="item-arrow ms-auto" />
-            </button>
           </nav>
         </div>
       </aside>

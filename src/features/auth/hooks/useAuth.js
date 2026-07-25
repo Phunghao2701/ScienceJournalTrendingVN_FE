@@ -16,6 +16,7 @@ import {
   loginWithPassword,
   logoutSession,
   registerUser,
+  resendActivationEmail,
   updateCurrentProfile,
 } from '../services/authService';
 
@@ -156,6 +157,21 @@ export default function useAuth() {
   }, [setError, setLoading]);
 
   /**
+   * Gửi lại email kích hoạt cho tài khoản vừa đăng ký.
+   */
+  const resendActivation = useCallback(async (email) => {
+    setError(null);
+
+    try {
+      return await resendActivationEmail(email);
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || 'Không thể gửi lại email kích hoạt';
+      setError(message);
+      throw err;
+    }
+  }, [setError]);
+
+  /**
    * Đăng xuất: gọi BE clear session/cookie, sau đó xóa state FE.
    */
   const logout = useCallback(async (redirectTo = '/login') => {
@@ -223,6 +239,7 @@ export default function useAuth() {
     login,
     loginWithGoogle,
     register,
+    resendActivation,
     logout,
     fetchProfile,
     updateProfile,

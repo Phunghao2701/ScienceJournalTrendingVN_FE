@@ -15,6 +15,15 @@ export const registerApi = (data) => {
 };
 
 /**
+ * Resend account activation email
+ * @param {string} email - Registered email address
+ * @returns {Promise} Axios promise
+ */
+export const resendActivationApi = (email) => {
+  return api.post('/auth/resend-activation', { email });
+};
+
+/**
  * Verify user email activation via token
  * @param {string} token - Activation token
  * @returns {Promise} Axios promise

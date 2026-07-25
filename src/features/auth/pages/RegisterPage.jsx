@@ -13,13 +13,16 @@ import Icon from '../../../shared/components/Icon';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, resendActivation } = useAuth();
 
   // State phục vụ UI đăng ký: loading, lỗi API, màn hình thành công.
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const [activationEmailSent, setActivationEmailSent] = useState(true);
+  const [isResending, setIsResending] = useState(false);
+  const [resendFeedback, setResendFeedback] = useState(null);
 
   /**
    * Gửi form đăng ký lên backend.
@@ -31,7 +34,8 @@ export default function RegisterPage() {
 
     try {
       setRegisteredEmail(payload.email);
-      await register(payload);
+      const result = await register(payload);
+      setActivationEmailSent(result?.data?.activation_email_sent !== false);
       setIsSuccess(true);
     } catch (err) {
       console.error('Registration failed:', err.response?.data?.message || err.message);
@@ -42,6 +46,33 @@ export default function RegisterPage() {
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  /**
+   * Gửi lại liên kết kích hoạt mà không yêu cầu người dùng đăng ký tài khoản mới.
+   */
+  const handleResendActivation = async () => {
+    setIsResending(true);
+    setResendFeedback(null);
+
+    try {
+      const result = await resendActivation(registeredEmail);
+      setActivationEmailSent(true);
+      setResendFeedback({
+        type: 'success',
+        message: result?.message || 'Email kích hoạt đã được gửi lại.',
+      });
+    } catch (err) {
+      setResendFeedback({
+        type: 'error',
+        message:
+          err.response?.data?.message
+          || err.message
+          || 'Không thể gửi lại email kích hoạt. Vui lòng thử lại sau.',
+      });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -63,12 +94,22 @@ export default function RegisterPage() {
               width: '80px',
               height: '80px',
               borderRadius: '50%',
-              background: 'rgba(16, 185, 129, 0.08)',
-              border: '2px solid #10b981',
-              boxShadow: '0 0 20px rgba(16, 185, 129, 0.1)',
+              background: activationEmailSent
+                ? 'rgba(16, 185, 129, 0.08)'
+                : 'rgba(245, 158, 11, 0.08)',
+              border: `2px solid ${activationEmailSent ? '#10b981' : '#f59e0b'}`,
+              boxShadow: activationEmailSent
+                ? '0 0 20px rgba(16, 185, 129, 0.1)'
+                : '0 0 20px rgba(245, 158, 11, 0.1)',
             }}
           >
-            <Icon icon="lucide:check-circle" className="text-success" style={{ fontSize: '40px' }} />
+            <Icon
+              icon={activationEmailSent ? 'lucide:check-circle' : 'lucide:mail-warning'}
+              style={{
+                fontSize: '40px',
+                color: activationEmailSent ? '#10b981' : '#f59e0b',
+              }}
+            />
           </div>
 
           <h2 className="font-display fw-bold mb-3" style={{ fontSize: '1.75rem', color: 'var(--text-main)' }}>
@@ -76,10 +117,47 @@ export default function RegisterPage() {
           </h2>
 
           <p className="text-muted-custom mb-4" style={{ color: 'var(--text-muted) !important', lineHeight: '1.6', fontSize: '14px' }}>
-            Một email xác thực đã được gửi tới địa chỉ <strong style={{ color: 'var(--text-main)' }}>{registeredEmail}</strong>. Vui lòng kiểm tra hộp thư (hoặc thư rác) và làm theo hướng dẫn để kích hoạt tài khoản của bạn.
+            {activationEmailSent ? (
+              <>
+                Một email xác thực đã được gửi tới địa chỉ <strong style={{ color: 'var(--text-main)' }}>{registeredEmail}</strong>. Vui lòng kiểm tra hộp thư (hoặc thư rác) và làm theo hướng dẫn để kích hoạt tài khoản của bạn.
+              </>
+            ) : (
+              <>
+                Tài khoản đã được tạo, nhưng email xác thực tới <strong style={{ color: 'var(--text-main)' }}>{registeredEmail}</strong> chưa gửi được. Vui lòng thử gửi lại.
+              </>
+            )}
           </p>
 
+          {resendFeedback && (
+            <p
+              className="mb-3"
+              role="status"
+              style={{
+                color: resendFeedback.type === 'success' ? '#059669' : '#dc2626',
+                fontSize: '14px',
+              }}
+            >
+              {resendFeedback.message}
+            </p>
+          )}
+
           <button
+            type="button"
+            onClick={handleResendActivation}
+            disabled={isResending}
+            className="w-100 py-2.5 rounded-3 text-sm font-semibold transition-all mb-3"
+            style={{
+              background: 'transparent',
+              color: 'var(--btn-dark)',
+              border: '1px solid var(--border)',
+              opacity: isResending ? 0.65 : 1,
+            }}
+          >
+            {isResending ? 'Đang gửi lại...' : 'Gửi lại email xác thực'}
+          </button>
+
+          <button
+            type="button"
             onClick={() => navigate('/login')}
             className="w-100 py-2.5 rounded-3 border-0 text-sm font-semibold transition-all"
             style={{

@@ -1,37 +1,32 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from "react-router-dom";
+import InstitutionDetailPage from "../../features/institution/pages/InstitutionDetailPage";
+import TrendingVNPage from "../../features/trendingVN/pages/TrendingVNPage";
+import ArticleDetailPage from "../../features/article/pages/ArticleDetailPage";
+import TrendingArticleDetailPage from "../../features/trendingVN/pages/ArticleDetailPage";
 
-// Core feature pages — all paths below are verified to exist in features/
-import TrendingVNPage from '../../features/trendingVN/pages/TrendingVNPage';
-import ArticleDetailPage from '../../features/article/pages/ArticleDetailPage';
-import TrendingArticleDetailPage from '../../features/trendingVN/pages/ArticleDetailPage';
-import ArticleVisualDetailPage from '../../features/article/pages/ArticleVisualDetailPage';
-import JournalDetailPage from '../../features/journal/pages/JournalDetailPage';
-import InstitutionDetailPage from '../../features/institution/pages/InstitutionDetailPage';
+import RegisterPage from "../../features/auth/pages/RegisterPage";
+import LoginPage from "../../features/auth/pages/LoginPage";
+import ProfilePage from "../../features/profile/pages/ProfilePage";
+import VerifyEmailPage from "../../features/auth/pages/VerifyEmailPage";
+import ForgotPasswordPage from "../../features/auth/pages/ForgotPasswordPage";
+import ResetPasswordPage from "../../features/auth/pages/ResetPasswordPage";
 
-import RegisterPage from '../../features/auth/pages/RegisterPage';
-import LoginPage from '../../features/auth/pages/LoginPage';
-import ProfilePage from '../../features/profile/pages/ProfilePage';
-import VerifyEmailPage from '../../features/auth/pages/VerifyEmailPage';
-import ForgotPasswordPage from '../../features/auth/pages/ForgotPasswordPage';
-import ResetPasswordPage from '../../features/auth/pages/ResetPasswordPage';
+import ProtectedRoute from "./ProtectedRoute";
+import PublicRoute from "./PublicRoute";
+import AuthLayoutWithUser from "../layouts/AuthLayoutWithUser";
 
-import ProtectedRoute from './ProtectedRoute';
-import PublicRoute from './PublicRoute';
-import AuthLayoutWithUser from '../layouts/AuthLayoutWithUser';
+import AuthorDetailPage from "../../features/author/pages/AuthorDetailPage";
+import AuthorListPage from "../../features/author/pages/AuthorListPage";
+import OrcidScanPage from "../../features/orcid/pages/OrcidScanPage";
 
-import AuthorLeaderboardPage from '../../features/author/pages/AuthorLeaderboardPage';
-import AuthorDetailPage from '../../features/author/pages/AuthorDetailPage';
-import AuthorListPage from '../../features/author/pages/AuthorListPage';
-
-import TopicDetailPage from '../../features/topic/pages/TopicDetailPage';
-import BookmarksPage from '../../features/bookmark/pages/BookmarksPage';
+import BookmarksPage from "../../features/bookmark/pages/BookmarksPage";
 
 // Projects features
-import ProjectListPage from '../../features/project/pages/ProjectListPage';
-import CreateProjectPage from '../../features/project/pages/CreateProjectPage';
-import EditProjectPage from '../../features/project/pages/EditProjectPage';
-import ProjectDetailPage from '../../features/project/pages/ProjectDetailPage';
-import ProjectWorkspaceLayout from '../../features/project/layouts/ProjectWorkspaceLayout';
+import ProjectListPage from "../../features/project/pages/ProjectListPage";
+import CreateProjectPage from "../../features/project/pages/CreateProjectPage";
+import EditProjectPage from "../../features/project/pages/EditProjectPage";
+import ProjectDetailPage from "../../features/project/pages/ProjectDetailPage";
+import ProjectWorkspaceLayout from "../../features/project/layouts/ProjectWorkspaceLayout";
 
 /**
  * Nơi khai báo route chính của ứng dụng.
@@ -52,10 +47,9 @@ export default function AppRoutes() {
 
       {/* Routes sử dụng layout chung */}
       <Route element={<AuthLayoutWithUser />}>
-
         {/* 🔐 Tuyến đường yêu cầu bảo mật (Đã đăng nhập) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/authors/leaderboard" element={<AuthorLeaderboardPage />} />
+          <Route path="/scan-orcid" element={<OrcidScanPage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />
           <Route element={<ProjectWorkspaceLayout />}>
             <Route path="/projects" element={<ProjectListPage />} />
@@ -69,8 +63,10 @@ export default function AppRoutes() {
         <Route path="/articles" element={<TrendingVNPage />} />
         <Route path="/trending-vn" element={<TrendingVNPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
-        <Route path="/trending/articles/:id" element={<TrendingArticleDetailPage />} />
-        <Route path="/articles/:id/visual" element={<ArticleVisualDetailPage />} />
+        <Route
+          path="/trending/articles/:id"
+          element={<TrendingArticleDetailPage />}
+        />
 
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -78,16 +74,11 @@ export default function AppRoutes() {
         <Route path="/authors" element={<AuthorListPage />} />
         <Route path="/authors/:id" element={<AuthorDetailPage />} />
 
-        <Route path="/journals/:id" element={<JournalDetailPage />} />
         <Route path="/institutions/:id" element={<InstitutionDetailPage />} />
 
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-        <Route path="/topics/:topicId" element={<TopicDetailPage />} />
       </Route>
-
-      <Route path="/topics/:topicId" element={<TopicDetailPage />} />
 
       <Route path="*" element={<TrendingVNPage />} />
     </Routes>

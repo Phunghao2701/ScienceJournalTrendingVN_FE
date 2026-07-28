@@ -25,6 +25,14 @@ import {
   buildArticleAuthorFilterPath,
   buildAuthorDetailPath,
 } from '../../../app/routes/routePaths';
+import {
+  getHiddenArticleDetailAuthorCount,
+  getVisibleArticleDetailAuthors,
+} from '../utils/articleDetailAuthors';
+import {
+  getArticleReferenceSignalCount,
+  getAvailableReferenceDisplayCount,
+} from '../utils/referenceHydration';
 
 // Subcomponents
 import ArticleDetailSkeleton from '../../article/components/ArticleDetailSkeleton';
@@ -37,6 +45,81 @@ import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
 import '../trendingVN.css';
 
 
+function ArticleDetailAuthors({ authors = [], institutionIndexById }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const visibleAuthors = getVisibleArticleDetailAuthors(authors, isExpanded);
+  const hiddenAuthorCount = getHiddenArticleDetailAuthorCount(authors);
+  const authorsListId = 'tvn-article-detail-authors-list';
+
+  return (
+    <div>
+      <div className="tvn-meta-heading">AUTHORS</div>
+      <div id={authorsListId} className="tvn-detail-authors-list text-xs">
+        {authors.length > 0 ? (
+          visibleAuthors.map((author, index) => {
+            const name = author.display_name || author.name || 'Author';
+            const affiliations = (author.institutions || [])
+              .map((institution) => institutionIndexById.get(String(
+                institution.institution_id || institution.id || institution.display_name,
+              )))
+              .filter(Boolean);
+
+            return (
+              <div key={author.author_id || author.id || `${name}-${index}`} className="tvn-detail-author-row">
+                {author.author_id || author.id ? (
+                  <Link
+                    to={buildAuthorDetailPath(author.author_id || author.id)}
+                    className="text-primary-hover"
+                    style={{ color: '#2b54b2', fontWeight: 500 }}
+                    title={`View ${name} profile`}
+                  >
+                    {name}
+                    {affiliations.length > 0 && (
+                      <sup className="ms-1 text-primary">{affiliations.join(',')}</sup>
+                    )}
+                  </Link>
+                ) : (
+                  <span style={{ fontWeight: 500, color: '#334155' }}>
+                    {name}
+                    {affiliations.length > 0 && (
+                      <sup className="ms-1 text-primary">{affiliations.join(',')}</sup>
+                    )}
+                  </span>
+                )}
+                {author.orcid && (
+                  <a
+                    href={author.orcid}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="tvn-detail-author-orcid"
+                    aria-label={`${name} ORCID profile`}
+                  >
+                    <Icon icon="simple-icons:orcid" className="text-success" width="12" aria-hidden="true" />
+                  </a>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <span className="text-muted-custom">Author list is being updated...</span>
+        )}
+      </div>
+
+      {hiddenAuthorCount > 0 && (
+        <button
+          type="button"
+          className="tvn-detail-authors-toggle"
+          aria-expanded={isExpanded}
+          aria-controls={authorsListId}
+          onClick={() => setIsExpanded((current) => !current)}
+        >
+          {isExpanded ? 'Show less' : `Show more +${hiddenAuthorCount}`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 
 export default function ArticleDetailPage() {
   const { id } = useParams();
@@ -45,6 +128,7 @@ export default function ArticleDetailPage() {
   const auth = useAuth();
   const currentUser = auth?.user;
   const isLoggedIn = Boolean(auth?.user || auth?.token || auth?.isAuthenticated);
+  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'citations' | 'references' | 'recommended' | 'collections'
 
 
   const {
@@ -60,6 +144,11 @@ export default function ArticleDetailPage() {
     references,
     referencesTotal,
     isReferencesError,
+    isHydratingReferences,
+    isReferencesHydrationPending,
+    referencesHydrationError,
+    retryReferences,
+    retryReferencesHydration,
     recommendedArticles,
     isCitingWorksLoading,
     isReferencesLoading,
@@ -68,11 +157,14 @@ export default function ArticleDetailPage() {
     setSearchQuery,
     handleBookmarkToggle,
     refetch,
-  } = useTrendingArticleDetail(id, currentUser || isLoggedIn);
+  } = useTrendingArticleDetail(
+    id,
+    currentUser || isLoggedIn,
+    { isReferencesTabActive: activeTab === 'references' },
+  );
   
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'citations' | 'references' | 'recommended' | 'collections'
   const [expandedAbstracts, setExpandedAbstracts] = useState({});
   const [showAllAuthors, setShowAllAuthors] = useState(false);
   const [showCitationsModal, setShowCitationsModal] = useState(false);
@@ -672,7 +764,18 @@ ER  - `;
   const citationMetric = article.citation_count ?? article.citations ?? 0;
   const referenceMetric = article.reference_count ?? 0;
   const citingWorksRelationTotal = citingWorksTotal ?? article.citing_works_count ?? citingWorks?.length ?? 0;
-  const availableReferencesTotal = referencesTotal ?? article.available_references_count ?? article.reference_count ?? references?.length ?? 0;
+  const availableReferencesTotal = getAvailableReferenceDisplayCount(
+    referencesTotal,
+    article,
+    {
+      references,
+    },
+  );
+  const isReferencesPreparing = (
+    isReferencesLoading
+    || isHydratingReferences
+    || isReferencesHydrationPending
+  );
   const publicationLabel = article.publication_date
     ? ['Published', article.publication_date]
     : article.publication_year
@@ -948,7 +1051,9 @@ ER  - `;
                 className={`tvn-tab-btn ${activeTab === 'references' ? 'active' : ''}`}
                 onClick={() => setActiveTab('references')}
               >
-                {availableReferencesTotal} References
+                {t('trendingArticleReferences.tabLabel', {
+                  count: availableReferencesTotal,
+                })}
               </Button>
               <Button 
                 variant="link" 
@@ -1012,50 +1117,11 @@ ER  - `;
                         {/* Sub-column 1: Authors, Keywords, Topics */}
                         <div className="col-md-6 d-flex flex-column gap-3">
                           {/* Authors */}
-                          <div>
-                            <div className="tvn-meta-heading">AUTHORS</div>
-                            <div className="d-flex flex-column gap-1 text-xs" style={{ lineHeight: '1.6' }}>
-                              {article.authors && article.authors.length > 0 ? (
-                                article.authors.map((author, index) => {
-                                  const name = author.display_name || author.name || 'Author';
-                                  const affiliations = (author.institutions || [])
-                                    .map((institution) => institutionIndexById.get(String(institution.institution_id || institution.id || institution.display_name)))
-                                    .filter(Boolean);
-                                  return (
-                                    <div key={index} className="d-flex align-items-center gap-1">
-                                      {author.author_id || author.id ? (
-                                        <Link
-                                          to={buildAuthorDetailPath(author.author_id || author.id)}
-                                          className="text-primary-hover"
-                                          style={{ color: '#2b54b2', fontWeight: 500 }}
-                                          title={`View ${name} profile`}
-                                        >
-                                          {name}
-                                          {affiliations.length > 0 && (
-                                            <sup className="ms-1 text-primary">{affiliations.join(',')}</sup>
-                                          )}
-                                        </Link>
-                                      ) : (
-                                        <span style={{ fontWeight: 500, color: '#334155' }}>
-                                          {name}
-                                          {affiliations.length > 0 && (
-                                            <sup className="ms-1 text-primary">{affiliations.join(',')}</sup>
-                                          )}
-                                        </span>
-                                      )}
-                                      {author.orcid && (
-                                        <a href={author.orcid} target="_blank" rel="noreferrer" className="ms-1 align-middle">
-                                          <Icon icon="simple-icons:orcid" className="text-success" width="12" />
-                                        </a>
-                                      )}
-                                    </div>
-                                  );
-                                })
-                              ) : (
-                                <span className="text-muted-custom">Author list is being updated...</span>
-                              )}
-                            </div>
-                          </div>
+                          <ArticleDetailAuthors
+                            key={id}
+                            authors={article.authors}
+                            institutionIndexById={institutionIndexById}
+                          />
 
                           {/* Keywords */}
                           {article.keywords?.length > 0 && (
@@ -1298,22 +1364,77 @@ ER  - `;
                   <Icon icon="lucide:book-open" width="32" className="text-primary mt-1" />
                   <div>
                     <h5 className="font-display fw-bold mb-1" style={{ color: 'var(--text-main)' }}>
-                      {availableReferencesTotal} available references
+                      {t('trendingArticleReferences.availableCount', {
+                        count: availableReferencesTotal,
+                      })}
                     </h5>
                     <p className="text-muted-custom mb-2 text-xs">
-                      Research works cited by this article. Select a title to open the source record.
-                      {isReferencesError ? ' The reference list could not be refreshed, so the detail count is shown.' : ''}
+                      {t('trendingArticleReferences.description')}
+                      {isReferencesError ? t('trendingArticleReferences.refreshWarning') : ''}
                     </p>
                     <Button variant="outline-primary" size="sm" className="tvn-btn-refine" onClick={() => navigate(`/trending-vn?search=${encodeURIComponent(toScientificPlainText(article.title))}`)}>
-                      Find related works
+                      {t('trendingArticleReferences.findRelatedWorks')}
                     </Button>
                   </div>
                 </div>
 
-                {isReferencesLoading ? (
-                  <div className="text-center py-5">
-                    <div className="spinner-border text-primary spinner-border-sm me-2" role="status" />
-                    <span className="text-xs text-muted-custom">Loading references...</span>
+                {isReferencesPreparing ? (
+                  <div
+                    className="article-reference-card-empty tvn-reference-state text-center py-5"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <div className="spinner-border text-primary spinner-border-sm" aria-hidden="true" />
+                    <strong className="text-sm">
+                      {isHydratingReferences || isReferencesHydrationPending
+                        ? t('trendingArticleReferences.hydratingTitle')
+                        : t('trendingArticleReferences.loadingTitle')}
+                    </strong>
+                    <p className="text-xs text-muted-custom mb-0">
+                      {isHydratingReferences || isReferencesHydrationPending
+                        ? t('trendingArticleReferences.hydratingDescription')
+                        : t('trendingArticleReferences.loadingDescription')}
+                    </p>
+                  </div>
+                ) : referencesHydrationError ? (
+                  <div
+                    className="article-reference-card-empty tvn-reference-state text-center py-5"
+                    role="alert"
+                  >
+                    <strong className="text-sm">
+                      {t('trendingArticleReferences.hydrationErrorTitle')}
+                    </strong>
+                    <p className="text-xs text-muted-custom mb-0">
+                      {t('trendingArticleReferences.hydrationErrorDescription')}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => retryReferencesHydration()}
+                    >
+                      {t('trendingArticleReferences.retry')}
+                    </Button>
+                  </div>
+                ) : isReferencesError ? (
+                  <div
+                    className="article-reference-card-empty tvn-reference-state text-center py-5"
+                    role="alert"
+                  >
+                    <strong className="text-sm">
+                      {t('trendingArticleReferences.loadErrorTitle')}
+                    </strong>
+                    <p className="text-xs text-muted-custom mb-0">
+                      {t('trendingArticleReferences.loadErrorDescription')}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => retryReferences()}
+                    >
+                      {t('trendingArticleReferences.retry')}
+                    </Button>
                   </div>
                 ) : (references || []).length > 0 ? (
                   <div className="d-flex flex-column">
@@ -1325,7 +1446,7 @@ ER  - `;
                   </div>
                 ) : (
                   <div className="article-reference-card-empty text-center py-5">
-                    This article does not have detailed references yet.
+                    {t('trendingArticleReferences.empty')}
                   </div>
                 )}
               </div>

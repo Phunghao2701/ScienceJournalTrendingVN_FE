@@ -39,7 +39,11 @@ export default function LoginPage() {
   };
 
   // Nếu người dùng bị redirect tới login từ một trang khác, đăng nhập xong quay lại trang đó.
-  const from = location.state?.from?.pathname || DASHBOARD_PAGE;
+  const fromLocation = location.state?.from;
+  const requestedDestination = typeof fromLocation === 'string'
+    ? fromLocation
+    : `${fromLocation?.pathname || ''}${fromLocation?.search || ''}${fromLocation?.hash || ''}`;
+  const from = requestedDestination.startsWith('/') ? requestedDestination : DASHBOARD_PAGE;
 
   /**
    * Xử lý submit form đăng nhập bằng email/password.
@@ -73,7 +77,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      loginWithGoogle(DASHBOARD_PAGE);
+      loginWithGoogle(from);
     } catch {
       toast.error('Đăng nhập thất bại');
     } finally {

@@ -2580,6 +2580,84 @@
   margin-bottom: 0.4rem;
 }
 
+.tvn-detail-authors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  line-height: 1.6;
+}
+
+.tvn-detail-author-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.tvn-detail-author-row > :first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.tvn-detail-author-orcid {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 0.15rem;
+  border-radius: 4px;
+}
+
+.tvn-detail-author-orcid:focus-visible,
+.tvn-detail-authors-toggle:focus-visible {
+  outline: 2px solid #2b54b2;
+  outline-offset: 2px;
+}
+
+.tvn-detail-authors-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  margin-top: 0.35rem;
+  padding: 0.2rem 0;
+  border: 0;
+  background: transparent;
+  color: #2b54b2;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.tvn-detail-authors-toggle:hover {
+  color: #1e3f8f;
+  text-decoration: underline;
+}
+
+.tvn-reference-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.tvn-reference-state p {
+  max-width: 60ch;
+}
+
+@media (max-width: 767.98px) {
+  .tvn-detail-author-row {
+    align-items: flex-start;
+  }
+
+  .tvn-detail-author-orcid {
+    margin-top: 0.1rem;
+  }
+
+  .tvn-detail-authors-toggle {
+    min-height: 40px;
+  }
+}
+
 .tvn-meta-subtext {
   font-size: 0.82rem;
   color: #475569;

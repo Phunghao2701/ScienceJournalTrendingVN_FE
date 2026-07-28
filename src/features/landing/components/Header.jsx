@@ -5,7 +5,7 @@
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Navbar from "react-bootstrap/Navbar";
 import NavDropdown from "react-bootstrap/NavDropdown";
@@ -20,6 +20,7 @@ import ROUTES from "../../../app/routes/routePaths";
 export default function Header() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = useAuth?.() ?? { logout: () => {} };
   const { logout } = auth;
   const email = useUserStore((state) => state.email);
@@ -47,6 +48,23 @@ export default function Header() {
   const handleAuthRegister = () => {
     navigate(ROUTES.REGISTER);
   };
+  const handleScanOrcid = () => {
+    if (isLoggedIn) {
+      navigate(ROUTES.ORCID_SCAN);
+      return;
+    }
+
+    navigate(ROUTES.LOGIN, {
+      state: {
+        from: {
+          pathname: ROUTES.ORCID_SCAN,
+          search: "",
+          hash: "",
+        },
+      },
+    });
+  };
+  const isScanOrcidActive = location.pathname === ROUTES.ORCID_SCAN;
 
   return (
     <>
@@ -115,6 +133,18 @@ export default function Header() {
                   </span>
                 </div>
               )}
+
+              <Button
+                variant="link"
+                className={`header-scan-orcid-link ${
+                  isScanOrcidActive ? "header-scan-orcid-link--active" : ""
+                }`}
+                onClick={handleScanOrcid}
+                aria-current={isScanOrcidActive ? "page" : undefined}
+              >
+                <Icon icon="lucide:scan-search" width="16" aria-hidden="true" />
+                <span>{t("orcidScan.navLabel")}</span>
+              </Button>
 
               {/* User Authentication Display/Buttons */}
               {isLoggedIn ? (
@@ -301,6 +331,19 @@ export default function Header() {
         <Offcanvas.Body className="d-flex flex-column justify-content-between py-4">
 
           <div className="d-flex flex-column gap-3">
+            <Button
+              variant={isScanOrcidActive ? "primary" : "outline-primary"}
+              className="orcid-mobile-nav-entry w-100 py-2.5"
+              onClick={() => {
+                setShowMobileMenu(false);
+                handleScanOrcid();
+              }}
+              aria-current={isScanOrcidActive ? "page" : undefined}
+            >
+              <Icon icon="lucide:scan-search" width="17" aria-hidden="true" />
+              <span>{t("orcidScan.navLabel")}</span>
+            </Button>
+
             {/* Mobile Language Switches */}
             <div className="d-flex align-items-center justify-content-center gap-4 py-2 border-top border-bottom border-light mb-2">
               <Button

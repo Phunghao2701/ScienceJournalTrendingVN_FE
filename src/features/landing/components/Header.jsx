@@ -336,19 +336,6 @@ export default function Header() {
 
         <Offcanvas.Body className="d-flex flex-column justify-content-between py-4">
           <div className="d-flex flex-column gap-3">
-            <Button
-              variant={isScanOrcidActive ? "primary" : "outline-primary"}
-              className="orcid-mobile-nav-entry w-100 py-2.5"
-              onClick={() => {
-                setShowMobileMenu(false);
-                handleScanOrcid();
-              }}
-              aria-current={isScanOrcidActive ? "page" : undefined}
-            >
-              <Icon icon="lucide:scan-search" width="17" aria-hidden="true" />
-              <span>{t("orcidScan.navLabel")}</span>
-            </Button>
-
             {/* Mobile Language Switches */}
             <div className="d-flex align-items-center justify-content-center gap-4 py-2 border-top border-bottom border-light mb-2">
               <Button

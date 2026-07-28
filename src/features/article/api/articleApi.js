@@ -3,7 +3,7 @@
  *
  * File: features\article\api\articleApi.js
  */
-import api from '../../../shared/services/api';
+import api, { publicApi } from '../../../shared/services/api';
 
 /**
  * Lấy danh sách hoặc tìm kiếm bài báo khoa học
@@ -64,7 +64,11 @@ export const getArticleCitingWorksAnalyticsApi = (id) => {
 };
 
 export const getArticleReferencesApi = (id, params = {}) => {
-  return api.get(`/articles/${id}/references`, { params });
+  return publicApi.get(`/articles/${id}/references`, { params });
+};
+
+export const hydrateArticleReferencesApi = (id) => {
+  return api.post(`/articles/${id}/references/hydrate`);
 };
 
 /**

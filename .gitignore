@@ -179,6 +179,9 @@ deploy
 docs
 plans
 scripts
+!scripts/
+scripts/*
+!scripts/orcidScan.test.mjs
 AGENTS.md
 CLAUDE.md
 DESIGN_SYSTEM.md

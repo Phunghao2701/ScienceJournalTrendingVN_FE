@@ -28,6 +28,7 @@ const ROUTES = {
   AUTHORS:               "/authors",
   AUTHORS_LEADERBOARD:   "/authors/leaderboard",
   AUTHOR_DETAIL:         "/authors/:id",
+  ORCID_SCAN:            "/scan-orcid",
 
   // Quản trị người dùng (Admin)
   ADMIN_USERS:           "/admin/users",

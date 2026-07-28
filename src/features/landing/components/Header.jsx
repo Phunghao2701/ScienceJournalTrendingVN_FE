@@ -124,19 +124,6 @@ export default function Header() {
           {/* Desktop Navigation Link Items */}
           <div className="ms-auto d-none d-md-flex align-items-center">
             <div className="d-flex align-items-center gap-3 ms-auto">
-              {/* Notification icon */}
-              {isLoggedIn && (
-                <div
-                  className="text-white hover:text-white-50 position-relative"
-                  style={{ cursor: "pointer" }}
-                >
-                  <Icon icon="lucide:bell" width="18" />
-                  <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
-                    <span className="visually-hidden">New alerts</span>
-                  </span>
-                </div>
-              )}
-
               <Button
                 variant="link"
                 className={`header-scan-orcid-link ${

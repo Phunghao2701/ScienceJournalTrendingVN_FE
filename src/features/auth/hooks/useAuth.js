@@ -3,7 +3,7 @@
  *
  * File: features/auth/hooks/useAuth.js
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from '../../../shared/utils/toast';
@@ -28,7 +28,7 @@ import {
  */
 export default function useAuth() {
   const navigate = useNavigate();
-  const [googleRedirect, setGoogleRedirect] = useState('/');
+  const googleRedirectRef = useRef('/');
 
   // State auth chính lấy từ Zustand store.
   const user = useAuthStore((state) => state.user);
@@ -85,7 +85,7 @@ export default function useAuth() {
           loginSuccess(googleToken);
           setEmail(email);
           toast.success('Đăng nhập thành công');
-          navigate(googleRedirect, { replace: true });
+          navigate(googleRedirectRef.current, { replace: true });
         } else {
           toast.error('Đăng nhập thất bại');
         }
@@ -133,7 +133,7 @@ export default function useAuth() {
    * Mở popup/redirect Google OAuth và ghi nhớ trang cần quay lại sau login.
    */
   const loginWithGoogle = useCallback((redirectTo = '/') => {
-    setGoogleRedirect(redirectTo);
+    googleRedirectRef.current = redirectTo;
     googleLogin();
   }, [googleLogin]);
 

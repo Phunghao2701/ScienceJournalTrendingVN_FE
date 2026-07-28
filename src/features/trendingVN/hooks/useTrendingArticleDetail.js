@@ -1,18 +1,31 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getArticleDetailApi,
   getArticlesListApi,
   getArticleCitingWorksApi,
   getArticleCitingWorksAnalyticsApi,
   getArticleReferencesApi,
+  hydrateArticleReferencesApi,
 } from '../../article/api/articleApi';
 import useBookmark from '../../bookmark/hooks/useBookmark';
 import { normalizeArticleDetail } from '../../article/utils/articleFormatters';
 import { PAPER_VN_SCOPE } from '../../article/utils/paperVnDiscoveryParams';
+import {
+  buildReferenceHydrationQueryKey,
+  getArticleReferenceSignalCount,
+  shouldHydrateArticleReferences,
+} from '../utils/referenceHydration';
 
-export const useTrendingArticleDetail = (id, currentUser) => {
+export const useTrendingArticleDetail = (
+  id,
+  currentUser,
+  { isReferencesTabActive = false } = {},
+) => {
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
+  const [hydratingReferencesArticleId, setHydratingReferencesArticleId] = useState(null);
+  const [referencesHydrationFailure, setReferencesHydrationFailure] = useState(null);
   const {
     isBookmarked,
     isBookmarkLoading,
@@ -83,6 +96,8 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     data: referencesData,
     isLoading: isReferencesLoading,
     isError: isReferencesError,
+    isSuccess: isReferencesSuccess,
+    refetch: refetchReferences,
   } = useQuery({
     queryKey: ['trendingVN', 'articleReferences', id],
     queryFn: async () => {
@@ -93,9 +108,88 @@ export const useTrendingArticleDetail = (id, currentUser) => {
         total: Number(payload.pagination?.total ?? payload.total ?? 0),
       };
     },
-    enabled: !!article && !!id,
+    enabled: !!article && !!id && isReferencesTabActive,
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
+
+  const articleReferenceSignalCount = getArticleReferenceSignalCount(
+    article?.parsedArticle,
+    article?.apiData,
+  );
+  const articleIdKey = String(id ?? '');
+  const referencesHydrationError = referencesHydrationFailure?.articleId === articleIdKey
+    ? referencesHydrationFailure.error
+    : null;
+  const isHydratingReferences = hydratingReferencesArticleId === articleIdKey;
+  const hasCompletedReferenceHydration = Boolean(
+    queryClient.getQueryData(buildReferenceHydrationQueryKey(id)),
+  );
+  const isReferenceHydrationEligible = shouldHydrateArticleReferences({
+    isReferencesTabActive,
+    isAuthenticated: Boolean(currentUser),
+    isGetSuccess: isReferencesSuccess,
+    hasGetError: isReferencesError,
+    detailedItemsCount: referencesData?.items?.length,
+    detailedTotal: referencesData?.total,
+    articleReferenceSignalCount,
+  });
+  const shouldStartReferenceHydration = (
+    isReferenceHydrationEligible
+    && !referencesHydrationError
+    && !hasCompletedReferenceHydration
+  );
+
+  const hydrateReferencesIfNeeded = useCallback(async () => {
+    if (!isReferenceHydrationEligible || !id) return false;
+
+    const hydrationQueryKey = buildReferenceHydrationQueryKey(id);
+    const referencesQueryKey = ['trendingVN', 'articleReferences', id];
+
+    setReferencesHydrationFailure(null);
+    setHydratingReferencesArticleId(articleIdKey);
+
+    try {
+      await queryClient.fetchQuery({
+        queryKey: hydrationQueryKey,
+        queryFn: async () => {
+          await hydrateArticleReferencesApi(id);
+          await queryClient.invalidateQueries({
+            queryKey: referencesQueryKey,
+            exact: true,
+            refetchType: 'active',
+          });
+          return { hydrated: true };
+        },
+        staleTime: Infinity,
+        gcTime: Infinity,
+        retry: false,
+      });
+      return true;
+    } catch (error) {
+      setReferencesHydrationFailure({ articleId: articleIdKey, error });
+      return false;
+    } finally {
+      setHydratingReferencesArticleId((currentArticleId) => (
+        currentArticleId === articleIdKey ? null : currentArticleId
+      ));
+    }
+  }, [
+    articleIdKey,
+    id,
+    isReferenceHydrationEligible,
+    queryClient,
+  ]);
+
+  useEffect(() => {
+    if (!shouldStartReferenceHydration) return;
+    void hydrateReferencesIfNeeded();
+  }, [hydrateReferencesIfNeeded, shouldStartReferenceHydration]);
+
+  const retryReferencesHydration = useCallback(
+    () => hydrateReferencesIfNeeded(),
+    [hydrateReferencesIfNeeded],
+  );
 
   const { data: recommendedArticles = [], isLoading: isRecommendedLoading } = useQuery({
     queryKey: ['trendingVN', 'relatedArticles', topicId],
@@ -129,6 +223,11 @@ export const useTrendingArticleDetail = (id, currentUser) => {
     references: referencesData?.items || [],
     referencesTotal: referencesData?.total,
     isReferencesError,
+    isHydratingReferences,
+    isReferencesHydrationPending: shouldStartReferenceHydration,
+    referencesHydrationError,
+    retryReferences: refetchReferences,
+    retryReferencesHydration,
     recommendedArticles,
     isRelatedLoading: isCitingWorksLoading || isCitingWorksAnalyticsLoading || isReferencesLoading || isRecommendedLoading,
     isCitingWorksLoading,

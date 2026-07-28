@@ -1,9 +1,10 @@
 import { useAuthStore } from "../store/authStore";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { isAuthenticated as checkAuthStatus } from "../../shared/utils/auth";
 
 const ProtectedRoute = () => {
+  const location = useLocation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [loading, setLoading] = useState(true);
 
@@ -19,8 +20,9 @@ const ProtectedRoute = () => {
   }, []);
 
   if (loading) return <div>Đang kiểm tra quyền truy cập...</div>;
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  return isAuthenticated
+    ? <Outlet />
+    : <Navigate to="/login" replace state={{ from: location }} />;
 };
 
 export default ProtectedRoute;
-

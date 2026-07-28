@@ -1,6 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-
-// Core feature pages — all paths below are verified to exist in features/
+import InstitutionDetailPage from "../../features/institution/pages/InstitutionDetailPage";
 import TrendingVNPage from "../../features/trendingVN/pages/TrendingVNPage";
 import ArticleDetailPage from "../../features/article/pages/ArticleDetailPage";
 import TrendingArticleDetailPage from "../../features/trendingVN/pages/ArticleDetailPage";
@@ -74,6 +73,8 @@ export default function AppRoutes() {
 
         <Route path="/authors" element={<AuthorListPage />} />
         <Route path="/authors/:id" element={<AuthorDetailPage />} />
+
+        <Route path="/institutions/:id" element={<InstitutionDetailPage />} />
 
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

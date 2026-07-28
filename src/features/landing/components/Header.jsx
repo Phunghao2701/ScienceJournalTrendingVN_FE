@@ -32,8 +32,11 @@ export default function Header() {
     auth.user?.full_name ||
     auth.user?.name ||
     t("userLabel");
-  const isLoggedIn = Boolean(auth.isAuthenticated || auth.token || auth.user || email);
-  const accountManagementRoute = userRole === 'ADMINISTRATOR' ? ROUTES.ADMIN_USERS : ROUTES.PROFILE;
+  const isLoggedIn = Boolean(
+    auth.isAuthenticated || auth.token || auth.user || email,
+  );
+  const accountManagementRoute =
+    userRole === "ADMINISTRATOR" ? ROUTES.ADMIN_USERS : ROUTES.PROFILE;
   const language = i18n.language || "vi";
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -121,18 +124,17 @@ export default function Header() {
           {/* Desktop Navigation Link Items */}
           <div className="ms-auto d-none d-md-flex align-items-center">
             <div className="d-flex align-items-center gap-3 ms-auto">
-              {/* Notification icon */}
-              {isLoggedIn && (
-                <div
-                  className="text-white hover:text-white-50 position-relative"
-                  style={{ cursor: "pointer" }}
-                >
-                  <Icon icon="lucide:bell" width="18" />
-                  <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
-                    <span className="visually-hidden">New alerts</span>
-                  </span>
-                </div>
-              )}
+              <Button
+                variant="link"
+                className={`header-scan-orcid-link ${
+                  isScanOrcidActive ? "header-scan-orcid-link--active" : ""
+                }`}
+                onClick={handleScanOrcid}
+                aria-current={isScanOrcidActive ? "page" : undefined}
+              >
+                <Icon icon="lucide:scan-search" width="16" aria-hidden="true" />
+                <span>{t("orcidScan.navLabel")}</span>
+              </Button>
 
               <Button
                 variant="link"
@@ -184,14 +186,14 @@ export default function Header() {
                     <div className="px-3 py-2 text-xs font-bold text-main border-bottom pb-2 mb-1">
                       {t("userLabel")}
                       <div
-                      className="text-muted-custom font-normal mt-0.5 text-truncate"
+                        className="text-muted-custom font-normal mt-0.5 text-truncate"
                         style={{ fontSize: "10px", color: "var(--text-muted)" }}
                       >
                         {accountLabel}
                       </div>
                     </div>
                     <Dropdown.Item
-                      onClick={() => navigate('/bookmarks')}
+                      onClick={() => navigate("/bookmarks")}
                       className="d-flex align-items-center gap-2 text-xs py-2 text-main"
                     >
                       <Icon
@@ -235,7 +237,9 @@ export default function Header() {
                   >
                     {t("register")}
                   </Button>
-                  <span className="mx-2 text-white-50" aria-hidden="true">/</span>
+                  <span className="mx-2 text-white-50" aria-hidden="true">
+                    /
+                  </span>
                   <Button
                     variant="link"
                     className="p-0 text-white text-xs font-semibold text-decoration-none"
@@ -251,7 +255,9 @@ export default function Header() {
                 title={
                   <span className="d-inline-flex align-items-center gap-2 text-white text-xs font-semibold">
                     <Icon icon="lucide:globe" width="17" />
-                    <span>{language.startsWith("vi") ? "Tiếng Việt" : "English"}</span>
+                    <span>
+                      {language.startsWith("vi") ? "Tiếng Việt" : "English"}
+                    </span>
                   </span>
                 }
                 id="language-nav-compact"
@@ -329,7 +335,6 @@ export default function Header() {
         </Offcanvas.Header>
 
         <Offcanvas.Body className="d-flex flex-column justify-content-between py-4">
-
           <div className="d-flex flex-column gap-3">
             <Button
               variant={isScanOrcidActive ? "primary" : "outline-primary"}
@@ -379,7 +384,7 @@ export default function Header() {
                   className="w-100 rounded-pill py-2.5 text-xs font-bold"
                   onClick={() => {
                     setShowMobileMenu(false);
-                    navigate('/bookmarks');
+                    navigate("/bookmarks");
                   }}
                 >
                   <Icon icon="lucide:bookmark-check" className="me-1" />

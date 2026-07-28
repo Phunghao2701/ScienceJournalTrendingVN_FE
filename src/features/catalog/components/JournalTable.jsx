@@ -3,23 +3,27 @@
  *
  * File: features\catalog\components\JournalTable.jsx
  */
-import { Table } from 'react-bootstrap';
-import { Icon } from '@iconify/react';
-import { useNavigate } from 'react-router-dom';
+import { Table } from "react-bootstrap";
+import { Icon } from "@iconify/react";
+import { useNavigate } from "react-router-dom";
 
-export default function JournalTable({ journals = [], followedJournals = {}, onFollow }) {
+export default function JournalTable({
+  journals = [],
+  followedJournals = {},
+  onFollow,
+}) {
   const navigate = useNavigate();
 
   const renderAccessBadge = (journal) => (
     <span className="catalog-badge catalog-access-badge">
-      {journal.is_open_access ? 'Open Access' : 'Subscription'}
+      {journal.is_open_access ? "Open Access" : "Subscription"}
     </span>
   );
 
-  const getQuartileBadgeClass = (quartile = '') => {
-    if (quartile === 'Q1') return 'catalog-badge catalog-badge--q1';
-    if (quartile === 'Q2') return 'catalog-badge catalog-badge--q2';
-    return 'catalog-badge';
+  const getQuartileBadgeClass = (quartile = "") => {
+    if (quartile === "Q1") return "catalog-badge catalog-badge--q1";
+    if (quartile === "Q2") return "catalog-badge catalog-badge--q2";
+    return "catalog-badge";
   };
 
   return (
@@ -47,36 +51,37 @@ export default function JournalTable({ journals = [], followedJournals = {}, onF
               return (
                 <tr key={id} onClick={() => navigate(`/journals/${id}`)}>
                   <td className="px-4 py-3">
-                    <div className="catalog-journal-name">{journal.display_name}</div>
+                    <div className="catalog-journal-name">
+                      {journal.display_name}
+                    </div>
                   </td>
-                  <td className="px-3 py-3 text-muted-custom catalog-mono">{journal.issn || '—'}</td>
-                  <td className="px-3 py-3 text-main">{journal.publisher || '—'}</td>
-                  <td className="px-3 py-3 text-main">{journal.country || '—'}</td>
+                  <td className="px-3 py-3 text-muted-custom catalog-mono">
+                    {journal.issn || "—"}
+                  </td>
+                  <td className="px-3 py-3 text-main">
+                    {journal.publisher || "—"}
+                  </td>
+                  <td className="px-3 py-3 text-main">
+                    {journal.country || "—"}
+                  </td>
                   <td className="px-3 py-3">
                     {journal.quartile ? (
                       <span className={getQuartileBadgeClass(journal.quartile)}>
                         {journal.quartile}
                       </span>
-                    ) : '—'}
+                    ) : (
+                      "—"
+                    )}
                   </td>
-                  <td className="px-3 py-3 fw-semibold text-main catalog-mono">{journal.metric_value ?? '—'}</td>
-                  <td className="px-3 py-3 text-main">{journal.metric_year || '—'}</td>
+                  <td className="px-3 py-3 fw-semibold text-main catalog-mono">
+                    {journal.metric_value ?? "—"}
+                  </td>
+                  <td className="px-3 py-3 text-main">
+                    {journal.metric_year || "—"}
+                  </td>
                   <td className="px-3 py-3">{renderAccessBadge(journal)}</td>
                   <td className="px-4 py-3 text-end">
-                    <div className="d-inline-flex align-items-center">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onFollow(id);
-                        }}
-                        className={`catalog-follow-btn ${isFollowed ? 'is-followed' : ''}`}
-                      >
-                        <Icon icon={isFollowed ? 'lucide:check' : 'lucide:plus'} width="13" />
-                        <span>{isFollowed ? 'Đã theo dõi' : 'Theo dõi'}</span>
-                      </button>
-                    </div>
+                    <div className="d-inline-flex align-items-center"></div>
                   </td>
                 </tr>
               );

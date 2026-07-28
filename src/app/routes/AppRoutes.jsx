@@ -6,6 +6,7 @@ import ArticleDetailPage from '../../features/article/pages/ArticleDetailPage';
 import TrendingArticleDetailPage from '../../features/trendingVN/pages/ArticleDetailPage';
 import ArticleVisualDetailPage from '../../features/article/pages/ArticleVisualDetailPage';
 import JournalDetailPage from '../../features/journal/pages/JournalDetailPage';
+import InstitutionDetailPage from '../../features/institution/pages/InstitutionDetailPage';
 
 import RegisterPage from '../../features/auth/pages/RegisterPage';
 import LoginPage from '../../features/auth/pages/LoginPage';
@@ -78,6 +79,7 @@ export default function AppRoutes() {
         <Route path="/authors/:id" element={<AuthorDetailPage />} />
 
         <Route path="/journals/:id" element={<JournalDetailPage />} />
+        <Route path="/institutions/:id" element={<InstitutionDetailPage />} />
 
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

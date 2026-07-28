@@ -13,3 +13,7 @@ import api from '../../../shared/services/api';
 export const getInstitutionsApi = (params = {}) => {
   return api.get('/institution', { params: { limit: 100, ...params } });
 };
+
+export const getInstitutionByIdApi = (institutionId) => {
+  return api.get(`/institution/${encodeURIComponent(institutionId)}`);
+};

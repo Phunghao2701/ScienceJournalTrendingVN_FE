@@ -492,6 +492,18 @@ export default function ArticleDetailPage() {
   const handleInstitutionClick = (institution) => {
     const instId = institution.institution_id || institution.id;
     const label = institution.display_name || institution.name || '';
+    if (instId) {
+      const params = new URLSearchParams();
+      if (label) params.set('name', label);
+      const country = institution.country_name || institution.country || '';
+      const countryCode = institution.country_code || '';
+      const institutionType = institution.type || institution.institution_type || '';
+      if (country) params.set('country', country);
+      if (countryCode) params.set('country_code', countryCode);
+      if (institutionType) params.set('type', institutionType);
+      navigate(`/institutions/${instId}${params.size ? `?${params.toString()}` : ''}`);
+      return;
+    }
     navigateEntityFilter('institution_id', instId, label);
   };
 

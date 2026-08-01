@@ -864,13 +864,7 @@ export default function TrendingVNPage() {
                       <div className="tvn-profile-info">
                         <div className="profile-name">{userDisplayName}</div>
                         <div className="profile-subtitle">
-                          {t("personalAccount")}{" "}
-                          <span
-                            className="text-danger"
-                            style={{ fontSize: "0.62rem", display: "block" }}
-                          >
-                            ({t("notCommercialUse")})
-                          </span>
+                          {t("personalAccount")}
                         </div>
                       </div>
                       <Icon

@@ -83,9 +83,6 @@ export default function WorkspaceSidebar({ activeItem = 'collections' }) {
                     <div className="profile-name">{userDisplayName}</div>
                     <div className="profile-subtitle">
                       {t('personalAccount')}
-                      <span className="text-danger workspace-license-note">
-                        ({t('notCommercialUse')})
-                      </span>
                     </div>
                   </div>
                   <Icon icon="lucide:chevron-down" width="16" className="text-muted ms-auto" />

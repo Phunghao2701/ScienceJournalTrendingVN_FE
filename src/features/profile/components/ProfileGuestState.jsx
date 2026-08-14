@@ -1,10 +1,22 @@
+import { useTranslation } from 'react-i18next';
+
 export default function ProfileGuestState({ onLogin, onRegister }) {
+  const { i18n } = useTranslation();
+  const isVi = i18n.resolvedLanguage?.startsWith('vi');
+
+  const titleText = isVi ? 'Hồ sơ' : 'Profile';
+  const subtitleText = isVi ? 'Quản lý thông tin cá nhân và thiết lập tài khoản của bạn.' : 'Manage your personal information and account settings.';
+  const pleaseLoginText = isVi ? 'Vui lòng đăng nhập' : 'Please log in';
+  const needLoginText = isVi ? 'Bạn cần đăng nhập để xem và quản lý hồ sơ cá nhân của mình' : 'You need to log in to view and manage your personal profile';
+  const loginText = isVi ? 'Đăng nhập' : 'Log in';
+  const registerText = isVi ? 'Đăng ký' : 'Sign up';
+
   return (
     <div className="profile-page">
       <div className="profile-container">
         <div className="page-header">
-          <h1>Hồ sơ</h1>
-          <p>Quản lý thông tin cá nhân và thiết lập tài khoản của bạn.</p>
+          <h1>{titleText}</h1>
+          <p>{subtitleText}</p>
         </div>
 
         <div
@@ -17,9 +29,9 @@ export default function ProfileGuestState({ onLogin, onRegister }) {
             boxShadow: '0 2px 10px rgba(0, 0, 0, 0.06)',
           }}
         >
-          <h2 style={{ marginBottom: '16px' }}>Vui lòng đăng nhập</h2>
+          <h2 style={{ marginBottom: '16px' }}>{pleaseLoginText}</h2>
           <p style={{ color: '#666', marginBottom: '32px', fontSize: '16px' }}>
-            Bạn cần đăng nhập để xem và quản lý hồ sơ cá nhân của mình
+            {needLoginText}
           </p>
           <button
             onClick={onLogin}
@@ -35,7 +47,7 @@ export default function ProfileGuestState({ onLogin, onRegister }) {
               marginRight: '12px',
             }}
           >
-            Đăng nhập
+            {loginText}
           </button>
           <button
             onClick={onRegister}
@@ -50,7 +62,7 @@ export default function ProfileGuestState({ onLogin, onRegister }) {
               cursor: 'pointer',
             }}
           >
-            Đăng kí
+            {registerText}
           </button>
         </div>
       </div>

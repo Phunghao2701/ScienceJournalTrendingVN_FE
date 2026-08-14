@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Form, InputGroup, Card, Button } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../shared/components/Icon';
 import Header from '../../landing/components/Header';
 import useAuthors from '../hooks/useAuthors';
@@ -19,6 +20,33 @@ import './AuthorListPage.css';
 export default function AuthorListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { i18n } = useTranslation();
+  const isVi = i18n.resolvedLanguage?.startsWith('vi');
+
+  // Localized texts
+  const overviewLabel = isVi ? 'Tổng quan' : 'Overview';
+  const featuredAuthorsLabel = isVi ? 'Tác giả nổi bật' : 'Featured Authors';
+  const pageTitle = isVi ? 'Danh sách Nhà khoa học & Tác giả' : 'List of Scientists & Authors';
+  const pageDesc = isVi 
+    ? 'Tra cứu thông tin, chỉ số học thuật h-index, số trích dẫn và các công trình khoa học của các tác giả hàng đầu.'
+    : 'Search information, academic h-index, citation counts, and scientific works of leading authors.';
+
+  const statTotalAuthorsLabel = isVi ? 'Tổng tác giả' : 'Total Authors';
+  const statTotalAuthorsDesc = isVi ? 'Tổng tác giả trong hệ thống' : 'Total authors in system';
+  const statFeaturedLabel = isVi ? 'Tác giả nổi bật' : 'Featured Authors';
+  const statFeaturedDesc = (count) => isVi 
+    ? (count > 0 ? `Trong ${formatLocalNumber(count)} tác giả đang hiển thị` : 'H-index vượt trội (>=30)')
+    : (count > 0 ? `Out of ${formatLocalNumber(count)} displayed authors` : 'Outstanding h-index (>=30)');
+  const statTotalWorksLabel = isVi ? 'Tổng bài báo' : 'Total Articles';
+  const statTotalWorksDesc = isVi ? 'Tổng bài báo trên trang hiện tại' : 'Total articles on current page';
+  const statTotalCitationsLabel = isVi ? 'Tổng citations' : 'Total Citations';
+  const statTotalCitationsDesc = isVi ? 'Tổng citations trên trang hiện tại' : 'Total citations on current page';
+
+  const searchPlaceholder = isVi ? 'Tìm theo tên, viện nghiên cứu, từ khóa...' : 'Search by name, institution, keywords...';
+  const subjectPlaceholder = isVi ? 'Nhập hoặc chọn lĩnh vực' : 'Enter or select subject area';
+  const allSubjectsLabel = isVi ? 'Tất cả lĩnh vực' : 'All subject areas';
+  const searchButtonLabel = isVi ? 'Tìm' : 'Search';
+  const entityNameText = isVi ? 'tác giả' : 'authors';
 
   const {
     authors,
@@ -59,10 +87,8 @@ export default function AuthorListPage() {
   }, [searchVal, pageVal, limitVal, sortVal, subjectAreaVal, countryVal, fetchAuthors]);
 
   useEffect(() => {
-    if (!subjectAreas || subjectAreas.length === 0) {
-      fetchSubjectAreas();
-    }
-  }, [subjectAreas, fetchSubjectAreas]);
+    fetchSubjectAreas();
+  }, [fetchSubjectAreas]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -98,29 +124,29 @@ export default function AuthorListPage() {
     setSearchParams(nextParams);
   };
 
-  const totalPagesCount = Math.max(1, totalPages);
-  const startIndex = (pageVal - 1) * limitVal + 1;
-
-  const formatLocalNumber = (value) => {
-    if (value === null || value === undefined || Number.isNaN(Number(value))) return '0';
-    return Number(value).toLocaleString('vi-VN');
+  const formatLocalNumber = (num) => {
+    if (num == null) return '0';
+    return Number(num).toLocaleString(isVi ? 'vi-VN' : 'en-US');
   };
 
+  const startIndex = (pageVal - 1) * limitVal + 1;
+  const totalPagesCount = totalPages || Math.ceil(totalAuthors / limitVal) || 1;
   const visibleAuthorsCount = authors.length;
+
   const featuredAuthorsCount = authors.filter((author) => Number(author.h_index ?? author.hindex ?? 0) >= 30).length;
   const totalWorksCount = authors.reduce((sum, author) => sum + (Number(author.works_count ?? author.article_count ?? 0) || 0), 0);
   const totalCitationCount = authors.reduce((sum, author) => sum + (Number(author.cited_by_count ?? author.citation_count ?? 0) || 0), 0);
 
   const statCards = [
-    { label: 'Tổng tác giả', value: formatLocalNumber(totalAuthors), icon: 'lucide:users', desc: 'Tổng tác giả trong hệ thống' },
+    { label: statTotalAuthorsLabel, value: formatLocalNumber(totalAuthors), icon: 'lucide:users', desc: statTotalAuthorsDesc },
     {
-      label: 'Tác giả nổi bật',
+      label: statFeaturedLabel,
       value: formatLocalNumber(featuredAuthorsCount || visibleAuthorsCount),
       icon: 'lucide:award',
-      desc: visibleAuthorsCount > 0 ? `Trong ${formatLocalNumber(visibleAuthorsCount)} tác giả đang hiển thị` : 'H-index vượt trội (>=30)'
+      desc: statFeaturedDesc(visibleAuthorsCount)
     },
-    { label: 'Tổng bài báo', value: formatLocalNumber(totalWorksCount), icon: 'lucide:file-text', desc: 'Tổng bài báo trên trang hiện tại' },
-    { label: 'Tổng citations', value: formatLocalNumber(totalCitationCount), icon: 'lucide:quote', desc: 'Tổng citations trên trang hiện tại' }
+    { label: statTotalWorksLabel, value: formatLocalNumber(totalWorksCount), icon: 'lucide:file-text', desc: statTotalWorksDesc },
+    { label: statTotalCitationsLabel, value: formatLocalNumber(totalCitationCount), icon: 'lucide:quote', desc: statTotalCitationsDesc }
   ];
 
   return (
@@ -132,11 +158,11 @@ export default function AuthorListPage() {
           <ol className="breadcrumb">
             <li className="breadcrumb-item">
               <span className="author-list-breadcrumb__link" onClick={() => navigate('/')}>
-                Tổng quan
+                {overviewLabel}
               </span>
             </li>
             <li className="breadcrumb-item active text-primary" aria-current="page">
-              Tác giả nổi bật
+              {featuredAuthorsLabel}
             </li>
           </ol>
         </nav>
@@ -147,9 +173,9 @@ export default function AuthorListPage() {
               <Icon icon="lucide:users-round" width="17" />
               <span>Author registry</span>
             </div>
-            <h1 className="author-list-title">Danh sách Nhà khoa học & Tác giả</h1>
+            <h1 className="author-list-title">{pageTitle}</h1>
             <p className="author-list-description">
-              Tra cứu thông tin, chỉ số học thuật h-index, số trích dẫn và các công trình khoa học của các tác giả hàng đầu.
+              {pageDesc}
             </p>
           </div>
         </section>
@@ -181,7 +207,7 @@ export default function AuthorListPage() {
                   </InputGroup.Text>
                   <Form.Control
                     type="text"
-                    placeholder="Tìm theo tên, viện nghiên cứu, từ khóa..."
+                    placeholder={searchPlaceholder}
                     value={searchInput}
                     onChange={e => setSearchInput(e.target.value)}
                     className="author-filter-input"
@@ -196,7 +222,7 @@ export default function AuthorListPage() {
                       id="subjectAreaInput"
                       size="sm"
                       type="text"
-                      placeholder="Nhập hoặc chọn lĩnh vực"
+                      placeholder={subjectPlaceholder}
                       value={subjectAreaVal}
                       onChange={e => {
                         handleFilterChange('subject_area', e.target.value);
@@ -220,7 +246,7 @@ export default function AuthorListPage() {
                           setSubjectAreaDropdownOpen(false);
                         }}
                       >
-                        Tất cả lĩnh vực
+                        {allSubjectsLabel}
                       </button>
                       {subjectAreas.map((area) => (
                         <button
@@ -242,7 +268,7 @@ export default function AuthorListPage() {
 
               <Col xs={12} sm={6} lg={1} className="d-flex gap-2">
                 <Button type="submit" className="author-filter-submit w-100 py-2">
-                  Tìm
+                  {searchButtonLabel}
                 </Button>
               </Col>
             </Row>
@@ -291,7 +317,7 @@ export default function AuthorListPage() {
             currentPage={pageVal}
             limit={limitVal}
             onPageChange={handlePageChange}
-            entityName="tác giả"
+            entityName={entityNameText}
           />
         )}
       </Container>

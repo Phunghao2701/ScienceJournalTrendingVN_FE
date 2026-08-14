@@ -16,6 +16,7 @@ import {
   Form,
 } from "react-bootstrap";
 import { Icon } from "@iconify/react";
+import { useTranslation } from "react-i18next";
 import Header from "../../landing/components/Header";
 import useAuthors from "../hooks/useAuthors";
 import useAuth from "../../auth/hooks/useAuth";
@@ -34,6 +35,9 @@ function formatCompactAxisNumber(num) {
 
 // SVG Bar Chart Component for Scholarly Works & Citations Over Time
 function AuthorWorksChart({ data }) {
+  const { i18n } = useTranslation();
+  const isVi = i18n.resolvedLanguage?.startsWith('vi');
+
   if (!data || data.length === 0) {
     return (
       <div
@@ -41,51 +45,46 @@ function AuthorWorksChart({ data }) {
         style={{ minHeight: "180px" }}
       >
         <Icon icon="lucide:bar-chart-2" width="24" className="me-2" />
-        <span>Không có dữ liệu lịch sử công bố</span>
+        <span>{isVi ? "Không có dữ liệu lịch sử công bố" : "No publication history data"}</span>
       </div>
     );
   }
 
   const W = 380;
   const H = 180;
-  const PAD = { top: 20, right: 30, bottom: 25, left: 30 };
+  const PAD = { top: 15, right: 35, bottom: 20, left: 35 };
+
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
 
-  const works = data.map((d) => d.works);
-  const citations = data.map((d) => d.citations);
+  // Max values for scaling
+  const maxWorks = Math.max(1, ...data.map((d) => d.works || 0));
+  const maxCitations = Math.max(1, ...data.map((d) => d.citations || 0));
 
-  const maxWorks = Math.max(5, ...works);
-  const maxCitations = Math.max(5, ...citations);
-
-  const barW = Math.max(10, (chartW / data.length) * 0.45);
-  const gap = (chartW - barW * data.length) / (data.length - 1 || 1);
+  // Compute bar positions
+  const barW = Math.max(2, Math.floor(chartW / data.length) - 4);
+  const gap = Math.max(1, Math.floor((chartW - barW * data.length) / data.length));
 
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      width="100%"
-      height="100%"
-      style={{ overflow: "visible" }}
-    >
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%">
       {/* Grid Lines */}
-      {[0, 0.25, 0.5, 0.75, 1].map((t) => {
-        const y = PAD.top + (1 - t) * chartH;
+      {Array.from({ length: 4 }).map((_, i) => {
+        const y = PAD.top + (i * chartH) / 3;
         return (
           <line
-            key={t}
+            key={i}
             x1={PAD.left}
-            x2={PAD.left + chartW}
             y1={y}
+            x2={W - PAD.right}
             y2={y}
             stroke="var(--border)"
             strokeWidth="0.5"
-            strokeDasharray="2 2"
+            strokeDasharray="2,2"
           />
         );
       })}
 
-      {/* Bars (Scholarly Works) */}
+      {/* Bar Chart (Works) */}
       {data.map((d, i) => {
         const x = PAD.left + i * (barW + gap) + gap * 0.5;
         const val = d.works;
@@ -104,7 +103,7 @@ function AuthorWorksChart({ data }) {
               className="chart-bar"
               style={{ transition: "all 0.3s" }}
             >
-              <title>{`${d.year}: ${val} bài báo`}</title>
+              <title>{`${d.year}: ${val} ${isVi ? "bài báo" : "articles"}`}</title>
             </rect>
           </g>
         );
@@ -144,7 +143,7 @@ function AuthorWorksChart({ data }) {
                   stroke="var(--bg-card)"
                   strokeWidth="1.2"
                 >
-                  <title>{`${d.year}: ${d.citations} trích dẫn`}</title>
+                  <title>{`${d.year}: ${d.citations} ${isVi ? "trích dẫn" : "citations"}`}</title>
                 </circle>
               );
             })}
@@ -246,6 +245,8 @@ export default function AuthorDetailPage() {
   const navigate = useNavigate();
   const auth = useAuth();
   const currentUser = auth?.user;
+  const { i18n } = useTranslation();
+  const isVi = i18n.resolvedLanguage?.startsWith('vi');
 
   const {
     currentAuthor,
@@ -285,11 +286,11 @@ export default function AuthorDetailPage() {
     currentAuthor?.full_name ??
     currentAuthor?.display_name ??
     currentAuthor?.name ??
-    "Tác giả";
+    (isVi ? "Tác giả" : "Author");
   const primaryAffiliation =
     currentAuthor?.institution_1 ??
     currentAuthor?.last_known_institution ??
-    "Đang cập nhật đơn vị";
+    (isVi ? "Đang cập nhật đơn vị" : "Updating institution");
 
   // Toggle abstract preview
   const toggleAbstract = (articleId) => {
@@ -311,15 +312,17 @@ export default function AuthorDetailPage() {
       localStorage.setItem(localBookmarkKey, String(nextState));
       toast.success(
         nextState
-          ? "Đã thêm bài báo vào project."
-          : "Đã xóa bài báo khỏi project.",
+          ? (isVi ? "Đã thêm bài báo vào project." : "Added article to project.")
+          : (isVi ? "Đã xóa bài báo khỏi project." : "Removed article from project."),
       );
     } catch (err) {
       console.warn("Bookmark API error, toggling state locally:", err);
       setBookmarkedMap((prev) => ({ ...prev, [articleId]: nextState }));
       localStorage.setItem(localBookmarkKey, String(nextState));
       toast.warning(
-        "Không thể đồng bộ server, đã cập nhật tạm trên trình duyệt.",
+        isVi
+          ? "Không thể đồng bộ server, đã cập nhật tạm trên trình duyệt."
+          : "Cannot sync with server, updated temporarily in browser.",
       );
     }
   };
@@ -381,7 +384,7 @@ export default function AuthorDetailPage() {
               institution:
                 au.last_known_institution ||
                 au.institution ||
-                "Đơn vị nghiên cứu",
+                (isVi ? "Đơn vị nghiên cứu" : "Research Institution"),
             };
           }
         });
@@ -425,14 +428,14 @@ export default function AuthorDetailPage() {
         {/* BREADCRUMB */}
         <div className="lens-breadcrumb mb-4">
           <span className="lens-breadcrumb-link" onClick={() => navigate("/")}>
-            Tổng quan
+            {isVi ? "Tổng quan" : "Overview"}
           </span>
           <Icon icon="lucide:chevron-right" width="12" />
           <span
             className="lens-breadcrumb-link"
             onClick={() => navigate("/authors")}
           >
-            Tác giả nổi bật
+            {isVi ? "Tác giả nổi bật" : "Featured Authors"}
           </span>
           <Icon icon="lucide:chevron-right" width="12" />
           <span className="lens-breadcrumb-current">{authorName}</span>
@@ -543,7 +546,7 @@ export default function AuthorDetailPage() {
                           ORCID
                         </div>
                         <div className="font-monospace text-dark text-truncate">
-                          {currentAuthor?.orcid || "Chưa cập nhật ORCID"}
+                          {currentAuthor?.orcid || (isVi ? "Chưa cập nhật ORCID" : "ORCID not updated")}
                         </div>
                       </div>
 
@@ -661,7 +664,7 @@ export default function AuthorDetailPage() {
                             item.subject_area ||
                             item.display_name ||
                             item.name ||
-                            "Chưa phân loại";
+                            (isVi ? "Chưa phân loại" : "Unclassified");
                           const pct = item.percentage ?? 0;
                           return (
                             <div key={index} className="text-xs">
@@ -720,7 +723,7 @@ export default function AuthorDetailPage() {
                       </div>
                     ) : (
                       <div className="text-center py-5 text-muted-custom font-sans text-xs">
-                        Chưa có dữ liệu lĩnh vực nghiên cứu.
+                        {isVi ? "Chưa có dữ liệu lĩnh vực nghiên cứu." : "No subject area data available."}
                       </div>
                     )}
                   </Card.Body>
@@ -763,11 +766,18 @@ export default function AuthorDetailPage() {
               <Card.Body className="p-3">
                 {activeTab === "works" && (
                   <div>
-                    {/* Toolbar / Sorting */}
+                     {/* Toolbar / Sorting */}
                     <div className="d-flex justify-content-between align-items-center mb-3">
                       <span className="text-xs text-muted-custom font-sans">
-                        Hiển thị <strong>{sortedArticles.length}</strong> bài
-                        báo khoa học.
+                        {isVi ? (
+                          <>
+                            Hiển thị <strong>{sortedArticles.length}</strong> bài báo khoa học.
+                          </>
+                        ) : (
+                          <>
+                            Showing <strong>{sortedArticles.length}</strong> scientific articles.
+                          </>
+                        )}
                       </span>
 
                       <div className="d-flex align-items-center gap-2">
@@ -775,7 +785,7 @@ export default function AuthorDetailPage() {
                           className="text-xs text-muted-custom"
                           style={{ whiteSpace: "nowrap" }}
                         >
-                          Sắp xếp:
+                          {isVi ? "Sắp xếp:" : "Sort by:"}
                         </span>
                         <Form.Select
                           size="sm"
@@ -783,9 +793,9 @@ export default function AuthorDetailPage() {
                           onChange={(e) => setSortKey(e.target.value)}
                           className="lens-author-sort-select"
                         >
-                          <option value="year-desc">Năm (Mới nhất)</option>
-                          <option value="year-asc">Năm (Cũ nhất)</option>
-                          <option value="citations-desc">Số trích dẫn</option>
+                          <option value="year-desc">{isVi ? "Năm (Mới nhất)" : "Year (Newest)"}</option>
+                          <option value="year-asc">{isVi ? "Năm (Cũ nhất)" : "Year (Oldest)"}</option>
+                          <option value="citations-desc">{isVi ? "Số trích dẫn" : "Citations"}</option>
                         </Form.Select>
                       </div>
                     </div>
@@ -797,13 +807,14 @@ export default function AuthorDetailPage() {
                           role="status"
                         />
                         <span className="text-xs text-muted-custom">
-                          Đang tải danh sách bài báo...
+                          {isVi ? "Đang tải danh sách bài báo..." : "Loading articles list..."}
                         </span>
                       </div>
                     ) : sortedArticles.length === 0 ? (
                       <div className="text-center py-5 text-muted-custom font-sans text-xs">
-                        Tác giả này chưa có bài báo nào được lưu trữ trong hệ
-                        thống.
+                        {isVi 
+                          ? "Tác giả này chưa có bài báo nào được lưu trữ trong hệ thống."
+                          : "This author has no articles stored in the system."}
                       </div>
                     ) : (
                       <div className="d-flex flex-column gap-3">
@@ -813,7 +824,7 @@ export default function AuthorDetailPage() {
                           const journal =
                             article.journal_name ||
                             article.journal ||
-                            "Tạp chí khoa học";
+                            (isVi ? "Tạp chí khoa học" : "Scientific Journal");
                           const year =
                             article.publication_year || article.year || "—";
                           const cites =
@@ -1012,7 +1023,9 @@ export default function AuthorDetailPage() {
                                       }}
                                     >
                                       {article.abstract ||
-                                        "Không có bản tóm tắt nội dung (abstract) chi tiết cho bài báo này trong cơ sở dữ liệu."}
+                                        (isVi 
+                                          ? "Không có bản tóm tắt nội dung (abstract) chi tiết cho bài báo này trong cơ sở dữ liệu."
+                                          : "No abstract available for this article in the database.")}
                                     </div>
                                   </Collapse>
                                 </div>
@@ -1033,8 +1046,9 @@ export default function AuthorDetailPage() {
                       className="text-muted mb-2"
                     />
                     <p className="mb-0">
-                      Tác giả này chưa có công trình sáng chế (Patents) nào được
-                      trích dẫn trong hệ thống.
+                      {isVi
+                        ? "Tác giả này chưa có công trình sáng chế (Patents) nào được trích dẫn trong hệ thống."
+                        : "This author has no patents cited in the system."}
                     </p>
                   </div>
                 )}
@@ -1043,8 +1057,9 @@ export default function AuthorDetailPage() {
                   <div>
                     {coauthors.length === 0 ? (
                       <div className="text-center py-5 text-muted-custom font-sans text-xs">
-                        Không tìm thấy đồng tác giả (Co-authors) nào liên kết
-                        trong hệ thống.
+                        {isVi
+                          ? "Không tìm thấy đồng tác giả (Co-authors) nào liên kết trong hệ thống."
+                          : "No co-authors found in the system."}
                       </div>
                     ) : (
                       <div className="row g-3">
@@ -1071,7 +1086,7 @@ export default function AuthorDetailPage() {
                                 </div>
                               </div>
                               <div className="text-2xs text-muted-custom mt-auto">
-                                <strong>{co.count}</strong> bài viết chung
+                                <strong>{co.count}</strong> {isVi ? "bài viết chung" : "joint publications"}
                               </div>
                             </Card>
                           </div>
@@ -1089,8 +1104,9 @@ export default function AuthorDetailPage() {
                       className="text-muted mb-2"
                     />
                     <p className="mb-0">
-                      Bộ sưu tập cá nhân (Collections) của tác giả này hiện chưa
-                      được công khai.
+                      {isVi
+                        ? "Bộ sưu tập cá nhân (Collections) của tác giả này hiện chưa được công khai."
+                        : "This author's personal collections are not public yet."}
                     </p>
                   </div>
                 )}

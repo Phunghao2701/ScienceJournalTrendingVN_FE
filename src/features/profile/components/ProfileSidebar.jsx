@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../shared/components/Icon';
 
 /**
@@ -8,6 +9,16 @@ import Icon from '../../../shared/components/Icon';
  */
 export default function ProfileSidebar({ formData, user, onLogout }) {
   const isActive = user?.is_active ?? true;
+  const { i18n } = useTranslation();
+  const isVi = i18n.resolvedLanguage?.startsWith('vi');
+
+  const researcherText = isVi ? 'Nhà nghiên cứu' : 'Researcher';
+  const activeText = isVi ? 'Đang hoạt động' : 'Active';
+  const inactiveText = isVi ? 'Không hoạt động' : 'Inactive';
+  const activityText = isVi ? 'Hoạt động' : 'Activity';
+  const watchedProjectsText = isVi ? 'Dự án đang theo dõi' : 'Watched projects';
+  const savedKeywordsText = isVi ? 'Từ khóa đã lưu' : 'Saved keywords';
+  const logoutText = isVi ? 'Đăng xuất' : 'Log out';
 
   return (
     <div className="profile-sidebar">
@@ -42,23 +53,23 @@ export default function ProfileSidebar({ formData, user, onLogout }) {
         {formData.last_name} {formData.first_name}
       </h2>
 
-      <div className="role-badge">{formData.role || 'Nhà nghiên cứu'}</div>
+      <div className="role-badge">{formData.role || researcherText}</div>
 
       <div className={`status-badge ${isActive ? 'active' : 'inactive'}`}>
-        {isActive ? 'Active' : 'Inactive'}
+        {isActive ? activeText : inactiveText}
       </div>
 
       <hr />
 
-      <div className="activity-title">Hoạt động</div>
+      <div className="activity-title">{activityText}</div>
 
       <div className="stat-row">
-        <span>Dự án đang theo dõi</span>
+        <span>{watchedProjectsText}</span>
         <strong>—</strong>
       </div>
 
       <div className="stat-row">
-        <span>Từ khóa đã lưu</span>
+        <span>{savedKeywordsText}</span>
         <strong>—</strong>
       </div>
 
@@ -66,7 +77,7 @@ export default function ProfileSidebar({ formData, user, onLogout }) {
 
       <button className="sidebar-logout-btn" onClick={onLogout} type="button">
         <Icon icon="lucide:log-out" width="16" />
-        Đăng xuất
+        {logoutText}
       </button>
     </div>
   );

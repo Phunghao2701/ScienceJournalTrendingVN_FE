@@ -37,6 +37,14 @@ const ProjectDetailPage = () => {
   const [articlePage, setArticlePage] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showManageModal, setShowManageModal] = useState(false);
+  const [expandedAuthors, setExpandedAuthors] = useState({});
+
+  const toggleAuthors = (articleId) => {
+    setExpandedAuthors((prev) => ({
+      ...prev,
+      [articleId]: !prev[articleId],
+    }));
+  };
 
   useEffect(() => {
     fetchRelatedArticles(20);
@@ -310,15 +318,59 @@ const ProjectDetailPage = () => {
                         <span className="text-muted-custom small">{article.journal_name || article.journal?.title || p('scientificJournal')}</span>
                         <span className="text-muted-custom small">{article.publication_year || new Date(article.publication_date).getFullYear()}</span>
                       </div>
-                      <Link to={`/articles/${article.article_id || article.id}/visual`} className="text-decoration-none">
+                      <Link to={`/trending/articles/${article.article_id || article.id}`} className="text-decoration-none">
                         <h6 className="fw-bold text-main mb-2 hover-primary lh-base">{article.title}</h6>
                       </Link>
                       <p className="text-muted-custom small mb-2 text-truncate">{article.abstract || p('noAbstract')}</p>
                       <div className="d-flex justify-content-between align-items-center">
                         <span className="text-muted-custom small">
-                          {p('authors')}: <strong className="text-main fw-medium">{article.authors?.map(a => a.name).join(', ') || 'N/A'}</strong>
+                          {p('authors')}: <strong className="text-main fw-medium">
+                            {(() => {
+                              const artId = article.article_id || article.id;
+                              const authorsArray = Array.isArray(article.authors)
+                                ? article.authors.map(a => a?.name || a?.display_name || a?.author_name || a?.full_name || (typeof a === 'string' ? a : '')).filter(Boolean)
+                                : (typeof article.authors === 'string' ? article.authors.split(',').map(s => s.trim()).filter(Boolean) : []);
+
+                              if (authorsArray.length === 0) return 'N/A';
+                              if (authorsArray.length <= 3) return authorsArray.join(', ');
+
+                              const isExpanded = expandedAuthors[artId];
+                              const isVi = i18n.resolvedLanguage?.startsWith('vi');
+                              const showMoreText = isVi ? 'xem thêm' : 'show more';
+                              const showLessText = isVi ? 'ẩn bớt' : 'show less';
+
+                              if (isExpanded) {
+                                return (
+                                  <>
+                                    {authorsArray.join(', ')}{' '}
+                                    <button
+                                      type="button"
+                                      className="btn btn-link p-0 text-primary small fw-normal ms-1 text-decoration-none"
+                                      onClick={() => toggleAuthors(artId)}
+                                      style={{ fontSize: '0.8rem', verticalAlign: 'baseline' }}
+                                    >
+                                      {showLessText}
+                                    </button>
+                                  </>
+                                );
+                              }
+
+                              return (
+                                <>
+                                  {authorsArray.slice(0, 3).join(', ')}...{' '}
+                                  <button
+                                    type="button"
+                                    className="btn btn-link p-0 text-primary small fw-normal ms-1 text-decoration-none"
+                                    onClick={() => toggleAuthors(artId)}
+                                    style={{ fontSize: '0.8rem', verticalAlign: 'baseline' }}
+                                  >
+                                    {showMoreText}
+                                  </button>
+                                </>
+                              );
+                            })()}
+                          </strong>
                         </span>
-                        <span className="badge bg-light text-muted border fw-normal" style={{ fontSize: '0.7rem' }}>{p('highRelevance')}</span>
                       </div>
                     </div>
                   ))}

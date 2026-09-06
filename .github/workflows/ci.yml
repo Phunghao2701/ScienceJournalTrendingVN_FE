@@ -71,7 +71,7 @@ jobs:
     name: Continuous Deployment (CD)
     needs: build-and-push-image # Chỉ deploy sau khi đã push image thành công
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/duy/feat/CI_CD-action')
     
     steps:
     - name: Deploy to Server via SSH

@@ -34,3 +34,54 @@ jobs:
       
     - name: Build Project
       run: npm run build
+
+  build-and-push-image:
+    name: Build and Push Docker Image
+    needs: build-and-test # Chỉ build image khi mà test và lint đã pass
+    runs-on: ubuntu-latest
+    # Chỉ push image khi merge/push vào nhánh main, master hoặc nhánh của bạn
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/duy/feat/CI_CD-action')
+    
+    permissions:
+      contents: read
+      packages: write # Cấp quyền cho action ghi image lên GitHub Container Registry (ghcr.io)
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Log in to the Container registry (GHCR)
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ghcr.io/leduycoder/scientificjournalsystem-fe:latest
+        build-args: |
+          VITE_API_URL=${{ vars.VITE_API_URL }}
+          VITE_GOOGLE_CLIENT_ID=${{ vars.VITE_GOOGLE_CLIENT_ID }}
+
+  deploy:
+    name: Continuous Deployment (CD)
+    needs: build-and-push-image # Chỉ deploy sau khi đã push image thành công
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    steps:
+    - name: Deploy to Server via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        # Thay đổi thư mục cd bên dưới cho khớp với đường dẫn thực tế trên Server của bạn
+        script: |
+          cd /var/www/ScientificJournalSystem_VietNam_FE
+          docker-compose pull frontend
+          docker-compose up -d frontend

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Badge } from 'react-bootstrap';
+import {Table} from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 
 /**

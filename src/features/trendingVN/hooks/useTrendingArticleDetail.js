@@ -45,6 +45,22 @@ export const useTrendingArticleDetail = (
       throw new Error('Unable to load article details.');
     },
     staleTime: 1000 * 60 * 5,
+    initialData: () => {
+      const queries = queryClient.getQueriesData({ queryKey: ['paper-vn-articles'] });
+      for (const [, queryData] of queries) {
+        const found = queryData?.articles?.find(
+          (a) => String(a.article_id) === String(id)
+        );
+        if (found) {
+          return {
+            apiData: found,
+            parsedArticle: normalizeArticleDetail(found, id),
+          };
+        }
+      }
+      return undefined;
+    },
+    initialDataUpdatedAt: () => 0,
   });
 
   // 2. Related data queries depend on the article topic ID.
@@ -70,7 +86,7 @@ export const useTrendingArticleDetail = (
         total: Number(payload.pagination?.total ?? payload.total ?? 0),
       };
     },
-    enabled: !!article && !!id,
+    enabled: !!id,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -88,7 +104,7 @@ export const useTrendingArticleDetail = (
             : [],
       };
     },
-    enabled: !!article && !!id,
+    enabled: !!id,
     staleTime: 1000 * 60 * 5,
   });
 

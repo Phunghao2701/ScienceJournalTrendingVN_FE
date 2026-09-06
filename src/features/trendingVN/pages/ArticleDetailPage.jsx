@@ -22,7 +22,7 @@ import { getArticlesListApi } from '../../article/api/articleApi';
 import ScientificMathText from '../../../shared/components/ScientificMathText';
 import { toScientificPlainText } from '../../../shared/utils/scientificMath';
 import {
-  buildArticleAuthorFilterPath,
+  
   buildAuthorDetailPath,
 } from '../../../app/routes/routePaths';
 import {
@@ -30,7 +30,7 @@ import {
   getVisibleArticleDetailAuthors,
 } from '../utils/articleDetailAuthors';
 import {
-  getArticleReferenceSignalCount,
+  
   getAvailableReferenceDisplayCount,
 } from '../utils/referenceHydration';
 
@@ -38,7 +38,7 @@ import {
 import ArticleDetailSkeleton from '../../article/components/ArticleDetailSkeleton';
 import ArticleDetailEmpty from '../../article/components/ArticleDetailEmpty';
 import ArticleDetailError from '../../article/components/ArticleDetailError';
-import ArticlesTabContent from '../../journal/components/ArticlesTabContent';
+
 import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
 
 
@@ -169,6 +169,7 @@ export default function ArticleDetailPage() {
   const [showAllAuthors, setShowAllAuthors] = useState(false);
   const [showCitationsModal, setShowCitationsModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+// eslint-disable-next-line no-unused-vars
   const [activeLeftTab, setActiveLeftTab] = useState(null); // 'filters' | 'profile' | 'info' | 'more'
   const [scholarlyResultsCount] = useState(0);
   const returnToResults = useMemo(() => {
@@ -179,6 +180,7 @@ export default function ArticleDetailPage() {
     return '/trending-vn';
   }, [location.search, location.state]);
 
+// eslint-disable-next-line no-unused-vars
   const returnContext = useMemo(() => {
     const queryIndex = returnToResults.indexOf('?');
     if (queryIndex < 0) {
@@ -199,6 +201,7 @@ export default function ArticleDetailPage() {
     };
   }, [location.state, returnToResults]);
 
+// eslint-disable-next-line no-unused-vars
   const handleBackToResults = () => {
     navigate(returnToResults);
   };
@@ -781,6 +784,7 @@ ER  - `;
     : article.publication_year
       ? ['Publication Year', article.publication_year]
       : null;
+// eslint-disable-next-line no-unused-vars
   const publicationMetadataRows = [
     article.journal_name ? ['Journal', article.journal_name, 'journal'] : null,
     article.publisher_name ? ['Publisher', article.publisher_name, 'publisher'] : null,
@@ -808,6 +812,7 @@ ER  - `;
     ])
   );
   const citingYearDistribution = citingWorksAnalytics?.yearDistribution || [];
+// eslint-disable-next-line no-unused-vars
   const maxCitingYearCount = Math.max(
     ...citingYearDistribution.map((item) => Number(item.count || 0)),
     1

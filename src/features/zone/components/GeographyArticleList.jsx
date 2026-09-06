@@ -2,6 +2,7 @@ import React from 'react';
 import { Table, Card, Button } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import AdminPagination from '../../../shared/components/Pagination';
+import ScientificMathText from '../../../shared/components/ScientificMathText';
 
 export default function GeographyArticleList({ 
   articles = [], 
@@ -175,11 +176,15 @@ export default function GeographyArticleList({
                       </td>
                       <td style={{ maxWidth: '380px' }} className="py-3">
                         <div className="geography-article-title line-clamp-2">
-                          {article.title}
+                          <ScientificMathText>
+                            {article.title}
+                          </ScientificMathText>
                         </div>
                         {article.abstract && (
                           <div className="text-muted-custom mt-1 text-xs text-truncate font-sans">
-                            {article.abstract}
+                            <ScientificMathText>
+                              {article.abstract}
+                            </ScientificMathText>
                           </div>
                         )}
                       </td>

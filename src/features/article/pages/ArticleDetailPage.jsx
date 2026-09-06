@@ -473,21 +473,28 @@ export default function ArticleDetailPage() {
                               lineHeight: '1.65',
                             }}
                           >
-                            <strong>Summary:</strong> {article.semantic_tldr}
+                            <strong>Summary:</strong>{' '}
+                            <ScientificMathText as="span">
+                              {article.semantic_tldr}
+                            </ScientificMathText>
                           </div>
                         </section>
                       )}
 
                       <section id="abstract" className="article-section">
                         <h2 className="article-section-title" style={{ fontSize: '1.65rem' }}>Abstract</h2>
-                        {(article.abstract || 'No abstract is available for this article.')
-                          .split('\n')
-                          .filter(Boolean)
-                          .map((paragraph, index) => (
-                            <p key={index} className="article-section-text">
-                              {paragraph}
-                            </p>
-                          ))}
+                        {article.abstract ? (
+                          article.abstract
+                            .split('\n')
+                            .filter(Boolean)
+                            .map((paragraph, index) => (
+                              <ScientificMathText key={index} as="p" className="article-section-text">
+                                {paragraph}
+                              </ScientificMathText>
+                            ))
+                        ) : (
+                          <p className="article-section-text">No abstract is available for this article.</p>
+                        )}
                       </section>
 
 

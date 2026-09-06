@@ -71,12 +71,38 @@ export const normalizeMathMlPrefixes = (value = '') => String(value || '')
   .replace(/<\/?mml:/gi, (match) => match.replace('mml:', ''))
   .replace(/\sxmlns:mml=(["'])http:\/\/www\.w3\.org\/1998\/Math\/MathML\1/gi, '');
 
-export const hasScientificMath = (value = '') => /<\/?(?:mml:)?math[\s>]/i.test(String(value || ''));
+export const hasMathML = (value = '') => /<\/?(?:mml:)?math[\s>]/i.test(String(value || ''));
+
+export const normalizeScientificLatex = (value = '') => {
+  const str = String(value || '');
+  if (!str) return '';
+  // Fix double backslashes before LaTeX commands or symbols: \\alpha -> \alpha, \\varDelta -> \varDelta
+  return str.replace(/\\\\([a-zA-Z]+|[{}_^])/g, '\\$1');
+};
+
+export const hasLatexMath = (value = '') => {
+  const str = String(value || '');
+  // LaTeX commands like \alpha, \varDelta, \textbf, \geq …
+  if (/\\[a-zA-Z]+/.test(str)) return true;
+  // Display math $$...$$
+  if (/\$\$[\s\S]+?\$\$/.test(str)) return true;
+  // Inline math $...$  (avoid lone $ as currency)
+  if (/\$[^$\n]{1,300}?\$/.test(str)) return true;
+  // \(...\) and \[...\]
+  if (/\\\([\s\S]+?\\\)/.test(str) || /\\\[[\s\S]+?\\\]/.test(str)) return true;
+  return false;
+};
+
+export const hasScientificMath = (value = '') => hasMathML(value) || hasLatexMath(value);
 
 export const stripScientificMarkup = (value = '') => normalizeMathMlPrefixes(value)
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
+  .replace(/\$\$/g, '')
+  .replace(/\$/g, '')
+  .replace(/\\\\([a-zA-Z]+)/g, '$1')
+  .replace(/\\([a-zA-Z]+)/g, '$1')
   .replace(/\s+/g, ' ')
   .trim();
 

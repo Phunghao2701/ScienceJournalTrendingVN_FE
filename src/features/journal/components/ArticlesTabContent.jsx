@@ -6,6 +6,7 @@
 import { Card, Button } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import LoadingSkeleton from '../../../shared/components/LoadingSkeleton';
+import ScientificMathText from '../../../shared/components/ScientificMathText';
 
 export default function ArticlesTabContent({ recentArticles = [], loading, onArticleClick, emptyMessage }) {
   if (loading) {
@@ -60,7 +61,9 @@ export default function ArticlesTabContent({ recentArticles = [], loading, onArt
               role={hasArticleId ? 'button' : undefined}
               title={hasArticleId ? 'Xem chi tiết bài báo' : 'Bài báo này chưa có mã định danh'}
             >
-              {article.title || 'Untitled Article'}
+              <ScientificMathText>
+                {article.title || 'Untitled Article'}
+              </ScientificMathText>
             </h3>
 
             {article.authors && (
@@ -72,7 +75,9 @@ export default function ArticlesTabContent({ recentArticles = [], loading, onArt
 
             {article.abstract && (
               <p className="journal-article-abstract">
-                {article.abstract}
+                <ScientificMathText>
+                  {article.abstract}
+                </ScientificMathText>
               </p>
             )}
 

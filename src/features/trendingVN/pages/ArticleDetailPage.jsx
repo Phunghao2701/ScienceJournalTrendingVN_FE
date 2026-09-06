@@ -383,9 +383,15 @@ export default function ArticleDetailPage() {
                     {/* 1. Abstract */}
                     <div className="expanded-section mb-3">
                       <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>Abstract</div>
-                      <p className="text-muted text-xs text-justify" style={{ lineHeight: '1.5', margin: 0 }}>
-                        {item.abstract || 'No abstract available'}
-                      </p>
+                      <div className="text-muted text-xs text-justify" style={{ lineHeight: '1.5', margin: 0 }}>
+                        {item.abstract ? (
+                          <ScientificMathText as="p" className="mb-0">
+                            {item.abstract}
+                          </ScientificMathText>
+                        ) : (
+                          'No abstract available'
+                        )}
+                      </div>
                     </div>
 
                     {/* 2. Article Notes */}
@@ -1107,15 +1113,21 @@ ER  - `;
                             <Icon icon="lucide:sparkles" width="15" />
                             <strong className="text-uppercase">TL;DR</strong>
                           </div>
-                          <p className="mb-0 text-xs" style={{ fontWeight: 500, color: '#334155', lineHeight: '1.5' }}>
+                          <ScientificMathText as="p" className="mb-0 text-xs" style={{ fontWeight: 500, color: '#334155', lineHeight: '1.5' }}>
                             {article.semantic_tldr}
-                          </p>
+                          </ScientificMathText>
                         </div>
                       )}
 
-                      <p className="text-xs mb-4" style={{ lineHeight: '1.7', color: '#475569', textAlign: 'justify' }}>
-                        {article.abstract || 'No abstract is available for this article.'}
-                      </p>
+                      <div className="text-xs mb-4" style={{ lineHeight: '1.7', color: '#475569', textAlign: 'justify' }}>
+                        {article.abstract ? (
+                          <ScientificMathText as="p" className="mb-0">
+                            {article.abstract}
+                          </ScientificMathText>
+                        ) : (
+                          <p className="mb-0">No abstract is available for this article.</p>
+                        )}
+                      </div>
 
                       {/* Sub-grid: 2 columns below Abstract */}
                       <div className="row g-3 pt-3 border-top">

@@ -117,7 +117,9 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
               WebkitBoxOrient: 'vertical'
             }}
           >
-            {article.abstract}
+            <ScientificMathText>
+              {article.abstract}
+            </ScientificMathText>
           </div>
         )}
       </td>

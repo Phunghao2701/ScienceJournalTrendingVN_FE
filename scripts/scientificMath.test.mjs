@@ -5,6 +5,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createServer } from 'vite';
 import {
   hasScientificMath,
+  hasMathML,
+  hasLatexMath,
+  normalizeScientificLatex,
   normalizeMathMlPrefixes,
   sanitizeScientificMathHtml,
   toScientificPlainText,
@@ -153,6 +156,17 @@ const malformed = 'Bad <math><mfrac><mi>x</math>';
 assert.equal(sanitizeScientificMathHtml(malformed), 'Bad x');
 assert.equal(toScientificPlainText(malformed), 'Bad x');
 
+// LaTeX tests
+const latexTitle = 'A title with $$\\varDelta ^2 u = u^\\alpha $$ in $$\\textbf{R}^n$$';
+assert.equal(hasLatexMath(latexTitle), true);
+assert.equal(hasMathML(latexTitle), false);
+assert.equal(hasScientificMath(latexTitle), true);
+
+const doubleEscapedLatex = 'Equation $$\\varDelta ^2 u = u^\\alpha $$';
+const normalizedLatex = normalizeScientificLatex(doubleEscapedLatex);
+assert.equal(normalizedLatex.includes('\\varDelta'), true);
+assert.equal(toScientificPlainText(latexTitle).includes('$$'), false);
+
 const server = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
@@ -173,6 +187,9 @@ try {
   const secondRender = renderToStaticMarkup(
     React.createElement(ScientificMathText, { as: 'div' }, 'Second <math><msub><mi>y</mi><mn>1</mn></msub></math>')
   );
+  const latexRender = renderToStaticMarkup(
+    React.createElement(ScientificMathText, { as: 'div' }, 'LaTeX: $$\\varDelta ^2 u = u^\\alpha $$')
+  );
 
   assert.match(firstRender, /First/);
   assert.match(firstRender, /<msup>/);
@@ -180,8 +197,10 @@ try {
   assert.match(secondRender, /Second/);
   assert.match(secondRender, /<msub>/);
   assert.doesNotMatch(secondRender, /First/);
+  assert.match(latexRender, /data-mathjax/);
+  assert.match(latexRender, /\\varDelta/);
 } finally {
   await server.close();
 }
 
-console.log('scientificMath DOM and component tests passed');
+console.log('scientificMath DOM, LaTeX and component tests passed');

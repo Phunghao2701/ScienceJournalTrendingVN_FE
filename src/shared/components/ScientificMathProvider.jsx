@@ -2,7 +2,18 @@ import React from 'react';
 import { MathJaxContext } from 'better-react-mathjax';
 
 const mathJaxConfig = {
-  loader: { load: ['input/mml', 'output/chtml'] },
+  loader: { load: ['input/mml', 'input/tex', 'output/chtml'] },
+  tex: {
+    inlineMath: [
+      ['$', '$'],
+      ['$$', '$$'],
+      ['\\(', '\\)'],
+    ],
+    displayMath: [
+      ['\\[', '\\]'],
+    ],
+    processEscapes: true,
+  },
   options: {
     enableMenu: false,
     renderActions: {

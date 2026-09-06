@@ -135,7 +135,7 @@ function EllipsisJumper({ totalPages, onPageChange }) {
   );
 }
 
-export default function PaginationControls({ currentPage, totalPages, onPageChange }) {
+export default function PaginationControls({ currentPage, totalPages, onPageChange, onPageHover }) {
   // Nothing to paginate — render nothing
   if (totalPages <= 1) return null;
 
@@ -149,6 +149,7 @@ export default function PaginationControls({ currentPage, totalPages, onPageChan
         className="admin-pagination__btn admin-pagination__btn--nav"
         disabled={currentPage === 1}
         onClick={() => onPageChange(currentPage - 1)}
+        onMouseEnter={() => currentPage > 1 && onPageHover?.(currentPage - 1)}
         aria-label="Previous page"
       >
         <Icon icon="lucide:chevron-left" />
@@ -168,6 +169,7 @@ export default function PaginationControls({ currentPage, totalPages, onPageChan
             type="button"
             className={pageButtonClass(item, currentPage)}
             onClick={() => onPageChange(item)}
+            onMouseEnter={() => onPageHover?.(item)}
             aria-current={item === currentPage ? 'page' : undefined}
             aria-label={`Page ${item}`}
           >
@@ -182,6 +184,7 @@ export default function PaginationControls({ currentPage, totalPages, onPageChan
         className="admin-pagination__btn admin-pagination__btn--nav"
         disabled={currentPage === totalPages}
         onClick={() => onPageChange(currentPage + 1)}
+        onMouseEnter={() => currentPage < totalPages && onPageHover?.(currentPage + 1)}
         aria-label="Next page"
       >
         <Icon icon="lucide:chevron-right" />

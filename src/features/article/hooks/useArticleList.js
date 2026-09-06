@@ -4,7 +4,7 @@
  * File: features\article\hooks\useArticleList.js
  */
 import { useCallback, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getArticlesListApi } from '../api/articleApi';
 import { searchJournalsApi } from '../../journal/api/journalApi';
@@ -85,6 +85,46 @@ const resolveIssnJournalFilter = async ({ search, selectedJournal }) => {
   return { journalIdToFilter, textSearch };
 };
 
+export const fetchArticlesByFilters = async (filters) => {
+  const { journalIdToFilter, textSearch } = await resolveIssnJournalFilter({
+    search: filters.search,
+    selectedJournal: filters.selectedJournal,
+  });
+
+  const apiParams = buildPaperVnDiscoveryParams({
+    ...filters,
+    search: textSearch,
+    selectedJournal: journalIdToFilter,
+  });
+
+  const response = await getArticlesListApi(apiParams);
+
+  if (!response?.data?.success) {
+    throw new Error(response?.data?.message || 'Unable to load articles');
+  }
+
+  const resData = response.data.data || {};
+  const rawList = resData.articles || resData.items || [];
+  const paginationData = resData.pagination || {};
+  const totalCount = paginationData.total || rawList.length;
+
+  const mappedArticles = rawList.map(mapArticleListItem);
+  const apiStats = resData.stats || null;
+
+  return {
+    articles: mappedArticles,
+    total: totalCount,
+    stats: {
+      totalArticles: Number(apiStats?.totalArticles ?? totalCount),
+      openAccessCount: Number(apiStats?.openAccessCount ?? mappedArticles.filter((a) => a.is_open_access).length),
+      authorsCount: Number(apiStats?.authorsCount ?? 0),
+      topicsCount: Number(
+        apiStats?.topicsCount ?? new Set(mappedArticles.map((a) => a.topic_id).filter(Boolean)).size
+      ),
+    },
+  };
+};
+
 /**
  * Hook quản lý trạng thái trang Article List.
  * Sync filter với URL query params để hỗ trợ back/forward và copy link.
@@ -92,6 +132,7 @@ const resolveIssnJournalFilter = async ({ search, selectedJournal }) => {
 export default function useArticleList({ enabled = true } = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const filters = useMemo(() => buildPaperVnQueryFilters(searchParams), [searchParams]);
@@ -100,46 +141,19 @@ export default function useArticleList({ enabled = true } = {}) {
     queryKey: ['paper-vn-articles', filters],
     enabled,
     placeholderData: (previousData) => previousData,
-    queryFn: async () => {
-      const { journalIdToFilter, textSearch } = await resolveIssnJournalFilter({
-        search: filters.search,
-        selectedJournal: filters.selectedJournal,
-      });
-
-      const apiParams = buildPaperVnDiscoveryParams({
-        ...filters,
-        search: textSearch,
-        selectedJournal: journalIdToFilter,
-      });
-
-      const response = await getArticlesListApi(apiParams);
-
-      if (!response?.data?.success) {
-        throw new Error(response?.data?.message || 'Unable to load articles');
-      }
-
-      const resData = response.data.data || {};
-      const rawList = resData.articles || resData.items || [];
-      const paginationData = resData.pagination || {};
-      const totalCount = paginationData.total || rawList.length;
-
-      const mappedArticles = rawList.map(mapArticleListItem);
-      const apiStats = resData.stats || null;
-
-      return {
-        articles: mappedArticles,
-        total: totalCount,
-        stats: {
-          totalArticles: Number(apiStats?.totalArticles ?? totalCount),
-          openAccessCount: Number(apiStats?.openAccessCount ?? mappedArticles.filter((a) => a.is_open_access).length),
-          authorsCount: Number(apiStats?.authorsCount ?? 0),
-          topicsCount: Number(
-            apiStats?.topicsCount ?? new Set(mappedArticles.map((a) => a.topic_id).filter(Boolean)).size
-          ),
-        },
-      };
-    },
+    staleTime: 60 * 1000, // 60s cache validity prevents jarring immediate refetches
+    queryFn: () => fetchArticlesByFilters(filters),
   });
+
+  const prefetchPage = useCallback((targetPage) => {
+    if (!targetPage || targetPage === filters.page) return;
+    const targetFilters = { ...filters, page: targetPage };
+    queryClient.prefetchQuery({
+      queryKey: ['paper-vn-articles', targetFilters],
+      queryFn: () => fetchArticlesByFilters(targetFilters),
+      staleTime: 60 * 1000,
+    });
+  }, [filters, queryClient]);
 
   const articles = articleQuery.data?.articles || [];
   const total = articleQuery.data?.total || 0;
@@ -191,6 +205,7 @@ export default function useArticleList({ enabled = true } = {}) {
     clearFilters,
     refetch: articleQuery.refetch,
     handlePageChange,
+    prefetchPage,
     handleDetailClick,
     showAuthModal,
     setShowAuthModal,

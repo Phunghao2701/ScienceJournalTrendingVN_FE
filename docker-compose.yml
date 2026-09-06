@@ -8,7 +8,7 @@ services:
         # Đưa các biến môi trường từ file .env vào quá trình build của Docker
         - VITE_API_URL=${VITE_API_URL}
         - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
-    image: ghcr.io/leduycoder/scientificjournalsystem-fe:latest
+    image: ghcr.io/phunghao2701/scientificjournalsystem-fe:latest
     container_name: researchpulse_frontend
     restart: unless-stopped
 

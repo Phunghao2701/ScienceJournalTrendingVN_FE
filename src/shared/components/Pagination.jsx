@@ -15,6 +15,7 @@ export default function Pagination({
   currentPage,
   limit,
   onPageChange,
+  onPageHover,
   entityName = 'items'
 }) {
   const totalPages = Math.max(1, Math.ceil(totalItems / limit));
@@ -38,6 +39,7 @@ export default function Pagination({
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={onPageChange}
+          onPageHover={onPageHover}
         />
       </div>
 

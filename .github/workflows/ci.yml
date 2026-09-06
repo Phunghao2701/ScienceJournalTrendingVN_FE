@@ -82,6 +82,6 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}
         # Thay đổi thư mục cd bên dưới cho khớp với đường dẫn thực tế trên Server của bạn
         script: |
-          cd /var/www/ScientificJournalSystem_VietNam_FE
+          cd /var/www/researchpulse-vn-fe
           docker-compose pull frontend
           docker-compose up -d frontend

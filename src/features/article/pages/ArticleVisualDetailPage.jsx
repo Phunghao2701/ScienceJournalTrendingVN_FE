@@ -23,7 +23,7 @@ import useBookmark from '../../bookmark/hooks/useBookmark';
 import ArticleDetailSkeleton from '../components/ArticleDetailSkeleton';
 import ArticleDetailEmpty from '../components/ArticleDetailEmpty';
 import ArticleDetailError from '../components/ArticleDetailError';
-import ArticlesTabContent from '../../journal/components/ArticlesTabContent';
+
 import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
 
 import { toast } from '../../../shared/utils/toast';
@@ -52,6 +52,7 @@ const normalizeRecommendedArticle = (item = {}) => ({
     : item.authors || item.authors_text || '',
 });
 
+// eslint-disable-next-line no-unused-vars
 const topicKeywordChipStyle = {
   border: '1px solid var(--border)',
   color: 'var(--text-main)',
@@ -67,6 +68,7 @@ const formatReferenceLabel = (referenceUrl = '', index = 0) => {
   return workId ? `OpenAlex ${workId}` : `Reference ${index + 1}`;
 };
 
+// eslint-disable-next-line no-unused-vars
 const smoothScrollTo = (targetId) => {
   const target = document.getElementById(targetId);
   if (!target) return;
@@ -84,6 +86,7 @@ export default function ArticleVisualDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+// eslint-disable-next-line no-unused-vars
   const [activeTab, setActiveTab] = useState('preview');
   const [recommendedArticles, setRecommendedArticles] = useState([]);
   const [isRecommendedLoading, setIsRecommendedLoading] = useState(false);
@@ -110,6 +113,7 @@ export default function ArticleVisualDetailPage() {
     (referencePage - 1) * referencesPerPage,
     referencePage * referencesPerPage,
   );
+// eslint-disable-next-line no-unused-vars
   const keywordsText = useMemo(() => {
     const keywords = article?.keywords || [];
     if (!keywords.length) return 'Đang cập nhật từ khóa.';
@@ -193,6 +197,7 @@ export default function ArticleVisualDetailPage() {
     }
   };
 
+// eslint-disable-next-line no-unused-vars
   const handleDoiClick = () => {
     if (!articleDoiUrl) return;
     window.open(articleDoiUrl, '_blank', 'noopener,noreferrer');
@@ -239,6 +244,7 @@ export default function ArticleVisualDetailPage() {
     }
   };
 
+// eslint-disable-next-line no-unused-vars
   const handleTopicClick = (topic) => {
     const topicId = topic?.topic_id || topic?.id;
     if (topicId) {
@@ -251,6 +257,7 @@ export default function ArticleVisualDetailPage() {
     navigate(`/articles?search=${encodeURIComponent(label)}`);
   };
 
+// eslint-disable-next-line no-unused-vars
   const handleOrganizationAccess = () => {
     if (article?.is_open_access && article?.doi) {
       window.open(getDoiUrl(article.doi), '_blank', 'noopener,noreferrer');

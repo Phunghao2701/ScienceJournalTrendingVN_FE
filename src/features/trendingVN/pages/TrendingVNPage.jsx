@@ -125,6 +125,7 @@ export default function TrendingVNPage() {
 
   const [showShareModal, setShowShareModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+// eslint-disable-next-line no-unused-vars
   const [groupingMode, setGroupingMode] = useState("none"); // 'none', 'simple-group', 'simple-expand', 'extended-group', 'extended-expand'
 
   const [exportDocCount, setExportDocCount] = useState(10);

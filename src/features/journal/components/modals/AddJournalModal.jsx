@@ -17,8 +17,7 @@ export default function AddJournalModal({ show, handleClose }) {
     onlineIssn: '',
     publisher: '',
     subjectCategory: '',
-    subjectArea: '',
-    publisher: ''
+    subjectArea: ''
   });
 
   // State lưu trữ thông báo lỗi khi validate dữ liệu đầu vào
@@ -59,8 +58,7 @@ export default function AddJournalModal({ show, handleClose }) {
       onlineIssn: '',
       publisher: '',
       subjectCategory: '',
-      subjectArea: '',
-      publisher: ''
+      subjectArea: ''
     });
     handleClose();
   };
@@ -166,17 +164,6 @@ export default function AddJournalModal({ show, handleClose }) {
               </Form.Group>
             </Col>
           </Row>
-
-          {/* Nhà xuất bản */}
-          <Form.Group className="mb-0">
-            <Form.Label className="fw-medium small text-main">Nhà xuất bản (Publisher)</Form.Label>
-            <Form.Control
-              type="text"
-              name="publisher"
-              value={formData.publisher}
-              placeholder="Nhập tên Giáo sư / Tiến sĩ..."
-            />
-          </Form.Group>
 
         </Modal.Body>
         <Modal.Footer className="border-top-0 pt-0">

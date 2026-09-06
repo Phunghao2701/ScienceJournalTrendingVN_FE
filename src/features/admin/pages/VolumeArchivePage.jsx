@@ -30,7 +30,7 @@ export default function VolumeArchivePage() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(6); // 6 cards per page fits nicely in a 3-column grid
+  const [limit] = useState(6); // 6 cards per page fits nicely in a 3-column grid
 
   // Load initial data
   useEffect(() => {

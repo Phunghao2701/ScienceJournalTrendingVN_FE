@@ -9,9 +9,9 @@ import { useNavigate } from "react-router-dom";
 
 export default function JournalHero({
   journal,
-  isFollowing,
+  
   isAddingToProject,
-  onFollow,
+  
   onAddToProject,
   loading,
 }) {
@@ -92,6 +92,7 @@ export default function JournalHero({
     metric_name = "Impact Factor",
     metric_year = "2024",
     subject_categories = [],
+// eslint-disable-next-line no-unused-vars
     is_following,
   } = journal;
 

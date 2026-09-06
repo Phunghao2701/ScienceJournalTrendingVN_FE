@@ -135,7 +135,7 @@ export default function GeographyChart({
               <div 
                 key={i} 
                 className="skeleton-shimmer flex-grow-1" 
-                style={{ height: `${Math.max(20, Math.random() * 80 + 20)}%`, borderRadius: '4px 4px 0 0' }} 
+                style={{ height: `${Math.max(20, (i * 23) % 80 + 20)}%`, borderRadius: '4px 4px 0 0' }} 
               />
             ))}
           </div>

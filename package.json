@@ -11,6 +11,7 @@
     "test:in-app-browser": "node scripts/inAppBrowser.test.mjs",
     "test:auth-refresh": "node scripts/authRefresh.test.mjs",
     "test:orcid-scan": "node scripts/orcidScan.test.mjs",
+    "test": "npm run test:orcid-scan",
     "preview": "vite preview --port $PORT --host",
     "lint": "eslint .",
     "check:brain-manifest": "repo-harness run check-brain-manifest",

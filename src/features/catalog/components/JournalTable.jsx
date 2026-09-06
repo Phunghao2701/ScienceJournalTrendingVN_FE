@@ -4,13 +4,13 @@
  * File: features\catalog\components\JournalTable.jsx
  */
 import { Table } from "react-bootstrap";
-import { Icon } from "@iconify/react";
+
 import { useNavigate } from "react-router-dom";
 
 export default function JournalTable({
   journals = [],
   followedJournals = {},
-  onFollow,
+  
 }) {
   const navigate = useNavigate();
 
@@ -46,6 +46,7 @@ export default function JournalTable({
           <tbody>
             {journals.map((journal) => {
               const id = journal.id || journal.journal_id;
+// eslint-disable-next-line no-unused-vars
               const isFollowed = !!followedJournals[id];
 
               return (

@@ -391,7 +391,7 @@ export default function AuthorDetailPage() {
       }
     });
     return Object.values(allCoauthors).sort((a, b) => b.count - a.count);
-  }, [authorArticles, currentAuthor]);
+  }, [authorArticles, currentAuthor, isVi]);
 
   // Sorting publications
   const sortedArticles = useMemo(() => {

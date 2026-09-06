@@ -181,7 +181,8 @@ plans
 scripts
 !scripts/
 scripts/*
-!scripts/orcidScan.test.mjs
+!scripts/*.test.mjs
+!scripts/mathJaxSsrStub.mjs
 AGENTS.md
 CLAUDE.md
 DESIGN_SYSTEM.md

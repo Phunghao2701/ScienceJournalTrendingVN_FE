@@ -136,18 +136,6 @@ export default function Header() {
                 <span>{t("orcidScan.navLabel")}</span>
               </Button>
 
-              <Button
-                variant="link"
-                className={`header-scan-orcid-link ${
-                  isScanOrcidActive ? "header-scan-orcid-link--active" : ""
-                }`}
-                onClick={handleScanOrcid}
-                aria-current={isScanOrcidActive ? "page" : undefined}
-              >
-                <Icon icon="lucide:scan-search" width="16" aria-hidden="true" />
-                <span>{t("orcidScan.navLabel")}</span>
-              </Button>
-
               {/* User Authentication Display/Buttons */}
               {isLoggedIn ? (
                 <Dropdown align="end">

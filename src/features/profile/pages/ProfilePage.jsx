@@ -2,6 +2,7 @@ import '../styles/ProfilePage.css';
 import Header from '../../landing/components/Header';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import useProfileForm from '../hooks/useProfileForm';
 import ProfileGuestState from '../components/ProfileGuestState';
 import ProfileLoadingState from '../components/ProfileLoadingState';
@@ -13,6 +14,16 @@ import DeleteAccountModal from '../components/DeleteAccountModal';
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { i18n } = useTranslation();
+  const isVi = i18n.resolvedLanguage?.startsWith('vi');
+
+  const titleText = isVi ? 'Hồ sơ' : 'Profile';
+  const subtitleText = isVi ? 'Quản lý thông tin cá nhân và thiết lập tài khoản của bạn.' : 'Manage your personal information and account settings.';
+  const overviewText = isVi ? 'Tổng quan' : 'Overview';
+  const profileText = isVi ? 'Hồ sơ cá nhân' : 'Personal profile';
+  const successAlert = isVi ? 'Cập nhật thành công' : 'Update successful';
+  const failAlert = isVi ? 'Cập nhật thất bại' : 'Update failed';
+
   const {
     user,
     formData,
@@ -30,7 +41,7 @@ export default function ProfilePage() {
 
   const onSave = async () => {
     const success = await handleSave();
-    alert(success ? 'Cập nhật thành công' : 'Cập nhật thất bại');
+    alert(success ? successAlert : failAlert);
   };
 
   const onDelete = async () => {
@@ -69,14 +80,14 @@ export default function ProfilePage() {
         <div className="profile-page">
           <div className="profile-container">
             <div className="page-header">
-              <h1>Hồ sơ</h1>
-              <p>Quản lý thông tin cá nhân và thiết lập tài khoản của bạn.</p>
+              <h1>{titleText}</h1>
+              <p>{subtitleText}</p>
             </div>
 
             <div className="breadcrumb">
-              Tổng quan
+              {overviewText}
               <span>&gt;</span>
-              Hồ sơ cá nhân
+              {profileText}
             </div>
 
             {saveError && (

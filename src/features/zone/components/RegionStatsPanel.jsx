@@ -1,6 +1,6 @@
 import React from 'react';
 import { Table } from 'react-bootstrap';
-import { Icon } from '@iconify/react';
+
 import EmptyState from './EmptyState';
 import ErrorState from './ErrorState';
 

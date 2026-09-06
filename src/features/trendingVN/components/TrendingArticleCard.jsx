@@ -8,7 +8,7 @@ import { toScientificPlainText } from '../../../shared/utils/scientificMath';
 import useBookmark from '../../bookmark/hooks/useBookmark';
 import { toast } from '../../../shared/utils/toast';
 
-export default function TrendingArticleCard({
+function TrendingArticleCard({
   article,
   expandedAbstracts,
   groupingMode,
@@ -512,3 +512,5 @@ export default function TrendingArticleCard({
     </div>
   );
 }
+
+export default React.memo(TrendingArticleCard);

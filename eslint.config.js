@@ -23,6 +23,8 @@ export default defineConfig([
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/immutability': 'off',
       'react-refresh/only-export-components': 'off',
+      'no-unused-vars': ['warn', { 'varsIgnorePattern': '^React$' }],
+      'react-hooks/exhaustive-deps': 'warn',
     },
   },
 ])

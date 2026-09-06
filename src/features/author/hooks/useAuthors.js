@@ -163,7 +163,7 @@ export default function useAuthors() {
   const [authorBreakdown, setAuthorBreakdown] = useState([]);         // Chỉ số đóng góp của các lĩnh vực nghiên cứu
   const [subjectAreas, setSubjectAreas] = useState([]);               // Danh sách subject area cho bộ lọc
   const [leaderboard, setLeaderboard] = useState([]);                // Danh sách bảng xếp hạng các tác giả hàng đầu
-  const [leaderboardBreakdowns, setLeaderboardBreakdowns] = useState({}); // Breakdown theo tác giả cho leaderboard
+  const [, setLeaderboardBreakdowns] = useState({}); // Breakdown theo tAc gi cho leaderboard
 
   // ── CÁC TRẠNG THÁI LOADING RIÊNG BIỆT ──────────────────────────────────────
   // Mỗi quá trình tải dữ liệu có cờ loading spinner/skeleton riêng để tránh làm nghẽn giao diện.
@@ -362,7 +362,7 @@ export default function useAuthors() {
               } else {
                 breakdownMap[id] = [];
               }
-            } catch (error) {
+            } catch {
               breakdownMap[id] = [];
             }
           })

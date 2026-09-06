@@ -1,11 +1,11 @@
-﻿/**
+/**
  * Card hiển thị keyword và topic trong trang chi tiết bài báo.
  * - Keywords: click được, điều hướng tới /keywords/:id/articles hoặc /keywords?keyword=...
  * - Topics: chỉ hiển thị, KHÔNG click vì route /topics/:id/articles chưa có trong AppRoutes.
  *
  * File: features/article/components/KeywordTopicCard.jsx
  */
-import { Card, Badge } from 'react-bootstrap';
+import { Card } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import { normalizeKeywords } from '../utils/articleFormatters';

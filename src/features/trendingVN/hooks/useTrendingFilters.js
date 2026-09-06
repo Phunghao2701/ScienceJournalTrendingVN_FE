@@ -3,9 +3,10 @@ import { searchJournalsApi } from '../../journal/api/journalApi';
 import { getTopicsApi } from '../../topic/api/topic.api';
 import { getInstitutionsApi } from '../../institution/api/institution.api';
 
-export const useTrendingFilters = () => {
+export const useTrendingFilters = ({ enabled = true } = {}) => {
   const { data: filterData, isLoading, error } = useQuery({
     queryKey: ['trendingVN', 'filters'],
+    enabled,
     queryFn: async () => {
       const [journalResponse, topicResponse, institutionResponse] = await Promise.allSettled([
         searchJournalsApi({ limit: 100 }),

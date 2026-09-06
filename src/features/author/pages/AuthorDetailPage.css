@@ -82,14 +82,6 @@
   margin-top: 0.25rem;
 }
 
-.lens-author-follow-btn {
-  font-weight: 700 !important;
-  font-size: 0.8rem !important;
-  padding: 0.4rem 1.2rem !important;
-  border-radius: 6px !important;
-  transition: all 0.2s ease-in-out !important;
-}
-
 .lens-stat-box-large {
   display: flex;
   align-items: center;
@@ -324,7 +316,6 @@
     overflow-wrap: anywhere;
   }
 
-  .lens-author-follow-btn,
   .lens-author-sort-select {
     width: 100%;
     min-height: 42px;

@@ -6,7 +6,7 @@
 import { useAuthStore } from '../../app/store/authStore';
 import { useUserStore } from '../../app/store/userStore';
 import api from '../services/api';
-import { jwtDecode } from 'jwt-decode';
+
 
 
 
@@ -67,7 +67,7 @@ export const isAuthenticated = async () => {
     return false;
 
 
-  } catch (error) {
+  } catch {
     // Nếu dính lỗi 401 triệt để (kể cả sau khi Axios Interceptor đã cố Refresh thất bại)
     useAuthStore.getState().logout(); // Đảm bảo clear sạch Zustand cũ nếu có
     localStorage.removeItem('researchpulse_token');

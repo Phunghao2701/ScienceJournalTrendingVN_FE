@@ -3,7 +3,7 @@
  * File: features\trendingVN\pages\TrendingVNPage.jsx
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import {
   Container,
   Row,
@@ -11,7 +11,6 @@ import {
   Form,
   Button,
   Badge,
-  Modal,
   Dropdown,
 } from "react-bootstrap";
 import { Icon } from "@iconify/react";
@@ -27,7 +26,13 @@ import AdminPagination from "../../../shared/components/Pagination";
 import PublisherGrid from "../components/PublisherGrid";
 import SearchableSelect from "../../../shared/components/Select/SearchableSelect";
 import TrendingArticleCard from "../components/TrendingArticleCard";
-import AnalysisDashboard from "../components/analysis/AnalysisDashboard";
+import PageLoadingBar from "../../../shared/components/PageLoadingBar";
+import TrendingShareModal from "../components/TrendingShareModal";
+import TrendingExportModal from "../components/TrendingExportModal";
+
+const AnalysisDashboard = lazy(
+  () => import("../components/analysis/AnalysisDashboard"),
+);
 import { toast } from "../../../shared/utils/toast";
 import { toScientificPlainText } from "../../../shared/utils/scientificMath";
 import useAuth from "../../auth/hooks/useAuth";
@@ -80,12 +85,27 @@ export default function TrendingVNPage() {
     updateFilters,
     clearFilters,
     handlePageChange,
+    prefetchPage,
   } = useArticleList({ enabled: !isAnalysisView });
+
+  // Progressive loading: Article list is critical; secondary analytics deferred
+  const [analyticsDeferred, setAnalyticsDeferred] = useState(false);
+  useEffect(() => {
+    if (!isLoading) {
+      setAnalyticsDeferred(true);
+      return;
+    }
+    const timer = setTimeout(() => setAnalyticsDeferred(true), 500);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
   const {
     analytics,
     isLoading: isAnalyticsLoading,
     error: analyticsError,
-  } = useArticleAnalytics(filters, { enabled: !isAnalysisView });
+  } = useArticleAnalytics(filters, {
+    enabled: !isAnalysisView && analyticsDeferred,
+  });
   const {
     analysis,
     isLoading: isAnalysisLoading,
@@ -125,6 +145,7 @@ export default function TrendingVNPage() {
 
   const [showShareModal, setShowShareModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+// eslint-disable-next-line no-unused-vars
   const [groupingMode, setGroupingMode] = useState("none"); // 'none', 'simple-group', 'simple-expand', 'extended-group', 'extended-expand'
 
   const [exportDocCount, setExportDocCount] = useState(10);
@@ -178,8 +199,15 @@ export default function TrendingVNPage() {
     setLocalSearchInput(filters.search);
   }, [filters.search]);
 
+  // On-demand filter metadata: only fetch when drawer is opened or entity filter active
+  const shouldFetchFilterMetadata = Boolean(
+    activeLeftTab === "filters" ||
+      (filters.selectedTopic && filters.selectedTopic !== "all") ||
+      (filters.selectedInstitution && filters.selectedInstitution !== "all"),
+  );
+
   const { journalOptions, topicOptions, institutionOptions } =
-    useTrendingFilters();
+    useTrendingFilters({ enabled: shouldFetchFilterMetadata });
 
   const toggleAbstract = (id) => {
     setExpandedAbstracts((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -864,13 +892,7 @@ export default function TrendingVNPage() {
                       <div className="tvn-profile-info">
                         <div className="profile-name">{userDisplayName}</div>
                         <div className="profile-subtitle">
-                          {t("personalAccount")}{" "}
-                          <span
-                            className="text-danger"
-                            style={{ fontSize: "0.62rem", display: "block" }}
-                          >
-                            ({t("notCommercialUse")})
-                          </span>
+                          {t("personalAccount")}
                         </div>
                       </div>
                       <Icon
@@ -1352,17 +1374,19 @@ export default function TrendingVNPage() {
                 {/* ==================== ARTICLE RESULTS ==================== */}
                 <div className="tvn-results-body">
                   {isAnalysisView ? (
-                    <AnalysisDashboard
-                      analysis={analysis}
-                      isLoading={isAnalysisLoading}
-                      error={analysisError}
-                      onEntityClick={handleEntityFilter}
-                      onArticleClick={handleDetailClick}
-                      onRetry={refetchAnalysis}
-                      onYearRangeChange={(fromYear, toYear) =>
-                        updateFilters({ fromYear, toYear })
-                      }
-                    />
+                    <Suspense fallback={<PageLoadingBar />}>
+                      <AnalysisDashboard
+                        analysis={analysis}
+                        isLoading={isAnalysisLoading}
+                        error={analysisError}
+                        onEntityClick={handleEntityFilter}
+                        onArticleClick={handleDetailClick}
+                        onRetry={refetchAnalysis}
+                        onYearRangeChange={(fromYear, toYear) =>
+                          updateFilters({ fromYear, toYear })
+                        }
+                      />
+                    </Suspense>
                   ) : isLoading && articles.length === 0 ? (
                     <div className="d-flex flex-column gap-0">
                       {[1, 2, 3].map((i) => (
@@ -1505,6 +1529,7 @@ export default function TrendingVNPage() {
                         currentPage={currentPage}
                         limit={10}
                         onPageChange={handlePageChange}
+                        onPageHover={prefetchPage}
                         entityName={t("articles").toLowerCase()}
                       />
                     </div>
@@ -2127,348 +2152,25 @@ export default function TrendingVNPage() {
       {/* /tvn-layout-wrapper */}
 
       {/* ==================== 6. MODALS ==================== */}
-      {/* 6.1 Share Modal */}
-      <Modal
+      <TrendingShareModal
         show={showShareModal}
         onHide={() => setShowShareModal(false)}
-        centered
-        className="tvn-modal"
-      >
-        <Modal.Header>
-          <Modal.Title>{t("shareTitle")}</Modal.Title>
-          <button
-            className="tvn-modal-close-btn"
-            onClick={() => setShowShareModal(false)}
-          >
-            x
-          </button>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="share-social-grid">
-            <button
-              className="share-social-btn twitter"
-              onClick={() =>
-                window.open(
-                  `https://twitter.com/intent/tweet?text=${encodeURIComponent(document.title)}&url=${encodeURIComponent(window.location.href)}`,
-                  "_blank",
-                )
-              }
-            >
-              <Icon icon="ri:twitter-x-fill" width="16" />
-              {t("shareTwitter")}
-            </button>
-            <button
-              className="share-social-btn linkedin"
-              onClick={() =>
-                window.open(
-                  `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`,
-                  "_blank",
-                )
-              }
-            >
-              <Icon icon="ri:linkedin-box-fill" width="16" />
-              {t("shareLinkedIn")}
-            </button>
-            <button
-              className="share-social-btn facebook"
-              onClick={() =>
-                window.open(
-                  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`,
-                  "_blank",
-                )
-              }
-            >
-              <Icon icon="ri:facebook-box-fill" width="16" />
-              {t("shareFacebook")}
-            </button>
-            <button
-              className="share-social-btn email"
-              onClick={() => {
-                window.location.href = `mailto:?subject=${encodeURIComponent(document.title)}&body=${encodeURIComponent(window.location.href)}`;
-              }}
-            >
-              <Icon icon="ri:mail-fill" width="16" />
-              {t("shareEmail")}
-            </button>
-          </div>
+      />
 
-          <div className="tvn-modal-panel-title mb-2">
-            {t("copyLinkToShare")}
-          </div>
-          <div className="share-copy-group">
-            <Form.Control
-              type="text"
-              readOnly
-              value={window.location.href}
-              className="share-copy-input"
-            />
-            <button
-              type="button"
-              className="share-copy-btn"
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                toast.success(t("linkCopied"));
-              }}
-              title="Copy Link"
-            >
-              <Icon icon="lucide:copy" width="16" />
-            </button>
-          </div>
-        </Modal.Body>
-      </Modal>
-
-      {/* 6.3 Export Modal */}
-      <Modal
+      <TrendingExportModal
         show={showExportModal}
         onHide={() => setShowExportModal(false)}
-        centered
-        size="lg"
-        className="tvn-modal"
-      >
-        <Modal.Header>
-          <Modal.Title>{t("export")}</Modal.Title>
-          <button
-            className="tvn-modal-close-btn"
-            onClick={() => setShowExportModal(false)}
-          >
-            x
-          </button>
-        </Modal.Header>
-        <Form onSubmit={handleExportSubmit}>
-          <Modal.Body>
-            <div className="export-split-layout">
-              {/* Left pane: export settings */}
-              <div className="export-left-pane">
-                <Form.Group className="mb-2" controlId="exportDocCountInput">
-                  <Form.Label>Export current page</Form.Label>
-                  <Form.Select
-                    value={exportDocCount}
-                    onChange={(e) => setExportDocCount(Number(e.target.value))}
-                    className="form-control"
-                  >
-                    <option value={10}>10</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </Form.Select>
-                  <span
-                    className="text-muted d-block mt-1 mb-2"
-                    style={{ fontSize: "0.68rem" }}
-                  >
-                    Export is limited to the {articles.length} article(s) loaded
-                    on this page.
-                  </span>
-                </Form.Group>
-
-                <Form.Group className="mb-2" controlId="exportFormatInput">
-                  <Form.Label>{t("exportFileFormat")}</Form.Label>
-                  <Form.Select
-                    value={exportFormat}
-                    onChange={(e) => setExportFormat(e.target.value)}
-                    className="form-control"
-                  >
-                    <option value="CSV">CSV</option>
-                    <option value="JSON">JSON</option>
-                  </Form.Select>
-                  <span
-                    className="text-muted d-block mt-1 mb-2"
-                    style={{ fontSize: "0.68rem" }}
-                  >
-                    {t("selectJsonLines")}
-                  </span>
-                </Form.Group>
-
-                <div className="export-fields-header">
-                  <span className="form-label mb-0">
-                    {t("exportFieldsLabel")}
-                  </span>
-                  <div className="export-fields-icons">
-                    <button
-                      type="button"
-                      className="export-fields-icon-btn text-success"
-                      onClick={() =>
-                        setExportFields({
-                          title: true,
-                          authors: true,
-                          journal: true,
-                          doi: true,
-                          issn: true,
-                          keywords: true,
-                          citations: true,
-                          year: true,
-                        })
-                      }
-                      title={t("selectAll", "Select All")}
-                    >
-                      <Icon icon="lucide:check-circle-2" width="16" />
-                    </button>
-                    <button
-                      type="button"
-                      className="export-fields-icon-btn text-danger"
-                      onClick={() =>
-                        setExportFields({
-                          title: false,
-                          authors: false,
-                          journal: false,
-                          doi: false,
-                          issn: false,
-                          keywords: false,
-                          citations: false,
-                          year: false,
-                        })
-                      }
-                      title={t("deselectAll", "Deselect All")}
-                    >
-                      <Icon icon="lucide:minus-circle" width="16" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="export-fields-grid">
-                  <Form.Check
-                    type="checkbox"
-                    id="field-title"
-                    label={t("colArticle")}
-                    checked={exportFields.title}
-                    onChange={(e) =>
-                      setExportFields((prev) => ({
-                        ...prev,
-                        title: e.target.checked,
-                      }))
-                    }
-                    className="export-field-check"
-                  />
-                  <Form.Check
-                    type="checkbox"
-                    id="field-authors"
-                    label={t("colAuthors")}
-                    checked={exportFields.authors}
-                    onChange={(e) =>
-                      setExportFields((prev) => ({
-                        ...prev,
-                        authors: e.target.checked,
-                      }))
-                    }
-                    className="export-field-check"
-                  />
-                  <Form.Check
-                    type="checkbox"
-                    id="field-journal"
-                    label={t("colJournal")}
-                    checked={exportFields.journal}
-                    onChange={(e) =>
-                      setExportFields((prev) => ({
-                        ...prev,
-                        journal: e.target.checked,
-                      }))
-                    }
-                    className="export-field-check"
-                  />
-                  <Form.Check
-                    type="checkbox"
-                    id="field-doi"
-                    label={t("colDoi")}
-                    checked={exportFields.doi}
-                    onChange={(e) =>
-                      setExportFields((prev) => ({
-                        ...prev,
-                        doi: e.target.checked,
-                      }))
-                    }
-                    className="export-field-check"
-                  />
-                  <Form.Check
-                    type="checkbox"
-                    id="field-issn"
-                    label={t("colIssn")}
-                    checked={exportFields.issn}
-                    onChange={(e) =>
-                      setExportFields((prev) => ({
-                        ...prev,
-                        issn: e.target.checked,
-                      }))
-                    }
-                    className="export-field-check"
-                  />
-                  <Form.Check
-                    type="checkbox"
-                    id="field-keywords"
-                    label={t("colKeywords")}
-                    checked={exportFields.keywords}
-                    onChange={(e) =>
-                      setExportFields((prev) => ({
-                        ...prev,
-                        keywords: e.target.checked,
-                      }))
-                    }
-                    className="export-field-check"
-                  />
-                  <Form.Check
-                    type="checkbox"
-                    id="field-citations"
-                    label={t("citedByLabel")}
-                    checked={exportFields.citations}
-                    onChange={(e) =>
-                      setExportFields((prev) => ({
-                        ...prev,
-                        citations: e.target.checked,
-                      }))
-                    }
-                    className="export-field-check"
-                  />
-                  <Form.Check
-                    type="checkbox"
-                    id="field-year"
-                    label={t("yearLabel")}
-                    checked={exportFields.year}
-                    onChange={(e) =>
-                      setExportFields((prev) => ({
-                        ...prev,
-                        year: e.target.checked,
-                      }))
-                    }
-                    className="export-field-check"
-                  />
-                </div>
-
-                <Form.Group className="mt-2" controlId="exportFileNameInput">
-                  <Form.Label>{t("exportFileNameLabel")}</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={exportFileName}
-                    onChange={(e) => setExportFileName(e.target.value)}
-                    placeholder="articles-export"
-                  />
-                </Form.Group>
-              </div>
-
-              {/* Right pane: export scope summary */}
-              <div className="export-right-pane">
-                <h6>Paper VN discovery data</h6>
-                <p>
-                  Exports include only the currently loaded article rows and
-                  selected fields.
-                </p>
-                <div className="btn-enabled-lens">
-                  <Icon icon="lucide:check-circle" width="14" />
-                  Scope: Vietnamese universities
-                </div>
-              </div>
-            </div>
-          </Modal.Body>
-          <div className="modal-footer border-top-0 d-flex justify-content-end gap-2 p-3 pt-0">
-            <button
-              type="button"
-              className="tvn-modal-btn-cancel"
-              onClick={() => setShowExportModal(false)}
-            >
-              {t("cancel")}
-            </button>
-            <button type="submit" className="tvn-modal-btn-save">
-              {t("export")}
-            </button>
-          </div>
-        </Form>
-      </Modal>
+        onSubmit={handleExportSubmit}
+        exportDocCount={exportDocCount}
+        setExportDocCount={setExportDocCount}
+        articlesCount={articles.length}
+        exportFormat={exportFormat}
+        setExportFormat={setExportFormat}
+        exportFields={exportFields}
+        setExportFields={setExportFields}
+        exportFileName={exportFileName}
+        setExportFileName={setExportFileName}
+      />
     </div>
   );
 }

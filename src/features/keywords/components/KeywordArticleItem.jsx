@@ -5,6 +5,7 @@
  */
 import { Button } from 'react-bootstrap';
 import { Icon } from '@iconify/react';
+import ScientificMathText from '../../../shared/components/ScientificMathText';
 
 /**
  * Item hiển thị bài báo liên quan đến keyword.
@@ -29,7 +30,9 @@ export default function KeywordArticleItem({ article, onViewDetail }) {
       </div>
 
       <h2 className="keyword-article-item__title">
-        {article.title}
+        <ScientificMathText>
+          {article.title}
+        </ScientificMathText>
       </h2>
 
       {article.doi && (
@@ -40,7 +43,9 @@ export default function KeywordArticleItem({ article, onViewDetail }) {
 
       {article.abstract && (
         <p className="keyword-article-abstract">
-          {article.abstract}
+          <ScientificMathText>
+            {article.abstract}
+          </ScientificMathText>
         </p>
       )}
 

@@ -344,9 +344,15 @@ function TrendingArticleCard({
                     <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1" style={{ letterSpacing: '0.5px' }}>
                       Abstract
                     </div>
-                    <p className="text-muted text-xs text-justify" style={{ lineHeight: '1.5', margin: 0 }}>
-                      {article.abstract || 'No abstract available'}
-                    </p>
+                    <div className="text-muted text-xs text-justify" style={{ lineHeight: '1.5', margin: 0 }}>
+                      {article.abstract ? (
+                        <ScientificMathText as="p" className="mb-0">
+                          {article.abstract}
+                        </ScientificMathText>
+                      ) : (
+                        'No abstract available'
+                      )}
+                    </div>
                   </div>
 
                   <Row className="mb-3">

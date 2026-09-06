@@ -25,6 +25,7 @@ import ArticleDetailEmpty from '../components/ArticleDetailEmpty';
 import ArticleDetailError from '../components/ArticleDetailError';
 
 import AuthRequiredModal from '../../../shared/components/AuthRequiredModal';
+import ScientificMathText from '../../../shared/components/ScientificMathText';
 
 import { toast } from '../../../shared/utils/toast';
 import { getDoiUrl, normalizeArticleDetail } from '../utils/articleFormatters';
@@ -474,7 +475,9 @@ export default function ArticleVisualDetailPage() {
 
                 {/* Title */}
                 <h1 className="article-detail-title is-clickable" onClick={handleTitleClick} title="Xem chi tiết bài báo">
-                  {article.title}
+                  <ScientificMathText>
+                    {article.title}
+                  </ScientificMathText>
                 </h1>
 
                 {/* Authors */}
@@ -591,14 +594,18 @@ export default function ArticleVisualDetailPage() {
                 {/* Abstract */}
                 <section className="article-section-connected">
                   <h3 className="section-title-connected mb-2 font-display">Abstract</h3>
-                  {(article.abstract || 'No abstract is available for this article.')
-                    .split('\n')
-                    .filter(Boolean)
-                    .map((paragraph, index) => (
-                      <p key={index} className="abstract-text-connected font-sans">
-                        {paragraph}
-                      </p>
-                    ))}
+                  {article.abstract ? (
+                    article.abstract
+                      .split('\n')
+                      .filter(Boolean)
+                      .map((paragraph, index) => (
+                        <ScientificMathText key={index} as="p" className="abstract-text-connected font-sans">
+                          {paragraph}
+                        </ScientificMathText>
+                      ))
+                  ) : (
+                    <p className="abstract-text-connected font-sans">No abstract is available for this article.</p>
+                  )}
                 </section>
 
                 {/* Keywords (Optionally show at bottom for richness) */}

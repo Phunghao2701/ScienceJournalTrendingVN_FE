@@ -68,7 +68,9 @@ function ArticleMobileCard({ article, index, topicClassName, onDetailClick }) {
 
         {article.abstract && (
           <p className="text-muted-custom text-xs mb-3 text-truncate-2" style={{ fontSize: '0.75rem', lineHeight: '1.4' }}>
-            {article.abstract}
+            <ScientificMathText>
+              {article.abstract}
+            </ScientificMathText>
           </p>
         )}
 

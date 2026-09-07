@@ -1,9 +1,7 @@
 /* Import Google Fonts */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&display=swap");
-@import "tailwindcss";
-@import "tw-animate-css";
 
-@theme {
+:root {
   --color-lens-dark-blue: #1F2F40;
   --color-lens-light-blue: #293B4D;
   --color-lens-link-blue: #2B54B2;
@@ -13,9 +11,6 @@
   --color-lens-badge-orange: #FFA200;
   --color-lens-badge-green: #2EA751;
   --color-lens-slate-gray: #414E59;
-}
-
-:root {
   --font-sans: "Inter", sans-serif;
   --font-display: "Source Serif 4", serif;
   --font-serif: "Source Serif 4", serif;

@@ -178,7 +178,7 @@ export default function useAuth() {
     await logoutSession();
     clearAuthState();
     clearEmail();
-    if (redirectTo) {
+    if (typeof redirectTo === 'string' && redirectTo) {
       navigate(redirectTo, { replace: true });
     }
   }, [clearAuthState, clearEmail, navigate]);

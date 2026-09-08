@@ -5,9 +5,10 @@
  */
 import { Form, InputGroup } from 'react-bootstrap';
 import Icon from './Icon';
-import { useState } from 'react';
+import { useState, useId } from 'react';
 
 export default function InputField({
+  id: customId,
   label,
   name,
   type = 'text',
@@ -22,12 +23,16 @@ export default function InputField({
   ...props
 }) {
   const [isFocused, setIsFocused] = useState(false);
+  const generatedId = useId();
+  const inputId = customId || name || generatedId;
+  const errorId = `${inputId}-error`;
 
   return (
     <Form.Group className="mb-3">
       {label && (
         <Form.Label 
-          className="text-xs font-bold mb-1.5 d-flex align-items-center gap-1"
+          htmlFor={inputId}
+          className="text-xs font-bold mb-1.5 d-flex align-items-center gap-1 cursor-pointer"
           style={{ 
             letterSpacing: '0.05em', 
             color: 'var(--text-main)',
@@ -35,7 +40,7 @@ export default function InputField({
           }}
         >
           {label}
-          {required && <span className="text-danger">*</span>}
+          {required && <span className="text-danger" aria-hidden="true">*</span>}
         </Form.Label>
       )}
       
@@ -47,7 +52,7 @@ export default function InputField({
           transition: 'all 0.2s ease-in-out',
           boxShadow: error 
             ? '0 0 0 3px rgba(239, 68, 68, 0.12)' 
-            : (isFocused ? '0 0 0 3px rgba(255, 122, 51, 0.15)' : '0 1px 2px rgba(0, 0, 0, 0.02)')
+            : (isFocused ? '0 0 0 3px rgba(25, 118, 210, 0.15)' : '0 1px 2px rgba(0, 0, 0, 0.02)')
         }}
       >
         {icon && (
@@ -60,6 +65,7 @@ export default function InputField({
         )}
         
         <Form.Control
+          id={inputId}
           type={type}
           name={name}
           value={value}
@@ -74,6 +80,9 @@ export default function InputField({
           }}
           placeholder={placeholder}
           disabled={disabled}
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : undefined}
+          required={required}
           className="bg-transparent border-0 text-main text-sm py-2.5 ps-2"
           style={{
             boxShadow: 'none',
@@ -86,6 +95,9 @@ export default function InputField({
       
       {error && (
         <div 
+          id={errorId}
+          role="alert"
+          aria-live="polite"
           className="text-danger text-xs mt-1.5 d-flex align-items-center gap-1 animate-fade-in"
           style={{ fontWeight: 500 }}
         >

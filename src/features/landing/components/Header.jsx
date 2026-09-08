@@ -140,16 +140,21 @@ export default function Header() {
               {isLoggedIn ? (
                 <Dropdown align="end">
                   <Dropdown.Toggle
-                    as="div"
-                    className="d-flex align-items-center justify-content-center text-white"
+                    as="button"
+                    type="button"
+                    aria-label={t("userLabel")}
+                    className="d-flex align-items-center justify-content-center text-white border-0"
                     style={{
-                      width: "32px",
-                      height: "32px",
+                      width: "36px",
+                      height: "36px",
+                      minWidth: "36px",
+                      minHeight: "36px",
                       borderRadius: "50%",
                       background: "var(--header-brand-primary)",
                       boxShadow: "0 0 8px var(--header-brand-primary-shadow)",
                       cursor: "pointer",
                       transition: "transform 0.15s ease",
+                      padding: 0,
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = "scale(1.05)";

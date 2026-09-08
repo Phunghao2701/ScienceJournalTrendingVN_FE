@@ -21,16 +21,16 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: false
+  withCredentials: true
 });
 
 // Interceptor gửi token kèm request
 api.interceptors.request.use(
   (config) => {
+    config.withCredentials = true;
     const token = useAuthStore.getState().token;
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
-      config.withCredentials = false;
     }
     return config;
   },

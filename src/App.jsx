@@ -11,7 +11,9 @@ import { initializeSsoSession } from './features/auth/services/ssoSession';
 
 function App() {
   useEffect(() => {
-    initializeSsoSession().catch(() => {});
+    initializeSsoSession().catch((error) => {
+      console.error('Unable to initialize the authentication session', error);
+    });
   }, []);
 
   return (

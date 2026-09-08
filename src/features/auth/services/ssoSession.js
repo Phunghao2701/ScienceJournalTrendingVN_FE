@@ -1,3 +1,4 @@
+import { jwtDecode } from 'jwt-decode';
 import api from '../../../shared/services/api';
 import { useAuthStore } from '../../../app/store/authStore';
 import { useUserStore } from '../../../app/store/userStore';
@@ -5,18 +6,34 @@ import { classifySsoError } from './ssoSessionContract';
 
 let initializationPromise = null;
 
-const setAuthenticatedUser = (user) => {
+const setAuthenticatedUser = (user, token = null) => {
   useUserStore.getState().setUser?.(user);
   useUserStore.getState().setEmail?.(user?.email);
-  useAuthStore.getState().loginSuccess(null, user);
+  useAuthStore.getState().loginSuccess(token, user);
   return { status: 'authenticated', user };
 };
 
 const checkChildSession = async () => {
   const response = await api.get('/auth/check-auth', { skipBearer: true, skipAuthRefresh: true });
-  const user = response.data?.data || response.data?.user;
+  const token = response.data?.access_token || response.data?.token || null;
+  let user = response.data?.data || response.data?.user;
+
+  if (!user && token) {
+    try {
+      const decoded = jwtDecode(token);
+      user = {
+        user_id: decoded.user_id || decoded.sub || decoded.id,
+        email: decoded.email,
+        role: decoded.role,
+        ...decoded,
+      };
+    } catch {
+      // ignore token decode failure
+    }
+  }
+
   if (!user) throw new Error('Authenticated response did not include a user');
-  return setAuthenticatedUser(user);
+  return setAuthenticatedUser(user, token);
 };
 
 const automaticBootstrap = async () => {

@@ -56,10 +56,18 @@ const automaticBootstrap = async () => {
 
 export const clearClientStorageAndCookies = () => {
   try {
-    localStorage.removeItem('token');
-    sessionStorage.removeItem('token');
-    localStorage.removeItem('researchpulse_token');
-    sessionStorage.removeItem('researchpulse_token');
+    const tokenKeys = [
+      'token',
+      'accessToken',
+      'researchpulse_token',
+      'researchpulse_guest_token',
+      'user',
+      'jwt',
+    ];
+    tokenKeys.forEach((key) => {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    });
     if (typeof document !== 'undefined') {
       document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
       document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';

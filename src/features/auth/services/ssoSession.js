@@ -6,10 +6,10 @@ import { classifySsoError } from './ssoSessionContract';
 
 let initializationPromise = null;
 
-const setAuthenticatedUser = (user, token = null) => {
+const setAuthenticatedUser = (user) => {
   useUserStore.getState().setUser?.(user);
   useUserStore.getState().setEmail?.(user?.email);
-  useAuthStore.getState().loginSuccess(token, user);
+  useAuthStore.getState().loginSuccess(null, user);
   return { status: 'authenticated', user };
 };
 
@@ -33,7 +33,7 @@ const checkChildSession = async () => {
   }
 
   if (!user) throw new Error('Authenticated response did not include a user');
-  return setAuthenticatedUser(user, token);
+  return setAuthenticatedUser(user);
 };
 
 const automaticBootstrap = async () => {
@@ -64,8 +64,10 @@ export const initializeSsoSession = () => {
       try {
         return await checkChildSession();
       } catch (error) {
-        if (error.response?.status !== 401) throw error;
-        return await automaticBootstrap();
+        if (error.response?.status === 401) {
+          return { status: 'anonymous' };
+        }
+        throw error;
       }
     } catch (error) {
       useAuthStore.getState().logout();
@@ -84,7 +86,7 @@ export const explicitSsoLogin = async () => {
 
 export const logoutSsoSession = async () => {
   try {
-    await api.post('/auth/logout', null, { skipBearer: true, skipAuthRefresh: true });
+    await api.post('/auth/logout', {}, { skipBearer: true, skipAuthRefresh: true });
   } finally {
     useAuthStore.getState().logout();
     useUserStore.getState().setUser?.(null);

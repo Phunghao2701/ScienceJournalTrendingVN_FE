@@ -349,7 +349,7 @@ export default function ArticleDetailPage() {
                 <>
                   {' | '}
                   <strong>DOI:</strong>{' '}
-                  <span style={{ fontFamily: 'monospace', fontSize: '0.68rem' }}>{item.doi}</span>
+                  <span style={{ fontSize: '0.68rem' }}>{item.doi}</span>
                 </>
               )}
             </div>

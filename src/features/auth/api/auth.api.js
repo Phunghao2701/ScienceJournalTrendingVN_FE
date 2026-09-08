@@ -81,4 +81,3 @@ export const logoutApi = () => {
 };
 
 export default authApi;
-

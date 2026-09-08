@@ -856,7 +856,6 @@ export default function AuthorDetailPage() {
                                     style={{
                                       fontSize: "0.65rem",
                                       color: "var(--text-muted)",
-                                      fontFamily: "monospace",
                                     }}
                                   >
                                     {idx + 1}

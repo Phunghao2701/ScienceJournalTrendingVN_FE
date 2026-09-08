@@ -31,9 +31,11 @@ export const useAuthStore = create((set) => {
      * - Khôi phục session bằng cookie: `loginSuccess(null, user)`
      */
     loginSuccess: (token = null, user = null) => set((state) => {
-      const targetToken = token ?? state.token;
+      const targetToken = token;
       if (targetToken) {
         localStorage.setItem('researchpulse_token', targetToken);
+      } else {
+        localStorage.removeItem('researchpulse_token');
       }
       return {
         token: targetToken,

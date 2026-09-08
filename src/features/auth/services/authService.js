@@ -9,7 +9,6 @@ import {
   registerApi,
   resendActivationApi,
   loginGoogleApi,
-  logoutApi,
 } from '../api/auth.api';
 import {
   deleteProfileApi,
@@ -17,6 +16,7 @@ import {
   updateProfileApi,
 } from '../../profile/api/profile.api';
 import { removeToken } from '../../../shared/utils/auth';
+import { logoutSsoSession } from './ssoSession';
 
 /**
  * Safely extract email-like identity from JWT payload.
@@ -175,9 +175,6 @@ export const deleteCurrentAccount = async () => {
  * @returns {Promise<void>}
  */
 export const logoutSession = async () => {
-  try {
-    await logoutApi();
-  } finally {
-    removeToken();
-  }
+  await logoutSsoSession();
+  removeToken();
 };

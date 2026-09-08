@@ -2,7 +2,7 @@
 // không phải "phiên đã hết hạn". Interceptor không được thử refresh token cho các
 // endpoint này — nếu không, lỗi refresh (vd "Refresh token không được để trống" khi
 // user chưa từng đăng nhập) sẽ ghi đè lên thông báo lỗi thật (vd sai mật khẩu).
-const AUTH_ENDPOINTS_WITHOUT_REFRESH = ['/auth/login', '/auth/register', '/auth/google', '/auth/refresh'];
+const AUTH_ENDPOINTS_WITHOUT_REFRESH = ['/auth/login', '/auth/register', '/auth/google', '/auth/refresh', '/auth/sso/'];
 
 export function shouldSkipTokenRefresh(requestUrl) {
   if (!requestUrl) return false;

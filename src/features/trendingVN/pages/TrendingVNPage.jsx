@@ -229,6 +229,7 @@ export default function TrendingVNPage() {
     e.stopPropagation();
     if (!doi) return;
     navigator.clipboard.writeText(doi);
+    toast.success(`${t("copyDoi")}: ${doi}`);
   };
 
   const handleExportSubmit = (e) => {
@@ -503,10 +504,11 @@ export default function TrendingVNPage() {
   const authorTotal = isAnalysisView
     ? Number(analysisSummary.authors || 0)
     : Number(
-        analyticsTotals.authors ??
-          analyticsTotals.author_count ??
-          analyticsTotals.authorsCount ??
-          stats.authorsCount ??
+        analyticsTotals.authors ||
+          analyticsTotals.author_count ||
+          analyticsTotals.authorsCount ||
+          stats.authorsCount ||
+          analytics?.topAuthors?.length ||
           0,
       );
   const institutionTotal = Number(analysisSummary.institutions || 0);
@@ -682,6 +684,20 @@ export default function TrendingVNPage() {
             <Icon icon="lucide:user-cog" width="18" />
           </button>
         </aside>
+
+        {/* Backdrop overlay for mobile/tablet when drawer is open */}
+        {activeLeftTab && (
+          <div
+            className="tvn-sidebar-backdrop is-open d-md-none"
+            onClick={() => setActiveLeftTab(null)}
+            aria-label="Close drawer"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" || e.key === "Enter") setActiveLeftTab(null);
+            }}
+          />
+        )}
 
         {/* ==================== EXPANDED SIDEBAR DRAWER (Lens-style) ==================== */}
         <aside
@@ -1008,28 +1024,19 @@ export default function TrendingVNPage() {
             </div>
 
             {/* ==================== 2. PAGE TITLE ==================== */}
-            <h1 className="tvn-page-title">{t("articleSearchResults")}</h1>
-
-            {/* ==================== 3. FILTER INDICATOR ==================== */}
-            <div className="tvn-filter-indicator">
-              <button
-                type="button"
-                className="filter-count-link"
-                onClick={clearFilters}
-              >
-                {t("databaseArticlesCount", { count: fmt(activeResultTotal) })}
-              </button>
-              <span className="tvn-filter-divider" aria-hidden="true">
-                -
-              </span>
-              <span className="tvn-filter-status">
-                <Icon icon="lucide:filter" width="12" className="me-1" />
-                {t("filtersLabel")}:{" "}
-                {activeChips.length > 0
-                  ? t("filtersApplied", { count: activeChips.length })
-                  : t("noFiltersApplied")}
-              </span>
-            </div>
+            <h1 className="tvn-page-title">
+              {t("articleSearchResults")}
+              {isAnalysisView && analysis?.window?.current?.from_year && (
+                <span
+                  className="badge bg-light text-secondary border ms-2"
+                  style={{ fontWeight: 500, fontSize: "0.8rem", verticalAlign: "middle" }}
+                >
+                  {analysis.window.current.from_year === analysis.window.current.to_year
+                    ? `${analysis.window.current.from_year}`
+                    : `${analysis.window.current.from_year}–${analysis.window.current.to_year}`}
+                </span>
+              )}
+            </h1>
 
             {/* ==================== 4. STATS COLOR BAR ==================== */}
             {/* In Analysis, every segment reads analysis.summary (never the disabled list/light

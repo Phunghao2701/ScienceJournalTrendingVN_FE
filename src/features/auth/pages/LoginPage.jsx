@@ -13,6 +13,7 @@ import SocialAuthButton from '../components/SocialAuthButton';
 import { toast } from '../../../shared/utils/toast';
 import { isInAppBrowser } from '../../../shared/utils/inAppBrowser';
 import ROUTES from '../../../app/routes/routePaths';
+import { explicitSsoLogin } from '../services/ssoSession';
 
 const DASHBOARD_PAGE = ROUTES.DASHBOARD;
 
@@ -85,6 +86,19 @@ export default function LoginPage() {
     }
   };
 
+  const handleHyperDataLabLogin = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await explicitSsoLogin();
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể đăng nhập bằng HyperDataLab');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthLayout banner={<AuthBanner />}>
       <div className="mb-4">
@@ -127,6 +141,10 @@ export default function LoginPage() {
         <span className="px-3 text-nowrap" style={{ letterSpacing: '0.05em' }}>HOẶC</span>
         <div className="w-100" style={{ height: '1px', background: 'var(--border)' }} />
       </div>
+
+      <button type="button" className="btn btn-outline-primary w-100 mb-3" onClick={handleHyperDataLabLogin} disabled={isLoading}>
+        Đăng nhập bằng HyperDataLab
+      </button>
 
       <LoginForm
         onSubmit={handleLoginSubmit}

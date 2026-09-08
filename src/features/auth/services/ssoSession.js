@@ -1,68 +1,40 @@
 import api from '../../../shared/services/api';
 import { useAuthStore } from '../../../app/store/authStore';
 import { useUserStore } from '../../../app/store/userStore';
-import { classifySsoError } from './ssoSessionContract';
 
 let initializationPromise = null;
 
-const setAuthenticatedUser = (user) => {
+const setAuthenticatedUser = (user, token = null) => {
   useUserStore.getState().setUser?.(user);
   useUserStore.getState().setEmail?.(user?.email);
-  useAuthStore.getState().loginSuccess(null, user);
+  useAuthStore.getState().loginSuccess(token, user);
   return { status: 'authenticated', user };
 };
 
-const checkChildSession = async () => {
-  const response = await api.get('/auth/check-auth', { skipBearer: true, skipAuthRefresh: true });
+export const checkChildSession = async () => {
+  const response = await api.get('/auth/check-auth', { skipBearer: false, skipAuthRefresh: true });
   const user = response.data?.data || response.data?.user;
   if (!user) throw new Error('Authenticated response did not include a user');
-  return setAuthenticatedUser(user);
-};
-
-const automaticBootstrap = async () => {
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      await api.post('/auth/sso/bootstrap', null, { skipBearer: true, skipAuthRefresh: true });
-      return await checkChildSession();
-    } catch (error) {
-      if (error.response?.status === 409 && error.response?.data?.code === 'LEGACY_COOKIE_CLEARED' && attempt === 0) {
-        continue;
-      }
-      const classification = classifySsoError(error);
-      if (classification === 'sso-blocked') return { status: 'sso-blocked' };
-      if (classification === 'anonymous') return { status: 'anonymous' };
-      if (classification === 'error') return { status: 'error', error };
-      throw error;
-    }
-  }
+  const token = response.data?.access_token || localStorage.getItem('researchpulse_token') || null;
+  return setAuthenticatedUser(user, token);
 };
 
 export const initializeSsoSession = () => {
   if (initializationPromise) return initializationPromise;
   initializationPromise = (async () => {
     try {
-      localStorage.removeItem('researchpulse_token');
-      sessionStorage.removeItem('researchpulse_token');
-      useAuthStore.getState().logout();
-      try {
-        return await checkChildSession();
-      } catch (error) {
-        if (error.response?.status !== 401) throw error;
-        return await automaticBootstrap();
-      }
+      return await checkChildSession();
     } catch (error) {
-      useAuthStore.getState().logout();
-      return { status: 'error', error };
+      // Nếu check-auth trả về 401 hoặc lỗi, và trước đó đang lưu state đăng nhập không hợp lệ thì dọn dẹp
+      if (useAuthStore.getState().token || useAuthStore.getState().user) {
+        useAuthStore.getState().logout();
+      }
+      return { status: 'anonymous', error };
     } finally {
       initializationPromise = null;
     }
   })();
   return initializationPromise;
-};
-
-export const explicitSsoLogin = async () => {
-  const response = await api.post('/auth/sso/login', null, { skipBearer: true, skipAuthRefresh: true });
-  return setAuthenticatedUser(response.data?.data || response.data?.user);
 };
 
 export const logoutSsoSession = async () => {

@@ -22,12 +22,6 @@ export const removeToken = () => {
   sessionStorage.removeItem('token');
   localStorage.removeItem('researchpulse_token');
   sessionStorage.removeItem('researchpulse_token');
-  try {
-    document.cookie = 'access_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'sso_access_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  } catch {
-    // ignore
-  }
 };
 
 /**

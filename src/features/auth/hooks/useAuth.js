@@ -7,7 +7,6 @@ import { useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from '../../../shared/utils/toast';
-import { removeToken } from '../../../shared/utils/auth';
 import { useAuthStore } from '../../../app/store/authStore';
 import { useUserStore } from '../../../app/store/userStore';
 import {
@@ -175,19 +174,14 @@ export default function useAuth() {
   /**
    * Đăng xuất: gọi BE clear session/cookie, sau đó xóa state FE.
    */
-  const logout = useCallback(async (redirectTo = '/') => {
-    try {
-      await logoutSession();
-    } catch (err) {
-      console.warn('Logout API error:', err);
-    } finally {
-      clearAuthState();
-      clearEmail();
-      removeToken();
-      const destination = typeof redirectTo === 'string' ? redirectTo : '/';
-      window.location.href = destination;
+  const logout = useCallback(async (redirectTo = '/login') => {
+    await logoutSession();
+    clearAuthState();
+    clearEmail();
+    if (redirectTo) {
+      navigate(redirectTo, { replace: true });
     }
-  }, [clearAuthState, clearEmail]);
+  }, [clearAuthState, clearEmail, navigate]);
 
   /**
    * Cập nhật profile user và đồng bộ lại store sau khi API thành công.

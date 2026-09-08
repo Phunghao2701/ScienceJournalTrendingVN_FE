@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 import AuthLayoutWithUser from "../layouts/AuthLayoutWithUser";
@@ -9,7 +9,6 @@ import ScientificMathProvider from "../../shared/components/ScientificMathProvid
 
 // Route-level code splitting
 const TrendingVNPage = lazy(() => import("../../features/trendingVN/pages/TrendingVNPage"));
-const ArticleDetailPage = lazy(() => import("../../features/article/pages/ArticleDetailPage"));
 const TrendingArticleDetailPage = lazy(() => import("../../features/trendingVN/pages/ArticleDetailPage"));
 const InstitutionDetailPage = lazy(() => import("../../features/institution/pages/InstitutionDetailPage"));
 
@@ -30,6 +29,11 @@ const ProjectListPage = lazy(() => import("../../features/project/pages/ProjectL
 const CreateProjectPage = lazy(() => import("../../features/project/pages/CreateProjectPage"));
 const EditProjectPage = lazy(() => import("../../features/project/pages/EditProjectPage"));
 const ProjectDetailPage = lazy(() => import("../../features/project/pages/ProjectDetailPage"));
+
+function ArticleRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/trending/articles/${id}`} replace />;
+}
 
 /**
  * Nơi khai báo route chính của ứng dụng với Route-level Code Splitting và Lazy MathJax.
@@ -92,11 +96,7 @@ export default function AppRoutes() {
           />
           <Route
             path="/articles/:id"
-            element={
-              <ScientificMathProvider>
-                <ArticleDetailPage />
-              </ScientificMathProvider>
-            }
+            element={<ArticleRedirect />}
           />
           <Route
             path="/trending/articles/:id"

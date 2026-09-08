@@ -93,18 +93,28 @@ function TrendingArticleCard({
     || (visibleColumns.issn && article.journal_issn)
   );
 
+  const [optimisticBookmarked, setOptimisticBookmarked] = React.useState(null);
+  const currentIsBookmarked = optimisticBookmarked !== null ? optimisticBookmarked : isBookmarked;
+
   const handleBookmarkClick = async (event) => {
     event.stopPropagation();
     if (isBookmarkLoading) return;
+    const previousState = currentIsBookmarked;
+    const nextState = !previousState;
+    setOptimisticBookmarked(nextState);
+
     try {
       const result = await toggleBookmark();
       if (result.needsAuth) {
+        setOptimisticBookmarked(previousState);
         toast.info(t('loginToBookmark'));
         navigate('/login');
         return;
       }
+      setOptimisticBookmarked(result.isBookmarked);
       toast.success(result.isBookmarked ? t('bookmarkAdded') : t('bookmarkRemoved'));
     } catch (err) {
+      setOptimisticBookmarked(previousState);
       console.warn('Unable to update bookmark:', err);
       toast.error(t('bookmarkUpdateError'));
     }
@@ -117,15 +127,15 @@ function TrendingArticleCard({
         className="tvn-star-bookmark-btn"
         disabled={isBookmarkLoading}
         onClick={handleBookmarkClick}
-        title={isBookmarked ? t('bookmarked') : t('bookmarkSave')}
-        aria-label={isBookmarked ? t('bookmarked') : t('bookmarkSave')}
+        title={currentIsBookmarked ? t('bookmarked') : t('bookmarkSave')}
+        aria-label={currentIsBookmarked ? t('bookmarked') : t('bookmarkSave')}
       >
         <Icon
           icon="lucide:star"
-          width="16"
+          width="18"
           style={{
-            color: isBookmarked ? '#f5b301' : 'var(--text-muted)',
-            fill: isBookmarked ? '#f5b301' : 'none',
+            color: currentIsBookmarked ? '#f5b301' : 'var(--text-muted)',
+            fill: currentIsBookmarked ? '#f5b301' : 'none',
           }}
         />
       </button>

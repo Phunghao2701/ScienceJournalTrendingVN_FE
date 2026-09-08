@@ -47,7 +47,7 @@ export default function ArticleTableRow({ article, index, onDetailClick }) {
     e.stopPropagation();
     if (!doi) return;
     navigator.clipboard.writeText(doi);
-    alert(`${t('copyDoi')}: ${doi}`);
+    toast.success(`${t('copyDoi')}: ${doi}`);
   };
 
   const handleJournalClick = (e, journalId) => {

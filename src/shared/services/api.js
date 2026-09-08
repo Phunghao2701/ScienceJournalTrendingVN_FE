@@ -27,9 +27,9 @@ const api = axios.create({
 // Interceptor gửi token kèm request
 api.interceptors.request.use(
   (config) => {
-    config.withCredentials = true;
+    config.withCredentials = config.withCredentials !== false;
     const token = useAuthStore.getState().token;
-    if (token) {
+    if (token && !config.skipBearer) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;
@@ -64,14 +64,16 @@ api.interceptors.response.use(
     // thông báo lỗi đăng nhập thật.
     if (
       error.response && error.response.status === 401 && originalRequest && !originalRequest._retry
+      && !originalRequest.skipAuthRefresh
       && !shouldSkipTokenRefresh(originalRequest.url)
     ) {
       originalRequest._retry = true;
 
       try {
-        const res = await axios.get(
+        const res = await axios.post(
           `${import.meta.env.VITE_API_URL}/auth/refresh`,
-          { withCredentials: true }
+          null,
+          { withCredentials: true, skipBearer: true, skipAuthRefresh: true }
         );
 
         if (res.status === 200) {

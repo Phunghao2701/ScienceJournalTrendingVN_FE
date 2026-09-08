@@ -201,16 +201,17 @@ function TrendingArticleCard({
               <strong>{t('authorsLabel')}: </strong>
               {article.authors && article.authors.length > 0 ? (
                 article.authors.map((au, aIdx) => (
-                  <button
-                    type="button"
-                    key={au.author_id || aIdx}
-                    className="text-link cursor-pointer"
-                    style={entityButtonStyle}
-                    onClick={() => applyEntityFilter('author_id', au.author_id, au.display_name || au.name)}
-                  >
-                    {au.display_name || au.name}
-                    {aIdx < article.authors.length - 1 ? '; ' : ''}
-                  </button>
+                  <React.Fragment key={au.author_id || aIdx}>
+                    {aIdx > 0 && <span className="text-muted-custom">; </span>}
+                    <button
+                      type="button"
+                      className="text-link cursor-pointer"
+                      style={entityButtonStyle}
+                      onClick={() => applyEntityFilter('author_id', au.author_id, au.display_name || au.name)}
+                    >
+                      {au.display_name || au.name}
+                    </button>
+                  </React.Fragment>
                 ))
               ) : (
                 <span style={{ fontStyle: 'italic' }}>Any author</span>
@@ -284,15 +285,17 @@ function TrendingArticleCard({
                 <>
                   {(visibleColumns.citations || visibleColumns.references) ? ' | ' : ''}
                   <strong>DOI:</strong>{' '}
-                  <span style={{ fontFamily: 'monospace', fontSize: '13.6px' }}>
+                  <span style={{ fontSize: '13.6px' }}>
                     {article.doi}
                   </span>
                   <button
-                    style={{ background: 'none', border: 'none', padding: 0, marginLeft: '3px', cursor: 'pointer', color: 'var(--text-muted)' }}
+                    type="button"
+                    style={{ background: 'none', border: 'none', padding: '2px 4px', marginLeft: '4px', cursor: 'pointer', color: 'var(--text-muted)' }}
                     onClick={(e) => handleCopyDoi(e, article.doi)}
-                    title="Copy DOI"
+                    title={t('copyDoi')}
+                    aria-label={t('copyDoi')}
                   >
-                    <Icon icon="lucide:copy" width="10" />
+                    <Icon icon="lucide:copy" width="12" />
                   </button>
                 </>
               )}
@@ -492,7 +495,7 @@ function TrendingArticleCard({
                         <div className="history-item border-top pt-1.5">
                           <div className="fw-semibold text-dark">
                             DOI:{' '}
-                            <span style={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>{article.doi}</span>
+                            <span style={{ overflowWrap: 'anywhere' }}>{article.doi}</span>
                             <button
                               style={{ background: 'none', border: 'none', padding: 0, marginLeft: '3px', cursor: 'pointer', color: 'var(--text-muted)' }}
                               onClick={(e) => handleCopyDoi(e, article.doi)}

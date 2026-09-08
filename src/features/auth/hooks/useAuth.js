@@ -174,14 +174,19 @@ export default function useAuth() {
   /**
    * Đăng xuất: gọi BE clear session/cookie, sau đó xóa state FE.
    */
-  const logout = useCallback(async (redirectTo = '/login') => {
-    await logoutSession();
-    clearAuthState();
-    clearEmail();
-    if (redirectTo) {
-      navigate(redirectTo, { replace: true });
+  const logout = useCallback(async (redirectTo = '/') => {
+    try {
+      await logoutSession();
+    } catch (err) {
+      console.warn('Logout API error:', err);
+    } finally {
+      clearAuthState();
+      clearEmail();
+      removeToken();
+      const destination = typeof redirectTo === 'string' ? redirectTo : '/';
+      window.location.href = destination;
     }
-  }, [clearAuthState, clearEmail, navigate]);
+  }, [clearAuthState, clearEmail]);
 
   /**
    * Cập nhật profile user và đồng bộ lại store sau khi API thành công.

@@ -208,7 +208,7 @@ export default function Header() {
                       <span>{t("userAccountManagement")}</span>
                     </Dropdown.Item>
                     <Dropdown.Item
-                      onClick={logout}
+                      onClick={() => logout()}
                       className="d-flex align-items-center gap-2 text-xs py-2 text-danger"
                     >
                       <Icon icon="lucide:log-out" width="14" />

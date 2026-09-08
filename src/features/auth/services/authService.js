@@ -51,13 +51,6 @@ export const loginWithPassword = async (email, password, remember = true) => {
     token = response.data?.token;
   }
 
-  if (token) {
-    // persistToken không nằm trong file hiện tại => fallback sang persist qua removeToken/shared flow
-    // Nếu hàm persistToken tồn tại ở scope khác thì vẫn dùng được.
-    const storage = remember ? localStorage : sessionStorage;
-    storage.setItem('researchpulse_token', token);
-  }
-
   return {
     response: response.data,
     token: token || null,

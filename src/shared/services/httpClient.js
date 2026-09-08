@@ -21,10 +21,7 @@ const httpClient = axios.create({
 // Tự động đính kèm token vào header mỗi request (nếu có)
 httpClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    config.withCredentials = config.withCredentials !== false;
     return config;
   },
   (error) => Promise.reject(error)

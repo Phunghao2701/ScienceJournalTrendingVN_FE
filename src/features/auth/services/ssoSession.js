@@ -54,12 +54,38 @@ const automaticBootstrap = async () => {
   }
 };
 
+export const clearClientStorageAndCookies = () => {
+  try {
+    const tokenKeys = [
+      'token',
+      'accessToken',
+      'researchpulse_token',
+      'researchpulse_guest_token',
+      'user',
+      'jwt',
+    ];
+    tokenKeys.forEach((key) => {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    });
+    if (typeof document !== 'undefined') {
+      document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+      document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+      document.cookie = 'access_token=; path=/; domain=.hyperdatalab.org; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+      document.cookie = 'refresh_token=; path=/; domain=.hyperdatalab.org; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+      document.cookie = 'access_token=; path=/; domain=hyperdatalab.org; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+      document.cookie = 'refresh_token=; path=/; domain=hyperdatalab.org; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+    }
+  } catch {
+    // Storage access might be restricted
+  }
+};
+
 export const initializeSsoSession = () => {
   if (initializationPromise) return initializationPromise;
   initializationPromise = (async () => {
     try {
-      localStorage.removeItem('researchpulse_token');
-      sessionStorage.removeItem('researchpulse_token');
+      clearClientStorageAndCookies();
       useAuthStore.getState().logout();
       try {
         return await checkChildSession();
@@ -87,7 +113,10 @@ export const explicitSsoLogin = async () => {
 export const logoutSsoSession = async () => {
   try {
     await api.post('/auth/logout', {}, { skipBearer: true, skipAuthRefresh: true });
+  } catch (error) {
+    // Non-fatal: still proceed to wipe local session
   } finally {
+    clearClientStorageAndCookies();
     useAuthStore.getState().logout();
     useUserStore.getState().setUser?.(null);
     useUserStore.getState().setEmail?.(null);

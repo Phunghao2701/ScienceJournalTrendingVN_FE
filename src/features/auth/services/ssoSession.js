@@ -69,12 +69,19 @@ export const clearClientStorageAndCookies = () => {
       sessionStorage.removeItem(key);
     });
     if (typeof document !== 'undefined') {
-      document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
-      document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
-      document.cookie = 'access_token=; path=/; domain=.hyperdatalab.org; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
-      document.cookie = 'refresh_token=; path=/; domain=.hyperdatalab.org; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
-      document.cookie = 'access_token=; path=/; domain=hyperdatalab.org; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
-      document.cookie = 'refresh_token=; path=/; domain=hyperdatalab.org; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+      const cookieNames = ['access_token', 'refresh_token'];
+      const domains = [
+        '',
+        '; domain=.hyperdatalab.org',
+        '; domain=hyperdatalab.org',
+        '; domain=.vn.hyperdatalab.org',
+        '; domain=vn.hyperdatalab.org',
+      ];
+      cookieNames.forEach((name) => {
+        domains.forEach((dom) => {
+          document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT${dom};`;
+        });
+      });
     }
   } catch {
     // Storage access might be restricted

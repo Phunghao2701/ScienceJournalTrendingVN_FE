@@ -2,9 +2,12 @@ import { jwtDecode } from 'jwt-decode';
 import api from '../../../shared/services/api';
 import { useAuthStore } from '../../../app/store/authStore';
 import { useUserStore } from '../../../app/store/userStore';
-import { classifySsoError, recoverSsoSession } from './ssoSessionContract';
-
-let initializationPromise = null;
+import {
+  classifySsoError,
+  createSessionInitializer,
+  getAuthenticatedSessionFromState,
+  recoverSsoSession,
+} from './ssoSessionContract';
 
 const setAuthenticatedUser = (user) => {
   useUserStore.getState().setUser?.(user);
@@ -105,9 +108,7 @@ export const clearClientStorageAndCookies = () => {
   }
 };
 
-export const initializeSsoSession = () => {
-  if (initializationPromise) return initializationPromise;
-  initializationPromise = (async () => {
+const sessionInitializer = createSessionInitializer(async () => {
     try {
       clearClientStorage();
       useAuthStore.getState().logout();
@@ -118,11 +119,12 @@ export const initializeSsoSession = () => {
     } catch (error) {
       useAuthStore.getState().logout();
       throw error;
-    } finally {
-      initializationPromise = null;
     }
-  })();
-  return initializationPromise;
+});
+
+export const initializeSsoSession = () => {
+  const currentSession = getAuthenticatedSessionFromState(useAuthStore.getState());
+  return currentSession ? Promise.resolve(currentSession) : sessionInitializer.run();
 };
 
 export const explicitSsoLogin = async () => {
@@ -140,6 +142,6 @@ export const logoutSsoSession = async () => {
     useAuthStore.getState().logout();
     useUserStore.getState().setUser?.(null);
     useUserStore.getState().setEmail?.(null);
-    initializationPromise = null;
+    sessionInitializer.reset();
   }
 };

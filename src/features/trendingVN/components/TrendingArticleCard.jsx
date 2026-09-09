@@ -1,6 +1,20 @@
 import React from 'react';
 import { Row, Col } from 'react-bootstrap';
-import { Icon } from '@iconify/react';
+import {
+  BookmarkCheck,
+  BookmarkPlus,
+  Building2,
+  ChevronDownCircle,
+  ChevronUpCircle,
+  Copy,
+  FileText,
+  Info,
+  Lock,
+  LockOpen,
+  Star,
+  Text,
+  User,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import ScientificMathText from '../../../shared/components/ScientificMathText';
@@ -95,6 +109,9 @@ function TrendingArticleCard({
 
   const [optimisticBookmarked, setOptimisticBookmarked] = React.useState(null);
   const currentIsBookmarked = optimisticBookmarked !== null ? optimisticBookmarked : isBookmarked;
+  const ExpandIcon = isExpanded ? ChevronUpCircle : ChevronDownCircle;
+  const AccessIcon = article.is_open_access ? LockOpen : Lock;
+  const CollectionIcon = currentIsBookmarked ? BookmarkCheck : BookmarkPlus;
 
   const handleBookmarkClick = async (event) => {
     event.stopPropagation();
@@ -130,9 +147,8 @@ function TrendingArticleCard({
         title={currentIsBookmarked ? t('bookmarked') : t('bookmarkSave')}
         aria-label={currentIsBookmarked ? t('bookmarked') : t('bookmarkSave')}
       >
-        <Icon
-          icon="lucide:star"
-          width="18"
+        <Star
+          size={18}
           style={{
             color: currentIsBookmarked ? '#f5b301' : 'var(--text-muted)',
             fill: currentIsBookmarked ? '#f5b301' : 'none',
@@ -149,10 +165,7 @@ function TrendingArticleCard({
             aria-label={isExpanded ? 'Collapse article details' : 'Expand article details'}
             title={isExpanded ? 'Collapse' : 'Expand'}
           >
-            <Icon
-              icon={isExpanded ? 'lucide:chevron-up-circle' : 'lucide:chevron-down-circle'}
-              width="14"
-            />
+            <ExpandIcon size={14} />
           </button>
         </div>
 
@@ -295,7 +308,7 @@ function TrendingArticleCard({
                     title={t('copyDoi')}
                     aria-label={t('copyDoi')}
                   >
-                    <Icon icon="lucide:copy" width="12" />
+                    <Copy size={12} />
                   </button>
                 </>
               )}
@@ -323,12 +336,12 @@ function TrendingArticleCard({
                 className={`tvn-pill ${article.is_open_access ? 'tvn-pill-oa' : 'tvn-pill-closed'}`}
                 onClick={() => applyEntityFilter('access', article.is_open_access ? 'oa' : 'closed')}
               >
-                <Icon icon={article.is_open_access ? 'lucide:lock-open' : 'lucide:lock'} width="10" />
+                <AccessIcon size={10} />
                 {accessLabel}
               </button>
             )}
             <span className="tvn-pill tvn-pill-pending">
-              <Icon icon="lucide:file-text" width="10" />
+              <FileText size={10} />
               {t('statusPublished')}
             </span>
             <button
@@ -337,14 +350,14 @@ function TrendingArticleCard({
               disabled={isBookmarkLoading}
               onClick={handleBookmarkClick}
             >
-              <Icon icon={isBookmarked ? 'lucide:bookmark-check' : 'lucide:bookmark-plus'} width="10" />
-              {isBookmarked ? t('bookmarked') : t('bookmarkSave')}
+              <CollectionIcon size={10} />
+              {currentIsBookmarked ? t('bookmarked') : t('bookmarkSave')}
             </button>
             <span
               className="tvn-pill tvn-pill-abstract"
               onClick={() => toggleAbstract(article.article_id)}
             >
-              <Icon icon="lucide:text" width="10" />
+              <Text size={10} />
               {t('abstract')}
             </span>
           </div>
@@ -381,7 +394,7 @@ function TrendingArticleCard({
                             style={entityButtonStyle}
                             onClick={() => applyEntityFilter('publisher_id', article.publisher_id, article.publisher_name)}
                           >
-                            <Icon icon="lucide:building-2" width="12" />
+                            <Building2 size={12} />
                             {article.publisher_name}
                           </button>
                         ) : (
@@ -393,7 +406,7 @@ function TrendingArticleCard({
                       <div className="expanded-section">
                         <div className="expanded-section-title fw-bold text-xs text-dark text-uppercase mb-1 d-flex align-items-center gap-1" style={{ letterSpacing: '0.5px' }}>
                           Topic
-                          <Icon icon="lucide:info" width="12" style={{ color: 'var(--primary-hover)', cursor: 'pointer' }} />
+                          <Info size={12} style={{ color: 'var(--primary-hover)', cursor: 'pointer' }} />
                         </div>
                         <div className="text-xs">
                           {article.primary_topic ? (
@@ -448,7 +461,7 @@ function TrendingArticleCard({
                             style={entityButtonStyle}
                             onClick={() => applyEntityFilter('author_id', au.author_id, au.display_name || au.name)}
                           >
-                            <Icon icon="lucide:user" width="12" />
+                            <User size={12} />
                             {au.display_name || au.name}
                             {au.last_known_institution && (
                               <span className="text-muted font-normal" style={{ fontSize: '0.62rem' }}>
@@ -501,7 +514,7 @@ function TrendingArticleCard({
                               onClick={(e) => handleCopyDoi(e, article.doi)}
                               title="Copy DOI"
                             >
-                              <Icon icon="lucide:copy" width="10" />
+                              <Copy size={10} />
                             </button>
                           </div>
                         </div>

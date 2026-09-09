@@ -13,21 +13,15 @@ export default function AuthLayoutWithUser() {
   const [booting, setBooting] = useState(true);
   const hasAuth = useAuthStore((s) => s.isAuthenticated);
 
-
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
-      // Luôn chạy isAuthenticated để hydrate đúng user khi reload
-      // (zustand có thể chưa kịp có dữ liệu hoặc bị reset khi refresh).
       await isAuthenticated()
-        .catch(() => {
-          // isAuthenticated đã logout/clear state khi fail; ở đây chỉ nuốt lỗi để tránh crash
-        })
+        .catch(() => {})
         .finally(() => {
           if (!cancelled) setBooting(false);
         });
-
     };
 
     run();
@@ -36,7 +30,6 @@ export default function AuthLayoutWithUser() {
     };
   }, [hasAuth]);
 
-  if (booting) return <div></div>;
+  if (booting) return <div />;
   return <Outlet />;
 }
-

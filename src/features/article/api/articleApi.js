@@ -76,8 +76,8 @@ export const hydrateArticleReferencesApi = (id) => {
  * @param {number|string} id - ID bài báo
  * @returns {Promise} Axios promise
  */
-export const getBookmarksApi = () => {
-  return api.get('/bookmarks');
+export const getBookmarksApi = (config = {}) => {
+  return api.get('/bookmarks', config);
 };
 
 export const createBookmarkApi = (articleId) => {

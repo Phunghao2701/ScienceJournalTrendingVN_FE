@@ -79,10 +79,18 @@ export default function useAuth() {
       setError(null);
 
       try {
-        const { response, token: googleToken, email } = await loginWithGoogleCode(codeResponse.code);
+        const {
+          response,
+          token: googleToken,
+          email,
+          user: authenticatedUser,
+        } = await loginWithGoogleCode(codeResponse.code);
 
         if (response?.success && googleToken) {
-          loginSuccess(googleToken);
+          if (!authenticatedUser) {
+            throw new Error('Phản hồi đăng nhập thiếu định danh người dùng');
+          }
+          loginSuccess(googleToken, authenticatedUser);
           setEmail(email);
           toast.success('Đăng nhập thành công');
           navigate(googleRedirectRef.current, { replace: true });
@@ -114,7 +122,10 @@ export default function useAuth() {
       const result = await loginWithPassword(email, password, remember);
 
       if (result.token) {
-        loginSuccess(result.token);
+        if (!result.user) {
+          throw new Error('Phản hồi đăng nhập thiếu định danh người dùng');
+        }
+        loginSuccess(result.token, result.user);
         onSuccess?.(result.token);
         setEmail(result.email);
       }

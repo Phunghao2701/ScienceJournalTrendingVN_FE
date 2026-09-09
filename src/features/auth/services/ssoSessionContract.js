@@ -17,3 +17,31 @@ export const recoverSsoSession = async ({ checkChildSession, bootstrapSession })
     throw error;
   }
 };
+
+export const createSessionInitializer = (initialize) => {
+  let initializationPromise = null;
+
+  return {
+    run: () => {
+      if (!initializationPromise) {
+        const trackedPromise = Promise.resolve()
+          .then(initialize)
+          .finally(() => {
+            if (initializationPromise === trackedPromise) {
+              initializationPromise = null;
+            }
+          });
+        initializationPromise = trackedPromise;
+      }
+      return initializationPromise;
+    },
+    reset: () => {
+      initializationPromise = null;
+    },
+  };
+};
+
+export const getAuthenticatedSessionFromState = (state) => {
+  if (!state?.isAuthenticated || !state.user) return null;
+  return { status: 'authenticated', user: state.user };
+};

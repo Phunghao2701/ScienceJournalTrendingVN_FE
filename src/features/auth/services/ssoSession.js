@@ -2,7 +2,7 @@ import { jwtDecode } from 'jwt-decode';
 import api from '../../../shared/services/api';
 import { useAuthStore } from '../../../app/store/authStore';
 import { useUserStore } from '../../../app/store/userStore';
-import { classifySsoError } from './ssoSessionContract';
+import { classifySsoError, recoverSsoSession } from './ssoSessionContract';
 
 let initializationPromise = null;
 
@@ -54,7 +54,7 @@ const automaticBootstrap = async () => {
   }
 };
 
-export const clearClientStorageAndCookies = () => {
+const clearClientStorage = () => {
   try {
     const tokenKeys = [
       'token',
@@ -68,8 +68,25 @@ export const clearClientStorageAndCookies = () => {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
     });
+  } catch {
+    // Storage access might be restricted
+  }
+};
+
+export const clearClientStorageAndCookies = () => {
+  clearClientStorage();
+  try {
     if (typeof document !== 'undefined') {
-      const cookieNames = ['access_token', 'refresh_token'];
+      const cookieNames = [
+        'access_token',
+        'refresh_token',
+        'vn_access_token_dev',
+        'vn_refresh_token_dev',
+        'vn_sso_block_dev',
+        '__Host-vn_access_token',
+        '__Host-vn_refresh_token',
+        '__Host-vn_sso_block',
+      ];
       const domains = [
         '',
         '; domain=.hyperdatalab.org',
@@ -92,16 +109,12 @@ export const initializeSsoSession = () => {
   if (initializationPromise) return initializationPromise;
   initializationPromise = (async () => {
     try {
-      clearClientStorageAndCookies();
+      clearClientStorage();
       useAuthStore.getState().logout();
-      try {
-        return await checkChildSession();
-      } catch (error) {
-        if (error.response?.status === 401) {
-          return { status: 'anonymous' };
-        }
-        throw error;
-      }
+      return await recoverSsoSession({
+        checkChildSession,
+        bootstrapSession: automaticBootstrap,
+      });
     } catch (error) {
       useAuthStore.getState().logout();
       throw error;
@@ -120,7 +133,7 @@ export const explicitSsoLogin = async () => {
 export const logoutSsoSession = async () => {
   try {
     await api.post('/auth/logout', {}, { skipBearer: true, skipAuthRefresh: true });
-  } catch (error) {
+  } catch {
     // Non-fatal: still proceed to wipe local session
   } finally {
     clearClientStorageAndCookies();

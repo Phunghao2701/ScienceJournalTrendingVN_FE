@@ -6,3 +6,14 @@ export const classifySsoError = (error) => {
   if (status === 403 || code === 'EMAIL_IDENTITY_AMBIGUOUS') return 'error';
   return 'throw';
 };
+
+export const recoverSsoSession = async ({ checkChildSession, bootstrapSession }) => {
+  try {
+    return await checkChildSession();
+  } catch (error) {
+    if (error?.response?.status === 401) {
+      return bootstrapSession();
+    }
+    throw error;
+  }
+};

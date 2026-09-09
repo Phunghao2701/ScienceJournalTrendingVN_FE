@@ -21,7 +21,7 @@ const LoadingState = () => {
       {/* Heading */}
       <h5
         style={{
-          fontFamily: "'Source Serif 4', serif",
+          fontFamily: "var(--font-sans)",
           fontWeight: 600,
           color: 'var(--text-main, #0D1B1C)',
           marginBottom: '0.5rem',

@@ -18,6 +18,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from '../../../shared/utils/toast';
 import { useAuthStore } from '../../../app/store/authStore';
 import { useNavigate } from 'react-router-dom';
+import { logoutSsoSession } from '../services/ssoSession';
 
 export const AuthContext = createContext(null);
 
@@ -164,8 +165,12 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    setUser(null);
+  const logout = useCallback(async () => {
+    try {
+      await logoutSsoSession();
+    } finally {
+      setUser(null);
+    }
   }, []);
 
   const updateProfile = useCallback(async (data) => {

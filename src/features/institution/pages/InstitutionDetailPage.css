@@ -262,7 +262,7 @@
 }
 .institution-work-item:last-child { border: 0; }
 .institution-work-item:hover { background: rgba(241, 245, 249, .45); }
-.institution-work-index { padding-top: .15rem; color: var(--text-muted); font-family: monospace; font-size: .65rem; }
+.institution-work-index { padding-top: .15rem; color: var(--text-muted); font-family: var(--font-sans); font-size: .65rem; }
 .institution-work-item button {
   padding: 0;
   border: 0;

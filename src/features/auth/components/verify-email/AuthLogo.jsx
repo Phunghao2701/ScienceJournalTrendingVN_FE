@@ -7,7 +7,7 @@ const AuthLogo = () => {
     <div className="text-center mb-4">
       <span
         style={{
-          fontFamily: "'Source Serif 4', serif",
+          fontFamily: "var(--font-sans)",
           fontSize: '1.8rem',
           fontWeight: 700,
           color: 'var(--primary)',

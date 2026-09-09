@@ -289,7 +289,7 @@
   "filters": "Filters",
   "info": "Info",
   "more": "More",
-  "databaseArticlesCount": "{{count}} Articles (ResearchPulse Database)",
+  "databaseArticlesCount": "{{count}} Articles",
   "exploreSectors": "Explore Science, Technology & Innovation...",
   "articleSearchResults": "Article Search Results",
   "allDocs": "All Docs",

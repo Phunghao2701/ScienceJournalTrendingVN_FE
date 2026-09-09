@@ -111,13 +111,21 @@ export const fetchArticlesByFilters = async (filters) => {
   const mappedArticles = rawList.map(mapArticleListItem);
   const apiStats = resData.stats || null;
 
+  const uniqueAuthorsInPage = new Set();
+  mappedArticles.forEach((a) => {
+    (a.authors || []).forEach((au) => {
+      const key = au.author_id || au.id || au.display_name || au.name;
+      if (key) uniqueAuthorsInPage.add(key);
+    });
+  });
+
   return {
     articles: mappedArticles,
     total: totalCount,
     stats: {
       totalArticles: Number(apiStats?.totalArticles ?? totalCount),
       openAccessCount: Number(apiStats?.openAccessCount ?? mappedArticles.filter((a) => a.is_open_access).length),
-      authorsCount: Number(apiStats?.authorsCount ?? 0),
+      authorsCount: Number(apiStats?.authorsCount || 0) || uniqueAuthorsInPage.size,
       topicsCount: Number(
         apiStats?.topicsCount ?? new Set(mappedArticles.map((a) => a.topic_id).filter(Boolean)).size
       ),

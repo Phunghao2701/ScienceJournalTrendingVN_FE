@@ -16,7 +16,7 @@ const SuccessState = ({ countdown, totalSeconds, onLogin, onHome }) => {
       <h4
         className="text-center mb-2"
         style={{
-          fontFamily: "'Source Serif 4', serif",
+          fontFamily: "var(--font-sans)",
           fontWeight: 600,
           color: 'var(--text-main, #0D1B1C)',
         }}

@@ -9,7 +9,6 @@ import {
   registerApi,
   resendActivationApi,
   loginGoogleApi,
-  logoutApi,
 } from '../api/auth.api';
 import {
   deleteProfileApi,
@@ -17,6 +16,7 @@ import {
   updateProfileApi,
 } from '../../profile/api/profile.api';
 import { removeToken } from '../../../shared/utils/auth';
+import { logoutSsoSession } from './ssoSession';
 
 /**
  * Safely extract email-like identity from JWT payload.
@@ -49,13 +49,6 @@ export const loginWithPassword = async (email, password, remember = true) => {
   let token = response.data?.data?.token;
   if (!token) {
     token = response.data?.token;
-  }
-
-  if (token) {
-    // persistToken không nằm trong file hiện tại => fallback sang persist qua removeToken/shared flow
-    // Nếu hàm persistToken tồn tại ở scope khác thì vẫn dùng được.
-    const storage = remember ? localStorage : sessionStorage;
-    storage.setItem('researchpulse_token', token);
   }
 
   return {
@@ -175,9 +168,6 @@ export const deleteCurrentAccount = async () => {
  * @returns {Promise<void>}
  */
 export const logoutSession = async () => {
-  try {
-    await logoutApi();
-  } finally {
-    removeToken();
-  }
+  await logoutSsoSession();
+  removeToken();
 };
